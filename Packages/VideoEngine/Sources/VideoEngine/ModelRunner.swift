@@ -64,7 +64,11 @@ final class ModelRunner {
                 let shapes = inputs.keys.sorted().map { key in
                     "\(key):\(inputs[key]?.multiArrayValue?.shape.map(\.intValue) ?? [])"
                 }.joined(separator: ";")
-                result = try benchmark.measure(name, phase: "predict", fields: ["requestedComputeUnits": unitLabel, "inputShapes": shapes]) {
+                let layouts = inputs.keys.sorted().compactMap { key -> String? in
+                    guard let array = inputs[key]?.multiArrayValue else { return nil }
+                    return "\(key):type=\(array.dataType.rawValue),strides=\(array.strides.map(\.intValue))"
+                }.joined(separator: ";")
+                result = try benchmark.measure(name, phase: "predict", fields: ["requestedComputeUnits": unitLabel, "inputShapes": shapes, "inputLayouts": layouts]) {
                     try model.prediction(from: provider)
                 }
             } else { result = try model.prediction(from: provider) }

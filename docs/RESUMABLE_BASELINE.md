@@ -14,9 +14,13 @@ If iOS terminates the process or its background task, reopen Setup and use **Res
 
 The old build 10 run cannot be resumed retroactively: its diagnostic journal contains timing and memory data, not the tensors required for continuation. One new baseline must start with this update.
 
-### Spatial decoder compatibility candidate
+### Spatial decoder compatibility policies
 
 The `spatial-attention-cpu-v1` policy requests CPU-only execution for `vae_spatial_part2`, the Float32 spatial-attention partition. All other partition policies, weights, tensor shapes, diffusion steps and guidance remain unchanged. The model revision and checkpoint configuration are intentionally retained: an existing completed step-21 checkpoint can restart decoding directly after an app update. Update the existing installation and choose **Resume saved baseline**; deleting the app or discarding the saved baseline removes recovery data.
+
+The subsequent `spatial-cpu-v2` candidate runs all nine spatial VAE partitions on CPU. Text encoding, transformer execution, temporal decoder placement, precision, weights, shapes, guidance and diffusion steps retain their existing settings. Checkpoint compatibility is unchanged. The full spatial chain is exercised locally with deterministic synthetic input before device validation; this does not establish physical-phone completion, performance or prompt adherence.
+
+Spatial input and each partition output are checked for non-finite values before being passed onward. The check reads the strided buffer without creating a full scalar copy. Journals record shape, strides, finite/zero counts, range and validation duration, plus Core ML input layouts. Tensor contents are not uploaded or added to the public repository. Invalid values produce a recoverable failure and preserve the saved baseline. Finite output alone does not establish visual quality; an all-zero result is recorded rather than presented as a quality pass.
 
 Decoder policy is recorded separately in journals and completed-video metadata. Its change invalidates previous timing-cache estimates so they can be learned again. Frame-append and video-finalization events distinguish decoder interruption from export failure. This is a compatibility candidate requiring physical validation, not a measured speed improvement or confirmed end-to-end fix. The original build-14 source remains the rollback reference.
 

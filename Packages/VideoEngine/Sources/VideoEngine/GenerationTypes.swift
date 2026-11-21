@@ -75,7 +75,7 @@ public enum GenerationError: LocalizedError {
         case .interrupted: return "Generation was interrupted. Keep the app open during generation."
         case .insufficientStorage: return "There is not enough free storage. Free space and try again."
         case .encodingFailed(let detail): return "The video could not be saved: \(detail)"
-        case .invalidTensor: return "The model returned an invalid video frame. Try a new seed."
+        case .invalidTensor: return "The model produced invalid video data. Generation stopped."
         case .invalidCheckpoint: return "This saved baseline is damaged or incompatible. Discard the saved baseline to start a new one."
         }
     }
@@ -84,7 +84,7 @@ public enum GenerationError: LocalizedError {
 public enum MOVDModel {
     public static let revision = "cc1839814d0e1b0cb01953831a55a557ff6682bf"
     /// Decoder placement is separate from the diffusion-state checkpoint format.
-    public static let decoderExecutionPolicy = "spatial-attention-cpu-v1"
+    public static let decoderExecutionPolicy = "spatial-cpu-v2"
     public static let temporalParts = ["vae_temporal_part1", "vae_temporal_part2_1", "vae_temporal_part2_2", "vae_temporal_part2_3_1", "vae_temporal_part2_3_2", "vae_temporal_part2_3_3", "vae_temporal_part2_3_4", "vae_temporal_part2_4", "vae_temporal_part3"]
     public static let spatialParts = ["vae_spatial_part1", "vae_spatial_part2", "vae_spatial_part3_1", "vae_spatial_part3_2", "vae_spatial_part3_3", "vae_spatial_part3_4_1", "vae_spatial_part3_4_2", "vae_spatial_part3_4_3", "vae_spatial_part4"]
     public static let requiredNames: [String] = {

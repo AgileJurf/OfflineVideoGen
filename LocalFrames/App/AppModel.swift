@@ -164,7 +164,7 @@ final class AppModel: ObservableObject {
             let log = benchmarking ? try makeBenchmarkLog(kind: "generation", fields: [
                 "prompt": request.prompt, "seed": String(request.seed), "durationSeconds": String(request.duration),
                 "width": String(request.width), "height": String(request.height), "fps": String(request.framesPerSecond),
-                "configuration": "baseline-fp32-stdit-vae-t5-int8-spatial-attention-cpu",
+                "configuration": "baseline-fp32-stdit-vae-t5-int8-spatial-cpu",
                 "decoderExecutionPolicy": MOVDModel.decoderExecutionPolicy,
                 "schedule": "30 points; leap index 20; 21 predictions; TDTM first 10; CFG 7; latent frames 20",
                 "cacheCondition": "uncontrolled OS cache; record first/repeat run separately; process is not restarted automatically",

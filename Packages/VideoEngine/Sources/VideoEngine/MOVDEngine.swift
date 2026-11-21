@@ -42,7 +42,7 @@ public actor MOVDEngine {
         let latent = try await denoise(request, encoding: encoding, runner: runner, saved: saved,
                                        checkpointURL: checkpointURL, progress: report)
         benchmark?.record("decoder_policy", fields: ["policy": MOVDModel.decoderExecutionPolicy,
-            "cpuOverridePartition": "vae_spatial_part2", "checkpointDiffusionStateUnchanged": "true"])
+            "cpuOverridePartitions": MOVDModel.spatialParts.joined(separator: ","), "checkpointDiffusionStateUnchanged": "true"])
         report(.init(0.8, "Decoding video frames"))
         try await decode(latent, request: request, output: output, runner: runner, progress: report)
         #if targetEnvironment(simulator)
@@ -232,13 +232,13 @@ public actor MOVDEngine {
         for (index, group) in spatialChunks.enumerated() {
             if writer.frameCount >= request.frameCount { break }
             var chunk = await group.shapedArray(of: Float32.self)
+            try inspectSpatialTensor(chunk, partition: "spatial_input", runner: runner)
             for (partIndex, name) in MOVDModel.spatialParts.enumerated() {
-                // Keep this partition's Float32 attention on CPU. Its 512-wide attention
-                // head has a separate GPU execution path; changing placement retains
-                // the original weights, tensor shapes, and saved diffusion state.
-                let cpu = name == "vae_spatial_part2" || name == "vae_spatial_part3_3" || name.hasPrefix("vae_spatial_part3_4")
-                let result = try await runner.predict(name, ["latents": feature(chunk)], cpuOnly: cpu)
+                // Run the complete spatial chain under one CPU compatibility policy.
+                // The original Float32 weights, boundaries and saved diffusion state remain intact.
+                let result = try await runner.predict(name, ["latents": feature(chunk)], cpuOnly: true)
                 chunk = try tensor(result, "output")
+                try inspectSpatialTensor(chunk, partition: name, runner: runner)
                 let neededGroups = (request.frameCount + 3) / 4
                 progress(.init(0.87 + 0.12 * Double(index * MOVDModel.spatialParts.count + partIndex + 1) / Double(neededGroups * MOVDModel.spatialParts.count), "Decoding video · frame group \(index + 1) of \(neededGroups)"))
             }
@@ -250,5 +250,14 @@ public actor MOVDEngine {
         try await writer.finish(expectedFrames: request.frameCount)
         runner.benchmark?.record("video_finalize_end", fields: ["frames": String(writer.frameCount)])
         finished = true
+    }
+
+    private func inspectSpatialTensor(_ array: MLShapedArray<Float32>, partition: String,
+                                      runner: ModelRunner) throws {
+        let started = ProcessInfo.processInfo.systemUptime
+        let statistics = try DecoderTensorStatistics(array)
+        runner.benchmark?.record("decoder_tensor", partition: partition,
+                                duration: ProcessInfo.processInfo.systemUptime - started, fields: statistics.fields)
+        try statistics.requireFinite()
     }
 }

@@ -5,6 +5,34 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testDecoderStatisticsIgnoreStridedPaddingAndPreserveValues() throws {
+        let values: [Float32] = [0, .nan, -2, 3, .nan, 4]
+        let bytes = values.withUnsafeBytes { Data($0) }
+        let array = MLShapedArray<Float32>(data: bytes, shape: [2, 2], strides: [3, 2])
+        let statistics = try DecoderTensorStatistics(array)
+        XCTAssertEqual(statistics.scalarCount, 4)
+        XCTAssertEqual(statistics.nonFiniteCount, 0, "Padding is not model output")
+        XCTAssertEqual(statistics.zeroCount, 1)
+        XCTAssertEqual(statistics.minimum, -2)
+        XCTAssertEqual(statistics.maximum, 4)
+        XCTAssertNoThrow(try statistics.requireFinite())
+        XCTAssertEqual(array.scalars, [0, -2, 3, 4])
+    }
+
+    func testDecoderRejectsNonfiniteValuesBeforeAnotherPrediction() throws {
+        let array = MLShapedArray<Float32>(scalars: [.nan, .infinity, -.infinity, 0, 1], shape: [5])
+        let statistics = try DecoderTensorStatistics(array)
+        XCTAssertEqual(statistics.nonFiniteCount, 3)
+        XCTAssertEqual(statistics.zeroCount, 1)
+        XCTAssertEqual(statistics.minimum, 0)
+        XCTAssertEqual(statistics.maximum, 1)
+        XCTAssertThrowsError(try statistics.requireFinite())
+        let allInvalid = try DecoderTensorStatistics(MLShapedArray<Float32>(scalars: [.nan], shape: [1]))
+        XCTAssertEqual(allInvalid.fields["minimum"], "none")
+        XCTAssertEqual(allInvalid.fields["maximum"], "none")
+        XCTAssertThrowsError(try allInvalid.requireFinite())
+    }
+
     func testETADoesNotInventUnknownDecoderTime() throws {
         let request = try GenerationRequest(prompt: "A sailboat moves.", duration: 2, seed: 42)
         let estimator = GenerationTimeEstimator(request: request, restoredSteps: nil, historyURL: nil)
