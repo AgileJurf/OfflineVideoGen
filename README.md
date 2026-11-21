@@ -37,6 +37,14 @@ Create offers twelve prompt-based visual styles with an explicit 63-token scene-
 
 Optional local diagnostics for Create jobs can be enabled in Setup. They include prompts and remain on the device unless manually exported. The benchmark screen supports side-by-side playback; precision and faster sampler presets require measured physical-device comparisons before activation.
 
+## Optional online support
+
+Build 25 adds **Setup → Online support and model updates → Enable online support**. It defaults off. When enabled, users can manually check the live model catalog over Wi-Fi and cache the validated result for offline use. Enabling the switch alone makes no request; generation does not depend on the backend. Existing installations do not need to download the model again.
+
+A user can separately review and consent to one structured diagnostic report. Its allowlist excludes prompts, seeds, videos, personal files and raw journals. Reports use private storage with a 30-day expiration and limited free intake capacity. Turning support off cancels support requests; nothing is queued automatically. The [service](https://localframes-support.vercel.app) runs on Vercel Hobby, with [deployment and quota documentation](support/README.md) and a [test/release report](docs/SUPPORT_TEST_REPORT.md).
+
+This release retains the original inference configuration and does not claim faster generation or improved video quality. Optional local-plus-remote computation is a separate [hybrid support investigation](docs/HYBRID_SUPPORT_RESEARCH.md); no media-upload helper is enabled in the app yet.
+
 ## Evidence and remaining work
 
 - [Feasibility and model choice](docs/FEASIBILITY.md)
