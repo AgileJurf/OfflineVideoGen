@@ -45,6 +45,8 @@ public enum GenerationCheckpoint {
     }
 
     private struct Envelope: Codable { let payload: Data; let sha256: String }
+    // Identifies stored text/diffusion tensors. A decoder-only placement change
+    // must not invalidate completed diffusion work from an earlier app build.
     static let configuration = "fp32-stdit-vae-t5-int8-rflow30-leap20-cfg7-tdtm10-latent20-v1"
 
     public static func summary(at url: URL) throws -> Summary {

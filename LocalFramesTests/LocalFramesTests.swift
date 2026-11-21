@@ -52,6 +52,29 @@ final class LocalFramesTests: XCTestCase {
         XCTAssertTrue(model.estimatedTimeMessage.contains("about 2 min"))
     }
 
+    func testETARejectsPreviousDecoderPolicyHistoryAndRelearns() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let request = try GenerationRequest(prompt: "A flag waves.", duration: 2, seed: 42)
+        let url = root.appendingPathComponent("timing.data")
+        // Build 14's cache predates the CPU-only spatial-attention policy.
+        let oldSignature = MOVDModel.revision + "fp32-stdit-vae-t5-int8-rflow30-leap20-cfg7-tdtm10-latent20-v1" + ProcessInfo.processInfo.operatingSystemVersionString
+        let history: [String: Any] = ["signature": oldSignature,
+            "samples": Dictionary(uniqueKeysWithValues: MOVDModel.requiredNames.map { ($0, [2.0]) })]
+        try JSONSerialization.data(withJSONObject: history).write(to: url)
+        let fresh = GenerationTimeEstimator(request: request, restoredSteps: 21, historyURL: url)
+        XCTAssertNil(fresh.estimate, "Old compute-policy timings must not become a new decoder estimate")
+        for operation in GenerationTimeEstimator.operations(request: request, restoredSteps: 21) {
+            fresh.record(operation.name, seconds: 3)
+        }
+        fresh.persist()
+        let learned = GenerationTimeEstimator(request: request, restoredSteps: 21, historyURL: url)
+        let estimate = try XCTUnwrap(learned.estimate)
+        XCTAssertTrue(estimate.isFullJob)
+        XCTAssertEqual(estimate.seconds, 270, accuracy: 0.001)
+    }
+
     func testThermalPauseWaitsThroughFairAndResumesAtNominal() async throws {
         let index = LockedValue(0)
         let pauses = LockedValue<[GenerationControl.PauseReason?]>([])
@@ -139,6 +162,35 @@ final class LocalFramesTests: XCTestCase {
         let url = root.appendingPathComponent("state.checkpoint")
         try GenerationCheckpoint.write(state, to: url)
         XCTAssertThrowsError(try GenerationCheckpoint.read(at: url))
+    }
+
+    func testBuild14CompletedCheckpointRemainsBitExactAndPlansOnlyDecoding() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try GenerationRequest(prompt: "A sailboat moves.", duration: 2, seed: 42)
+        let shape = [1, 4, 20, 32, 32]
+        let values = (0..<shape.reduce(1, *)).map { Float32($0 % 127 - 63) / 17 }
+        let hidden = GenerationCheckpoint.Tensor(MLShapedArray<Float32>(repeating: 0.25, shape: [1, 1, 300, 4096]))
+        let state = GenerationCheckpoint.State(version: 1,
+            modelRevision: "cc1839814d0e1b0cb01953831a55a557ff6682bf",
+            configuration: "fp32-stdit-vae-t5-int8-rflow30-leap20-cfg7-tdtm10-latent20-v1",
+            request: request, completedSteps: 21,
+            latent: .init(MLShapedArray(scalars: values, shape: shape)), hidden: hidden, unconditional: hidden,
+            mask: .init(MLShapedArray<Float32>(scalars: [1] + Array(repeating: 0, count: 299), shape: [1, 300])), tokenCount: 1)
+        let url = root.appendingPathComponent("build14.checkpoint")
+        try GenerationCheckpoint.write(state, to: url)
+        let restored = try GenerationCheckpoint.read(at: url)
+        XCTAssertEqual(restored.request, request)
+        XCTAssertEqual(restored.completedSteps, 21)
+        XCTAssertEqual(try restored.latent.array(expectedShape: shape).scalars.map(\.bitPattern), values.map(\.bitPattern))
+        XCTAssertEqual(try restored.hidden.array(expectedShape: [1, 1, 300, 4096]).shape, hidden.shape)
+        XCTAssertEqual(try restored.unconditional.array(expectedShape: [1, 1, 300, 4096]).shape, hidden.shape)
+        XCTAssertEqual(try restored.mask.array(expectedShape: [1, 300]).scalars.first, 1)
+        let remaining = GenerationTimeEstimator.operations(request: restored.request, restoredSteps: restored.completedSteps)
+        XCTAssertEqual(remaining.count, 90)
+        XCTAssertEqual(remaining.filter { $0.stage == .temporalDecode }.count, 36)
+        XCTAssertEqual(remaining.filter { $0.stage == .spatialDecode }.count, 54)
+        XCTAssertTrue(remaining.allSatisfy { $0.name.hasPrefix("vae_") })
     }
 
     @MainActor

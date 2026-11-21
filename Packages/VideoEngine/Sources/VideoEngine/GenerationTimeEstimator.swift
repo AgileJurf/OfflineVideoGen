@@ -16,7 +16,7 @@ final class GenerationTimeEstimator: @unchecked Sendable {
     }
     struct Operation { let name: String; let stage: Stage }
     private struct History: Codable { let signature: String; let samples: [String: [Double]] }
-    private let signature = MOVDModel.revision + GenerationCheckpoint.configuration + ProcessInfo.processInfo.operatingSystemVersionString
+    private let signature = MOVDModel.revision + GenerationCheckpoint.configuration + MOVDModel.decoderExecutionPolicy + ProcessInfo.processInfo.operatingSystemVersionString
     private let plan: [Operation]
     private let historyURL: URL?
     private var samples: [String: [Double]] = [:]

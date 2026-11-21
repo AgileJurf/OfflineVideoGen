@@ -41,6 +41,8 @@ public actor MOVDEngine {
         }
         let latent = try await denoise(request, encoding: encoding, runner: runner, saved: saved,
                                        checkpointURL: checkpointURL, progress: report)
+        benchmark?.record("decoder_policy", fields: ["policy": MOVDModel.decoderExecutionPolicy,
+            "cpuOverridePartition": "vae_spatial_part2", "checkpointDiffusionStateUnchanged": "true"])
         report(.init(0.8, "Decoding video frames"))
         try await decode(latent, request: request, output: output, runner: runner, progress: report)
         #if targetEnvironment(simulator)
@@ -56,7 +58,8 @@ public actor MOVDEngine {
                                  peakSampledMemoryBytes: runner.peakMemory,
                                  thermalStates: runner.thermalStates.sorted(), environment: environment,
                                  modelRevision: MOVDModel.revision,
-                                 pausedSeconds: control.totalPausedSeconds, resumedFromStep: saved?.completedSteps)
+                                 pausedSeconds: control.totalPausedSeconds, resumedFromStep: saved?.completedSteps,
+                                 decoderExecutionPolicy: MOVDModel.decoderExecutionPolicy)
     }
 
     private struct Encoding {
@@ -206,6 +209,7 @@ public actor MOVDEngine {
 
     private func decode(_ latent: MLShapedArray<Float32>, request: GenerationRequest, output: URL,
                         runner: ModelRunner, progress: @Sendable (GenerationProgress) -> Void) async throws {
+        runner.benchmark?.record("video_encoder_begin")
         let writer = try VideoEncoder(output: output, width: request.width, height: request.height, fps: request.framesPerSecond)
         var finished = false
         defer { if !finished { writer.cancel() } }
@@ -229,15 +233,22 @@ public actor MOVDEngine {
             if writer.frameCount >= request.frameCount { break }
             var chunk = await group.shapedArray(of: Float32.self)
             for (partIndex, name) in MOVDModel.spatialParts.enumerated() {
-                let cpu = name == "vae_spatial_part3_3" || name.hasPrefix("vae_spatial_part3_4")
+                // Keep this partition's Float32 attention on CPU. Its 512-wide attention
+                // head has a separate GPU execution path; changing placement retains
+                // the original weights, tensor shapes, and saved diffusion state.
+                let cpu = name == "vae_spatial_part2" || name == "vae_spatial_part3_3" || name.hasPrefix("vae_spatial_part3_4")
                 let result = try await runner.predict(name, ["latents": feature(chunk)], cpuOnly: cpu)
                 chunk = try tensor(result, "output")
                 let neededGroups = (request.frameCount + 3) / 4
                 progress(.init(0.87 + 0.12 * Double(index * MOVDModel.spatialParts.count + partIndex + 1) / Double(neededGroups * MOVDModel.spatialParts.count), "Decoding video · frame group \(index + 1) of \(neededGroups)"))
             }
             try await writer.append(chunk, limit: request.frameCount)
+            runner.benchmark?.record("video_frames_appended", fields: ["frames": String(writer.frameCount)])
         }
+        progress(.init(0.995, "Saving video"))
+        runner.benchmark?.record("video_finalize_begin", fields: ["frames": String(writer.frameCount)])
         try await writer.finish(expectedFrames: request.frameCount)
+        runner.benchmark?.record("video_finalize_end", fields: ["frames": String(writer.frameCount)])
         finished = true
     }
 }

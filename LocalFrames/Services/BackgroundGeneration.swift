@@ -65,7 +65,10 @@ final class BackgroundGeneration {
                 log?.record("background_unavailable", fields: ["error": String(describing: error)])
             }
         } else {
-            log?.record("background_unavailable", fields: ["reason": "GPU background processing not supported by this device or OS, or registration unavailable"])
+            var fields = ["reason": "GPU background processing not supported by this device or OS, or registration unavailable",
+                          "registered": String(registered)]
+            if #available(iOS 26.0, *) { fields["gpuSupported"] = String(BGTaskScheduler.supportedResources.contains(.gpu)) }
+            log?.record("background_unavailable", fields: fields)
         }
         #else
         log?.record("background_unavailable", fields: ["reason": "Built with SDK older than iOS 26"])

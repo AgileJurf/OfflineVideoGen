@@ -55,6 +55,7 @@ public struct GenerationMetrics: Codable, Sendable {
     public var modelRevision: String
     public var pausedSeconds: Double? = nil
     public var resumedFromStep: Int? = nil
+    public var decoderExecutionPolicy: String? = nil
 }
 
 public enum GenerationError: LocalizedError {
@@ -82,6 +83,8 @@ public enum GenerationError: LocalizedError {
 
 public enum MOVDModel {
     public static let revision = "cc1839814d0e1b0cb01953831a55a557ff6682bf"
+    /// Decoder placement is separate from the diffusion-state checkpoint format.
+    public static let decoderExecutionPolicy = "spatial-attention-cpu-v1"
     public static let temporalParts = ["vae_temporal_part1", "vae_temporal_part2_1", "vae_temporal_part2_2", "vae_temporal_part2_3_1", "vae_temporal_part2_3_2", "vae_temporal_part2_3_3", "vae_temporal_part2_3_4", "vae_temporal_part2_4", "vae_temporal_part3"]
     public static let spatialParts = ["vae_spatial_part1", "vae_spatial_part2", "vae_spatial_part3_1", "vae_spatial_part3_2", "vae_spatial_part3_3", "vae_spatial_part3_4_1", "vae_spatial_part3_4_2", "vae_spatial_part3_4_3", "vae_spatial_part4"]
     public static let requiredNames: [String] = {

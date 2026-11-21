@@ -14,6 +14,12 @@ If iOS terminates the process or its background task, reopen Setup and use **Res
 
 The old build 10 run cannot be resumed retroactively: its diagnostic journal contains timing and memory data, not the tensors required for continuation. One new baseline must start with this update.
 
+### Spatial decoder compatibility candidate
+
+The `spatial-attention-cpu-v1` policy requests CPU-only execution for `vae_spatial_part2`, the Float32 spatial-attention partition. All other partition policies, weights, tensor shapes, diffusion steps and guidance remain unchanged. The model revision and checkpoint configuration are intentionally retained: an existing completed step-21 checkpoint can restart decoding directly after an app update. Update the existing installation and choose **Resume saved baseline**; deleting the app or discarding the saved baseline removes recovery data.
+
+Decoder policy is recorded separately in journals and completed-video metadata. Its change invalidates previous timing-cache estimates so they can be learned again. Frame-append and video-finalization events distinguish decoder interruption from export failure. This is a compatibility candidate requiring physical validation, not a measured speed improvement or confirmed end-to-end fix. The original build-14 source remains the rollback reference.
+
 ## Background execution
 
 On iOS 26 or later, a build made with the corresponding SDK registers a continued-processing handler at app launch. A user-started generation checks `BGTaskScheduler.supportedResources` for `.gpu`, requests that resource, and uses the Background GPU Access entitlement. Work begins in the handler once the system grants execution. Requests use the immediate-or-fail strategy; a submission failure, unsupported device, or missing callback falls back to foreground execution. The app reports truthful progress in the system's task UI, including cooling pauses.
@@ -31,5 +37,7 @@ Journals record pause start/end/reason changes, checkpoint writes/restores, fore
 The indicator learns load-plus-prediction timings locally for each partition, weights recent samples more heavily, and counts the operations remaining in the actual schedule, including restored steps and requested output frames. It may estimate unobserved blocks only within the same transformer family after at least three distinct block observations. It never substitutes transformer timing for unmeasured decoder work. Until every remaining phase has usable timing, it labels a current-phase estimate and says the total finish time is still being estimated. Later runs can use the local timing cache for a full-job estimate. No device-specific timing constants are shipped in source.
 
 The UI and system task progress display approximate minutes. Cooling and foreground waits pause the displayed estimate. Saving and future waits can add time; estimates are not measured generation results. The cache is local, contains model names and timings rather than prompts, and is not included in benchmark exports.
+
+Cache compatibility includes the model, diffusion configuration, decoder execution policy and OS version; timings from a different policy are not reused.
 
 Local validation initially passed 17 unit tests and 2 UI tests plus 5 report-parser tests. ETA tests additionally check partial-versus-full estimates, timing-cache reuse, restored-step accounting, adaptation to slower operations, and cooling labels. These checks establish control and persistence behavior with fixtures, not physical-device diffusion quality or background GPU execution. Cloud and physical follow-up results are recorded in `VALIDATION.md`.
