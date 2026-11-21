@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "case": "fabricated-moving-shapes-12fps-v1",
+  "providerSpace": "1inkusFace/RIFE",
+  "providerSourceRevisionObserved": "6ddbfae",
+  "modelURLDeclaredByProvider": "https://huggingface.co/hzwer/RIFE/resolve/main/RIFEv4.26_0921.zip",
+  "modelHashVerified": false,
+  "settings": {
+    "multiplier": 2,
+    "outputFPS": "native",
+    "outputFormat": "MP4",
+    "boomerang": false
+  },
+  "completionObservedWithinSecondsAfterSubmission": 20.581,
+  "timingSemantics": "One successful browser run. Upper bound from submission to completed UI observation, including queue and browser overhead; excludes upload/download and local normalization. Exact GPU runtime not available.",
+  "inputBytes": 7490,
+  "rawOutputBytes": 15902,
+  "normalizedOutputBytes": 19646,
+  "userMediaOrPromptsUploaded": false,
+  "physicalIPhoneTested": false,
+  "generationAccelerationMeasured": false,
+  "normalizationHost": "Intel Mac; macOS 15.8.3; Swift compiler from Xcode 16.4",
+  "cost": "Existing free ZeroGPU allowance; no paid resource, credits or subscription provisioned"
+}
