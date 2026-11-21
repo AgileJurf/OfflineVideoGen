@@ -40,7 +40,8 @@ final class SupportHTTPTransport: NSObject, SupportTransport, URLSessionTaskDele
 final class OnlineSupport: ObservableObject {
     // This is the public support origin only. No API key, user credential or model prompt is sent.
     static let origin = URL(string: "https://localframes-support.vercel.app")!
-    @Published var enabled = false { didSet { persistPreference(); if !enabled { cancel() } } }
+    @Published var enabled = false { didSet { persistPreference(); if !enabled { cancel(); onDisable?() } } }
+    var onDisable: (() -> Void)?
     @Published private(set) var busy = false
     @Published private(set) var snapshot: SupportSnapshot?
     @Published var message: String?

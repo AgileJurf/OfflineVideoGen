@@ -132,6 +132,9 @@ struct VideoComparisonView: View {
                     if left.isCrop || right.isCrop {
                         Text("A cropped copy reuses its original’s generation measurements. Crop export does not run a new diffusion job.").foregroundStyle(.orange)
                     }
+                    if left.smoothing != nil || right.smoothing != nil {
+                        Text("An interpolated copy reuses its original’s diffusion measurements. Smoothing time includes transfer and queueing; it is not a faster generation measurement.").foregroundStyle(.orange)
+                    }
                     if (left.metrics.resumedFromStep ?? 0) > 0 || (right.metrics.resumedFromStep ?? 0) > 0 {
                         Text("At least one output was resumed. Its session duration is not a full generation time.").foregroundStyle(.orange)
                     }
@@ -150,7 +153,7 @@ struct VideoComparisonView: View {
         Picker(title, selection: value) {
             Text("Choose video").tag(nil as UUID?)
             ForEach(model.videos) { video in
-                Text("\(video.prompt.prefix(28)) · seed \(video.seed) · \(video.id.uuidString.prefix(6))").tag(Optional(video.id))
+                Text("\(video.prompt.prefix(28)) · \(video.framesPerSecond) FPS · seed \(video.seed) · \(video.id.uuidString.prefix(6))").tag(Optional(video.id))
             }
         }
     }
@@ -159,7 +162,8 @@ struct VideoComparisonView: View {
             Text(label).font(.headline)
             Text(video.prompt)
             Text("Style: " + video.style.name)
-            Text(video.isCrop ? "Center-cropped copy" : "Native square output")
+            Text(video.isCrop ? "Center-cropped copy" : (video.smoothing == nil ? "Native square output" : "RIFE interpolated copy"))
+            if let smoothing = video.smoothing { Text("Smoothing + transfer: \(smoothing.elapsedSeconds, specifier: "%.2f") s") }
             Text("Seed \(video.seed)")
             Text(video.metrics.profileID ?? "Earlier baseline")
             Text(video.metrics.precision ?? "Original model precision")

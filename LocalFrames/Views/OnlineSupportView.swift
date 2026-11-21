@@ -10,9 +10,15 @@ struct OnlineSupportView: View {
         Form {
             Section("Optional connection") {
                 Toggle("Enable online support", isOn: $support.enabled).accessibilityIdentifier("enableOnlineSupport")
-                Text("Off by default. Only checks or reports you choose to send contact the support service over Wi-Fi. Video generation stays on your iPhone.")
+                Text("Off by default. Choose update checks, diagnostic reports or a 24 FPS copy over Wi-Fi. Each video upload requires separate consent. Video generation stays on your iPhone.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(OnlineSupport.origin.absoluteString).font(.caption).textSelection(.enabled)
+            }
+            Section("24 FPS smoothing · beta") {
+                Text("Create a smoother copy of a saved 2-second, 256 × 256, 12 FPS video using the free Hugging Face RIFE helper. Your original stays local. This is optional postprocessing, not faster diffusion.").font(.caption)
+                NavigationLink("Choose a clip for 24 FPS smoothing") { SmoothingLibraryView(support: support) }
+                    .disabled(!support.enabled || model.working || support.busy).accessibilityIdentifier("chooseSmoothingClip")
+                Text("Preview and approve every clip before upload. No automatic uploads, account tokens, payments or retries. Free shared quota may be unavailable; other durations and crops are not yet supported.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Model updates") {
                 LabeledContent("Configuration", value: support.catalogLabel).accessibilityIdentifier("supportCatalogSource")

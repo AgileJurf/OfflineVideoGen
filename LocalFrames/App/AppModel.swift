@@ -15,6 +15,11 @@ final class AppModel: ObservableObject {
     @Published var recordCreationDiagnostics = false { didSet { saveCreationPreferences() } }
     @Published var creationRequestID = UUID()
     @Published var exportingCrop = false
+    @Published private(set) var smoothingActive = false
+    @Published private(set) var smoothingPreview: PreparedSmoothing?
+    @Published private(set) var smoothingResult: VideoRecord?
+    @Published private(set) var smoothingMessage: String?
+    private let smoothingClient: RIFEClient
     @Published var videos: [VideoRecord] = []
     @Published var selectedVideo: VideoRecord?
     @Published var installed = false
@@ -83,7 +88,8 @@ final class AppModel: ObservableObject {
     }
     var isGenerating: Bool { generationControl != nil }
 
-    init(root: URL? = nil) {
+    init(root: URL? = nil, smoothingClient: RIFEClient = RIFEClient()) {
+        self.smoothingClient = smoothingClient
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
         library = VideoLibrary(root: support.appendingPathComponent("Library", isDirectory: true))
         let modelRoot = support.appendingPathComponent("Models", isDirectory: true)
@@ -101,6 +107,7 @@ final class AppModel: ObservableObject {
             recordCreationDiagnostics = preferences.recordDiagnostics ?? false
         }
         preferencesLoaded = true
+        self.support.onDisable = { [weak self] in self?.closeSmoothingReview() }
     }
 
     private func saveCreationPreferences() {
@@ -340,6 +347,62 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func prepareSmoothing(_ video: VideoRecord) {
+        guard support.enabled, !working else { return }
+        closeSmoothingReview()
+        smoothingResult = nil; smoothingMessage = nil
+        working = true; smoothingActive = true
+        progress = .init(0, "Preparing a local preview · nothing uploaded")
+        operation = Task {
+            defer { finish() }
+            do {
+                let prepared = try await SmoothingMedia.prepare(video, source: library.videoURL(video.id), temporaryRoot: temporaryDirectory)
+                guard !Task.isCancelled, support.enabled else {
+                    try? FileManager.default.removeItem(at: prepared.directory)
+                    throw CancellationError()
+                }
+                smoothingPreview = prepared
+            } catch is CancellationError { smoothingMessage = "Preview cancelled. Nothing was uploaded." }
+            catch { smoothingMessage = (error as? SmoothingError)?.localizedDescription ?? "The local preview could not be prepared. Nothing was uploaded." }
+        }
+    }
+
+    func startSmoothing(previewID: UUID, consent: Bool) {
+        guard !working, support.enabled, consent, let prepared = smoothingPreview, prepared.id == previewID else { return }
+        // Consume the reviewed snapshot immediately. Neither success nor failure can reuse its consent.
+        smoothingPreview = nil; smoothingResult = nil; smoothingMessage = nil
+        support.cancel(); working = true; smoothingActive = true
+        progress = .init(0, "Starting 24 FPS smoothing")
+        operation = Task {
+            defer { try? FileManager.default.removeItem(at: prepared.directory); finish() }
+            do {
+                let result = try await smoothingClient.smooth(prepared, consentID: previewID, enabled: support.enabled) { text in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.smoothingActive else { return }
+                        self.progress = .init(0, text)
+                    }
+                }
+                try Task.checkCancellation()
+                guard support.enabled else { throw CancellationError() }
+                let saved = try await library.addSmoothed(result, original: prepared.original)
+                videos = try await library.list(); smoothingResult = saved
+                smoothingMessage = "24 FPS copy saved. Your original 12 FPS video is unchanged."
+            } catch is CancellationError {
+                smoothingMessage = "Smoothing cancelled. Your original is safe. The helper may already have received or processed the clip; cancellation does not delete its remote copy."
+            } catch {
+                if Task.isCancelled {
+                    smoothingMessage = "Smoothing stopped. Your original is safe. The helper may already have received the clip. Nothing will retry automatically."
+                } else { smoothingMessage = (error as? SmoothingError)?.localizedDescription ?? SmoothingError.unavailable.localizedDescription }
+            }
+        }
+    }
+
+    func closeSmoothingReview() {
+        if smoothingActive { operation?.cancel() }
+        if let preview = smoothingPreview { try? FileManager.default.removeItem(at: preview.directory) }
+        smoothingPreview = nil
+    }
+
     func install() {
         guard !working else { return }
         support.cancel()
@@ -418,7 +481,7 @@ final class AppModel: ObservableObject {
 
     private func finish(success: Bool = false) {
         BackgroundGeneration.shared.finish(success: success)
-        working = false; installing = false; exportingCrop = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        working = false; installing = false; exportingCrop = false; smoothingActive = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
         refreshBenchmarkFiles(); refreshSavedBaseline()
     }
 

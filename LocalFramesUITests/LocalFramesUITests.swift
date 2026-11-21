@@ -11,15 +11,22 @@ final class LocalFramesUITests: XCTestCase {
         let toggle = app.switches["enableOnlineSupport"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertFalse(app.buttons["chooseSmoothingClip"].isEnabled)
         XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertTrue(app.buttons["chooseSmoothingClip"].isEnabled)
         XCTAssertTrue(app.buttons["checkSupportUpdates"].isEnabled)
         XCTAssertFalse(app.buttons["Cancel support request"].exists, "Enabling support must not initiate network work")
         XCTAssertFalse(app.buttons["Send this report"].exists)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Optional online support with manual checks"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.buttons["chooseSmoothingClip"].tap()
+        XCTAssertTrue(app.staticTexts["noSmoothingClips"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists, "An empty library must not offer an upload")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertFalse(app.buttons["chooseSmoothingClip"].isEnabled)
         XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
     }
     @MainActor

@@ -4,7 +4,7 @@
 
 ## Current release boundary
 
-The support service and Enable online support setting deliver verified catalogs and explicitly consented structured diagnostics. They do not accelerate inference. The production Vercel service does not accept media or prompt data. No hybrid helper, optimized model, replacement sampler or interpolation output has been validated on the physical iPhone by this investigation.
+Build 25's support service and Enable online support setting deliver verified catalogs and explicitly consented structured diagnostics. They do not accelerate inference. A subsequent [24 FPS smoothing beta](ONLINE_SMOOTHING.md) adds a separate, direct, per-clip-consented helper integration. The production Vercel service still does not accept media or prompt data. No optimized model or replacement sampler is enabled; the new native interpolation workflow still needs physical-iPhone acceptance.
 
 ## Useful hybrid boundaries
 
@@ -43,7 +43,7 @@ npm install --prefix build/HybridProbe --ignore-scripts --no-audit --no-fund @gr
 node scripts/probe_hybrid_interpolation.mjs --client
 ```
 
-Do not retry a refused quota in a loop or rotate identities to bypass it. The CLI deliberately has no credential argument. Authenticated research requires a separate explicit account workflow; do not paste access tokens into chat or commit them. Successful helper execution, privacy/retention review and physical iPhone acceptance are still required before shipping a media-upload feature. A public demo that sometimes answers is not a validated application backend.
+Do not retry a refused quota in a loop or rotate identities to bypass it. The CLI deliberately has no credential argument. Authenticated research requires a separate explicit account workflow; do not paste access tokens into chat or commit them. Successful helper execution, privacy/retention review and physical iPhone acceptance remain gates before describing the new beta as device-validated. A public demo that sometimes answers is not a dependable application backend.
 
 ## Completed synthetic GPU experiment
 

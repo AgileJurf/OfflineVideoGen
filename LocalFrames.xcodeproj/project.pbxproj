@@ -34,6 +34,13 @@
 		AA5A4A7D5DDDB14FC18C6D09 /* LocalFrames/Views/PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */; };
 		C95C24E471C6B076333C2945 /* VideoEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 13FED826EBF589E7F413451E /* VideoEngine */; };
 		F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */; };
+		A14000000000000000000002 /* VideoSmoothing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000001 /* VideoSmoothing.swift */; };
+		A14000000000000000000004 /* RIFEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000003 /* RIFEClient.swift */; };
+		A14000000000000000000006 /* SmoothingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000005 /* SmoothingView.swift */; };
+		A14000000000000000000008 /* SmoothingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000007 /* SmoothingTests.swift */; };
+		A14000000000000000000011 /* source-12fps.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000010 /* source-12fps.mp4 */; };
+		A14000000000000000000013 /* rife-24fps-raw.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000012 /* rife-24fps-raw.mp4 */; };
+		A14000000000000000000015 /* rife-24fps-duration-corrected.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +90,13 @@
 		DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LocalFrames/Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/PreviewView.swift; sourceTree = "<group>"; };
 		EFC275C2380C38304077287A /* LocalFrames/App/AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/App/AppModel.swift; sourceTree = "<group>"; };
+		A14000000000000000000001 /* VideoSmoothing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/VideoSmoothing.swift"; sourceTree = "<group>"; };
+		A14000000000000000000003 /* RIFEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/RIFEClient.swift"; sourceTree = "<group>"; };
+		A14000000000000000000005 /* SmoothingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Views/SmoothingView.swift"; sourceTree = "<group>"; };
+		A14000000000000000000007 /* SmoothingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFramesTests/SmoothingTests.swift"; sourceTree = "<group>"; };
+		A14000000000000000000010 /* source-12fps.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/source-12fps.mp4"; sourceTree = "<group>"; };
+		A14000000000000000000012 /* rife-24fps-raw.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/rife-24fps-raw.mp4"; sourceTree = "<group>"; };
+		A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/rife-24fps-duration-corrected.mp4"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +134,13 @@
 				A12000000000000000000004 /* GenerationOptionsView.swift */,
 				A13000000000000000000001 /* SupportCatalog.swift */,
 				A13000000000000000000003 /* OnlineSupport.swift */,
+				A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */,
+				A14000000000000000000012 /* rife-24fps-raw.mp4 */,
+				A14000000000000000000010 /* source-12fps.mp4 */,
+				A14000000000000000000007 /* SmoothingTests.swift */,
+				A14000000000000000000005 /* SmoothingView.swift */,
+				A14000000000000000000003 /* RIFEClient.swift */,
+				A14000000000000000000001 /* VideoSmoothing.swift */,
 				A13000000000000000000005 /* DiagnosticReport.swift */,
 				A13000000000000000000007 /* OnlineSupportView.swift */,
 				A13000000000000000000009 /* support-config.json */,
@@ -291,6 +312,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A14000000000000000000015 /* rife-24fps-duration-corrected.mp4 in Resources */,
+				A14000000000000000000013 /* rife-24fps-raw.mp4 in Resources */,
+				A14000000000000000000011 /* source-12fps.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +325,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A14000000000000000000008 /* SmoothingTests.swift in Sources */,
 				A13000000000000000000021 /* SupportTests.swift in Sources */,
 				09DAF5CEF579DFFB8EE764A1 /* LocalFramesTests/LocalFramesTests.swift in Sources */,
 			);
@@ -310,6 +335,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A14000000000000000000006 /* SmoothingView.swift in Sources */,
+				A14000000000000000000004 /* RIFEClient.swift in Sources */,
+				A14000000000000000000002 /* VideoSmoothing.swift in Sources */,
 				A12000000000000000000001 /* VideoCropExporter.swift in Sources */,
 				A12000000000000000000003 /* GenerationOptionsView.swift in Sources */,
 				A13000000000000000000002 /* SupportCatalog.swift in Sources */,

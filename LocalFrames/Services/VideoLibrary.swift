@@ -24,6 +24,7 @@ struct VideoRecord: Codable, Identifiable, Hashable {
     var extensionHistory: [UUID]? = nil
     var mediaKind: String? = nil
     var postprocessingSeconds: Double? = nil
+    var smoothing: SmoothingProvenance? = nil
 
     var style: VisualStyle { visualStyle ?? .default }
     var effectivePrompt: String { effectiveModelPrompt ?? prompt }
@@ -78,8 +79,22 @@ actor VideoLibrary {
             visualStyle: original.style, styleConditioningVersion: original.styleConditioningVersion ?? 1,
             outputFraming: framing, requestedFraming: framing, sourceImageReference: original.sourceImageReference,
             parentVideoID: original.id, extensionHistory: original.extensionHistory,
-            mediaKind: "center-crop-v1", postprocessingSeconds: elapsedSeconds)
+            mediaKind: "center-crop-v1", postprocessingSeconds: elapsedSeconds, smoothing: original.smoothing)
         return try await persist(item, temporaryURL: temporaryURL)
+    }
+
+    func addSmoothed(_ result: SmoothingResult, original: VideoRecord) async throws -> VideoRecord {
+        guard SmoothingMedia.supports(original) else { throw SmoothingError.unsupported }
+        _ = try await SmoothingMedia.inspect(result.url, fps: 24, acceptedCounts: [48])
+        try Task.checkCancellation()
+        let item = VideoRecord(id: UUID(), prompt: original.prompt, duration: 2, width: 256, height: 256,
+            framesPerSecond: 24, seed: original.seed, createdAt: Date(), metrics: original.metrics,
+            generationMode: original.generationMode ?? .textToVideo, effectiveModelPrompt: original.effectivePrompt,
+            visualStyle: original.style, styleConditioningVersion: original.styleConditioningVersion,
+            outputFraming: .square, requestedFraming: original.requestedFraming,
+            parentVideoID: original.id, mediaKind: "rife-24fps-v1",
+            postprocessingSeconds: result.provenance.elapsedSeconds, smoothing: result.provenance)
+        return try await persist(item, temporaryURL: result.url)
     }
 
     private func persist(_ item: VideoRecord, temporaryURL: URL) async throws -> VideoRecord {

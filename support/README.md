@@ -2,6 +2,8 @@
 
 This service distributes small versioned configuration/manifest JSON documents and accepts explicitly consented, structured diagnostic reports. It never performs inference, receives prompts/videos, or proxies the 14.1 GB model download. Installed generation does not depend on its availability.
 
+The iOS 24 FPS smoothing beta contacts the community Hugging Face helper **directly** after per-clip consent. This Vercel project remains outside that media path: no GPU, upload proxy, media storage or new paid resource is added. Its public privacy page describes the separate recipient and retention limits. See [online smoothing](../docs/ONLINE_SMOOTHING.md).
+
 ## Deploy
 
 Use the existing **agilejurf Hobby** team, a separate **localframes-support** project, repository `AgileJurf/OfflineVideoGen`, root directory `support`, framework Other, Node 22, build `npm run build`, output `public`. Keep paid upgrades, trials, marketplace integrations, analytics and paid compute disabled. The deployment contains no model weights or private device evidence.

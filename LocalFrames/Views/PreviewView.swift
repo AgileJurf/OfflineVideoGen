@@ -29,11 +29,18 @@ struct PreviewView: View {
                     HStack {
                         Button("Replay", systemImage: "arrow.counterclockwise") { player?.seek(to: .zero); player?.play() }
                         Spacer()
-                        Text("\(video.duration)s · \(video.width) × \(video.height)").font(.caption).foregroundStyle(.secondary)
+                        Text("\(video.duration)s · \(video.width) × \(video.height) · \(video.framesPerSecond) FPS").font(.caption).foregroundStyle(.secondary)
                     }
                     Text(video.prompt).font(.headline)
                     LabeledContent("Style", value: video.style.name)
                     LabeledContent("Seed", value: String(video.seed)).font(.caption)
+                    if let smoothing = video.smoothing {
+                        Label("24 FPS interpolated copy", systemImage: "sparkles.tv").font(.caption).foregroundStyle(.mint)
+                        Text("Created with \(smoothing.provider). The original remains a separate library item. This is postprocessing, not a new diffusion generation.").font(.caption)
+                        LabeledContent("Online processing + transfer", value: String(format: "%.1f seconds", smoothing.elapsedSeconds)).font(.caption)
+                        Text("\(smoothing.returnedFrames) returned frames · \(smoothing.terminalHoldFrames) terminal hold frame(s). Reusing settings generates a new 12 FPS original; smoothing always requires fresh consent.").font(.caption).foregroundStyle(.secondary)
+                    }
+                    SmoothingPreviewLink(support: model.support, video: video)
                     if video.isCrop {
                         Label("\(video.framing.name) · center-cropped copy", systemImage: "crop").font(.caption).foregroundStyle(.mint)
                         Text("The square original was saved separately. This copy contains no additional AI-generated frames.").font(.caption).foregroundStyle(.secondary)
@@ -52,7 +59,7 @@ struct PreviewView: View {
                     Text("Restores the original prompt, style, duration and seed in Create. Choose another style there to compare results.").font(.caption).foregroundStyle(.secondary)
                     NavigationLink("Compare saved outputs") { VideoComparisonView() }.disabled(model.videos.count < 2)
                     Button("Extend Video · unavailable", systemImage: "lock") { showExtensionInfo = true }
-                    if !video.isCrop {
+                    if !video.isCrop && video.smoothing == nil {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("SAVE A CROPPED COPY").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                             Text("Center crop only. The square original remains unchanged.").font(.caption)

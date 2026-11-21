@@ -1,6 +1,14 @@
 # Internal TestFlight beta
 
-Local Frames is an experimental native MOVD / Open-Sora video diffusion app. Simulator tests pass, but successful full-model generation on a physical iPhone has not yet been demonstrated. This beta is intended to perform that validation.
+Local Frames is an experimental native MOVD / Open-Sora video diffusion app. Genuine offline 2-second generation has completed on the physical iPhone 17 Pro Max. New model settings and optional postprocessing still require their own device validation.
+
+## Optional 24 FPS smoothing beta
+
+Enable **Setup → Online support and model updates → Enable online support**, then choose a compatible 2-second square 12 FPS clip. Preview it and approve that exact upload to Hugging Face’s community `1inkusFace/RIFE` helper. An action is also available in compatible video previews while support is enabled. No clip is uploaded by enabling the switch or finishing generation. Every retry requires another review and approval.
+
+Keep the app foregrounded on Wi-Fi. Anonymous shared free quota may be exhausted; no credentials, credits or paid fallback are used. Cancellation/backgrounding stops local work without automatically retrying, but cannot guarantee that a clip already sent is deleted from the helper. Its retention period is unspecified. The original video is preserved, and a successful result is separately saved as 48 frames at 24 FPS for exactly two seconds. This is optional frame interpolation, not faster diffusion or higher-resolution generation.
+
+For the device acceptance pass, compare both saved clips, replay and export each, then turn support off and verify library/export and offline generation in Airplane Mode. Do not delete the working original or installed model. See [the integration report](ONLINE_SMOOTHING.md).
 
 ## Install and prepare
 

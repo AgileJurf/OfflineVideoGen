@@ -80,7 +80,7 @@ struct CreateView: View {
                         Text(model.progressMessage).font(.subheadline)
                         if model.isGenerating { Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("generationETA") }
                         Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
-                        Button(model.installing ? "Pause installation" : (model.exportingCrop ? "Cancel export" : "Cancel generation"), role: .cancel) { model.cancel() }
+                        Button(model.installing ? "Pause installation" : (model.smoothingActive ? "Cancel smoothing" : (model.exportingCrop ? "Cancel export" : "Cancel generation")), role: .cancel) { model.cancel() }
                     }.padding().background(.mint.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
                 } else {
                     Button(action: model.generate) {
@@ -92,7 +92,7 @@ struct CreateView: View {
                         .accessibilityIdentifier("generateButton")
                 }
                 if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
-                Text("Your prompts and videos stay in this app. Internet is needed only to install the model.")
+                Text("Generation works offline after model installation. Optional online smoothing uploads only a clip you preview and explicitly approve.")
                     .font(.footnote).foregroundStyle(.secondary)
             }.padding(24)
         }.scrollDismissesKeyboard(.interactively)
