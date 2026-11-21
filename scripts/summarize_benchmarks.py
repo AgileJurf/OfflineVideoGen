@@ -57,6 +57,14 @@ def summarize(path):
     snapshots = [x.get("snapshot", {}) for x in events]
     footprints = [x["footprintBytes"] for x in snapshots if x.get("footprintBytes") is not None]
     lifetime_peaks = [x["processLifetimePeakBytes"] for x in snapshots if x.get("processLifetimePeakBytes") is not None]
+    available_memory = [x["availableProcessMemoryBytes"] for x in snapshots if x.get("availableProcessMemoryBytes") is not None]
+    pending = {}
+    for event in events:
+        key = (event.get("partition"), event.get("phase"))
+        if event.get("event") == "begin":
+            pending[key] = event
+        elif event.get("event") in ("end", "failure"):
+            pending.pop(key, None)
     cpu_samples = [(x["elapsedSeconds"], x["snapshot"]["processCPUSeconds"]) for x in events
                    if x.get("snapshot", {}).get("processCPUSeconds") is not None]
     cpu = None
@@ -83,6 +91,9 @@ def summarize(path):
     return dict(path=path, events=events, problems=problems, metadata=metadata, finish=finish,
                 outcome=outcome, required=required, covered=successful_predictions,
                 peak=max(footprints, default=None), lifetime_peak=max(lifetime_peaks, default=None),
+                available_min=min(available_memory, default=None),
+                pending=list(pending.values()),
+                memory_warnings=[x for x in events if x.get("event") == "memory_warning"],
                 cpu=cpu, artifact_valid=artifact_valid)
 
 
@@ -97,16 +108,25 @@ def render(runs):
             continue
         meta, events = run["metadata"], run["events"]
         lines += ["| Field | Observed value |", "| --- | --- |"]
-        for key in ["kind", "startedAt", "executionEnvironment", "hardware", "os", "appVersion", "appBuild", "sourceRevision", "modelRevision", "manifestSHA256", "configuration", "prompt", "seed", "schedule", "cacheCondition", "sampleIntervalSeconds"]:
+        for key in ["kind", "startedAt", "executionEnvironment", "hardware", "os", "appVersion", "appBuild", "sourceRevision", "modelRevision", "manifestSHA256", "configuration", "memoryLimitRequest", "prompt", "seed", "schedule", "cacheCondition", "sampleIntervalSeconds"]:
             if key in meta:
                 lines.append(f"| {key} | {escape(meta[key])} |")
         lines += [f"| Outcome | {escape(run['outcome'])} |",
                   f"| Observed log span (seconds) | {number(events[-1].get('elapsedSeconds'))} |",
                   f"| Sampled process footprint maximum (MiB) | {mib(run['peak'])} |",
                   f"| Process-lifetime footprint high-water mark (MiB) | {mib(run['lifetime_peak'])} |",
+                  f"| Lowest recorded available app memory (MiB, advisory) | {mib(run['available_min'])} |",
+                  f"| Recorded memory warnings | {len(run['memory_warnings'])} |",
                   f"| Mean process CPU utilization (% of one core) | {number(run['cpu'], 1)} |",
                   f"| Thermal states | {', '.join(sorted({x.get('snapshot', {}).get('thermalState', 'unknown') for x in events}))} |",
                   "| GPU utilization | Not measured |", "| Actual Neural Engine execution | Not measured |", ""]
+        for event in run["pending"]:
+            lines += [f"Unfinished operation: **{escape(event.get('partition'))} / {escape(event.get('phase'))}**, begun at {number(event.get('elapsedSeconds'))} seconds. No completion or error event was recorded for it. This locates the interruption but does not establish the OS termination reason.", ""]
+        if run["memory_warnings"]:
+            lines += ["Recorded memory warnings:", ""]
+            for warning in run["memory_warnings"]:
+                lines += [f"- {number(warning.get('elapsedSeconds'))} seconds: {escape(warning.get('partition', 'unknown'))} / {escape(warning.get('phase', 'unknown'))}; process footprint {mib(warning.get('snapshot', {}).get('footprintBytes'))} MiB."]
+            lines += [""]
         engine = next((x for x in events if x.get("event") == "engine_completed"), None)
         if engine:
             lines += [f"Engine wall time: {engine.get('fields', {}).get('elapsedSeconds', 'unknown')} seconds. This excludes subsequent library persistence, artifact copying, and hashing.", ""]

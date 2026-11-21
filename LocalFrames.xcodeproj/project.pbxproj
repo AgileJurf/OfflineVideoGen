@@ -43,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		70DD95CE5C1A4A1EB33E1005 /* LocalFrames.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LocalFrames/LocalFrames.entitlements; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LocalFrames/Resources/build-revision.txt"; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LocalFrames/Resources/ThirdPartyNotices.txt; sourceTree = "<group>"; };
 		08EE3AD642B89C82D2B4C20A /* LocalFramesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LocalFramesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,6 +95,7 @@
 			children = (
 				B1550ED80F46BEA14D5A9DBA /* LocalFrames/App/LocalFramesApp.swift */,
 				EFC275C2380C38304077287A /* LocalFrames/App/AppModel.swift */,
+				70DD95CE5C1A4A1EB33E1005 /* LocalFrames.entitlements */,
 				EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */,
 				64955CBB9888BE58AD2B1590 /* LocalFrames/Views/RootView.swift */,
 				2DB1C44E28A5D023461904E6 /* LocalFrames/Services/VideoLibrary.swift */,
@@ -324,6 +326,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LocalFrames/LocalFrames.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 35TTQQ785M;
@@ -385,6 +388,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LocalFrames/LocalFrames.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 35TTQQ785M;

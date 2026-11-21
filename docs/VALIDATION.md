@@ -16,9 +16,10 @@
 | Benchmark instrumentation tests | 9 unit + 2 UI tests passed locally on iOS 18.4 simulator; 3 report-parser tests passed. These validate measurement code, not model performance |
 | Installation checksum regression | Reproduced on Intel Mac in 3 fresh-process pairs; identical SHA-256 with bounded buffer lifetimes. Fixed probe verified the complete 8.9 GB STDiT archive against its pinned digest. See [benchmark record](BENCHMARK_REPORT.md#reproduced-installation-blocker) |
 | Memory-fix simulator suite | 11 unit + 2 UI tests passed locally and in Xcode Cloud Build 7; Cloud static analysis also passed with no reported issues |
-| Physical setup retry | Reported T5 download implies STDiT checksum, extraction, and 58 compilations completed in the sequential installer. Device journal, full installation, and actual inference remain unverified |
-| Real-model end-to-end inference | Not run |
-| Physical iPhone generation | Not run |
+| Physical setup retry | Exported build 8 journal confirms all 3 archive hashes, all 102 compilation calls, and terminal installation success; resumed install took 236.257 seconds |
+| Real-model end-to-end inference | Attempted twice on the target phone; neither completed. No MP4 or visual-quality result |
+| Physical iPhone generation | 28 partitions loaded and 27 predictions completed in each attempt. Both logs end inside `stdit3_TDTM_0` prediction after an iOS memory warning; highest recorded footprints 3.38 and 3.19 GB. See [measured results](BENCHMARK_REPORT.md#physical-device-results-from-build-8) |
+| Memory-limit candidate, local validation | 11 unit + 2 UI tests passed on the iOS 18.4 simulator; 4 report-parser tests passed. Device-dependent memory allowance and signed distribution remain pending Cloud/device validation |
 
 Build success and synthetic encoder fixtures are not diffusion validation. No sample output in this repository is presented as generated video.
 
@@ -28,7 +29,7 @@ Build 1 exposed an invalid resource-bundle layout during signing. The tokenizer 
 
 Cloud Build 3 automatically started on the `main` push of `f76a027e56e5df7d2aa2afd8cd43d882a8e6b415`; its Test and Analyze checks both passed. This confirms push triggering for code/packaging changes.
 
-Cloud Build 6 passed Test and Analyze for benchmark instrumentation source `7b2b82d7a8f64efd6603235b11aad6421f039fb6`. Cloud Build 7 passed all 13 tests and Analyze for checksum-memory fix `fd113f2c1cbbd724247406c587fe1826fac90a68`, with no reported issues. These are simulator and static checks; physical installation and generation still require device evidence.
+Cloud Build 6 passed Test and Analyze for benchmark instrumentation source `7b2b82d7a8f64efd6603235b11aad6421f039fb6`. Cloud Build 7 passed all 13 tests and Analyze for checksum-memory fix `fd113f2c1cbbd724247406c587fe1826fac90a68`, with no reported issues. These are simulator and static checks. Exported build 8 logs now verify physical installation and locate the two interrupted generation attempts; a completed video remains unverified.
 
 ## Automated suite
 

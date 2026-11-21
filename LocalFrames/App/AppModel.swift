@@ -208,6 +208,7 @@ final class AppModel: ObservableObject {
         var metadata = fields
         metadata["appVersion"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         metadata["appBuild"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        metadata["memoryLimitRequest"] = "increased-memory-limit entitlement requested; OS-dependent; inspect availableProcessMemoryBytes"
         if let revision = Bundle.main.url(forResource: "build-revision", withExtension: "txt") {
             metadata["sourceRevision"] = try String(contentsOf: revision, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         }

@@ -1,6 +1,6 @@
 # iPhone 17 Pro Max feasibility and benchmark record
 
-Status: **baseline device execution pending; no iPhone generation performance improvement established**. This is a record of current evidence and the measurement procedure, not a completed device-performance result.
+Status: **physical installation verified; two baseline attempts interrupted in the first TDTM prediction; no completed video or generation speedup established**. Measurements below come from three exported build 8 journals, received on 21 November 2026 (Pacific).
 
 ## Observed evidence
 
@@ -8,17 +8,49 @@ Status: **baseline device execution pending; no iPhone generation performance im
 | --- | --- |
 | Installable physical-device beta | Replacement TestFlight 0.1.0 (8), source `fd113f2`, is Testing in the internal group. Cloud Build 7 passed 13 tests and static analysis; Build 8 archived and delivered successfully. Original build 5 remains available |
 | Physical iPhone identification | Paired wired iPhone 17 Pro Max, hardware family iPhone18,2, iOS 27.3 beta; Developer Mode enabled |
-| Model installation on the phone | On 21 November 2026 (Pacific), the tester reported updating to build 8 and reaching “Downloading T5.zip.” The sequential installer reaches this only after STDiT verification, extraction, and compilation of its 58 required partitions. This is user-reported stage evidence; exported logs and full installation completion are still pending |
-| Genuine 2-second generation | No completed physical-device MP4 or measurement log received yet |
-| All 102 required partitions | Inventory known; runtime loading and prediction coverage remain unmeasured on the phone |
-| Generation time, memory, thermal state, CPU | No physical-device benchmark values available yet |
+| Model installation on the phone | Exported journal confirms all three SHA-256 checks, 102 successful compilations, and terminal installation success. STDiT archive was reused; T5 and VAE were downloaded during this recorded attempt |
+| Genuine 2-second generation | 0/2 completed. Both attempts ended during `stdit3_TDTM_0` prediction at step 1; no MP4 or terminal journal event |
+| All 102 required partitions | 102 compiled; 28 loaded and 27 completed a prediction in each attempt. First TDTM prediction was interrupted; 74 partitions were not reached for loading/prediction |
+| Generation time, memory, thermal state, CPU | Partial-run measurements are available below; full generation time and final peak remain unknown |
 | GPU utilization and actual compute placement | Instruments attachment blocked by missing compatible developer disk image |
 | Float16 comparison | Export format and conversion path investigated; no converted model or parity result claimed |
 | Fewer steps / alternative sampler | No changes or speedup claims; baseline uses 21 model evaluations on a 30-point schedule |
 | Visual quality, motion, prompt adherence | Awaiting actual baseline and candidate videos |
-| Rollback | Public tag `baseline/testflight-build-5` preserves source `df73d09de302b28e0e6af6ee16ff24211e9cdb35`; original archives and pinned hashes remain unchanged |
+| Rollback | Public tags `baseline/testflight-build-5` and `baseline/testflight-build-8` preserve the original source and instrumented failing baseline. Original archives and pinned hashes remain unchanged |
 
 The Mac has Xcode 16.4 on macOS 15.8.3 (Intel). CoreDevice reports that its personalized developer image lacks the requested hardware variant. Refreshing Apple's Xcode device-support components did not resolve it. A compatible Xcode/device-support environment is needed for Instruments. Apple's [current compatibility table](https://developer.apple.com/xcode/system-requirements) lists Xcode 27.3 beta 2 with the matching iOS 27.3 SDK and requires macOS 26.6 or later. TestFlight can install and run the app independently of that debugger connection. Simulator test passes are not iPhone performance measurements.
+
+## Physical-device results from build 8
+
+The logs identify an iPhone18,2 running iOS 27.3 build 24C5037i, app 0.1.0 (8), source `fd113f2c1cbbd724247406c587fe1826fac90a68`. Both generation attempts use the sailboat prompt, seed 42, 256 × 256, 12 FPS, and a requested duration of 2 seconds. The model revision and manifest hash match the repository, and all event sequences are contiguous. The first attempt follows installation in the same process; the second follows relaunch. OS caches and environmental conditions were not controlled. These two failed attempts are not an optimization comparison.
+
+| Recorded metric | Attempt A (00:10:22 PST) | Attempt B (00:11:02 PST) |
+| --- | ---: | ---: |
+| Last recorded elapsed time, not generation completion time | 14.255 s | 9.008 s |
+| Completed model loads | 28 | 28 |
+| Completed partition predictions | 27 | 27 |
+| Sum of completed load times | 8.751 s | 4.134 s |
+| Sum of completed prediction times | 4.671 s | 3.936 s |
+| App CPU-time increase over recorded interval | 7.161 s | 4.313 s |
+| Mean app CPU use, relative to one core | 50.2% | 47.9% |
+| Highest recorded process footprint | 3,383,038,384 bytes | 3,186,020,544 bytes |
+| Memory-warning footprint | 2,840,186,904 bytes | 2,855,227,320 bytes |
+| Thermal state throughout recorded interval | nominal | nominal |
+| Last unfinished operation | `stdit3_TDTM_0 / predict` | `stdit3_TDTM_0 / predict` |
+
+The TDTM model loaded successfully in 0.394 and 0.491 seconds. Its first prediction began with approximately 1.20 and 1.17 GB of app footprint, then memory rose above 3 GB before logging stopped. Input shapes were `x:[2,5120,1152]`, `y:[1,30,1152]`, `attn:[1,16,5120,30]`, `t_mlp:[2,6912]`, and `T:[1]`. All 26 T5 predictions and `stdit3_part1` completed. The largest completed load cost was T5 layer 0 in attempt A; the immediate feasibility blocker is the first TDTM prediction's memory growth. No VAE execution or completed diffusion step has been established.
+
+The OS lifetime footprint high-water marks equal the largest recorded footprints in these two journals, but logging ends before the final termination. They remain lower bounds on the full attempt's peak. CPU time excludes separate Core ML service processes. GPU utilization, actual CPU/GPU placement, Neural Engine activity, and final termination reason are not measured by these files. Memory warnings followed by termination support a memory-pressure hypothesis; a [Jetsam event report](https://developer.apple.com/documentation/xcode/identifying-high-memory-use-with-jetsam-event-reports) is needed to distinguish a per-process limit from other OS termination reasons. TestFlight Crash Feedback currently has no report, and direct device crash-log access is blocked by the same developer-image incompatibility.
+
+Resumed installation completed in 236.257 seconds, with 110,200,552 bytes maximum recorded app footprint and 111,101,672 bytes process-lifetime high-water mark. STDiT verification took 3.654 seconds and extraction 37.363 seconds. T5 download/verification/extraction took 153.989/1.951/21.713 seconds; VAE took 10.997/0.194/2.548 seconds. The sum of 102 compilation-call durations was 3.264 seconds. These figures exclude the prior STDiT download and memory charged to separate compiler services. They do not constitute a timing comparison against build 5.
+
+The [detailed per-partition report](BUILD8_DEVICE_EVIDENCE.md) lists all 102 partitions for each journal, including missing execution measurements. The [evidence index](BUILD8_EVIDENCE_INDEX.json) records input-log SHA-256 hashes. Raw journals remain local. Reproduce the derived report using `scripts/summarize_benchmarks.py` with the three original exported files.
+
+## Next controlled feasibility experiment
+
+Build 8 does not request Apple's [Increased Memory Limit entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.kernel.increased-memory-limit). The next candidate requests it and adds [available app-memory samples](https://developer.apple.com/documentation/os/os_proc_available_memory) so the device's actual allowance can be observed. This is advisory and device-dependent; the phone's physical RAM does not equal an app's allocation limit. It is not a memory-use reduction, confirmed fix, or speed improvement.
+
+This candidate preserves model weights, precision, tensor shapes, sampler, guidance, compute-unit requests, and memory/thermal cancellation checks. Repeat the same sailboat/seed-42 run and export its journal. Success requires a genuine 2-second MP4 and successful partition coverage. If the same prediction still fails or no extra allowance is available, use that evidence to test a separate CPU-only placement for the failing partition or a validated, separately stored Float16 conversion. Do not combine those changes with this first experiment. The build 8 tag and TestFlight binary remain the comparison and rollback point.
 
 ## Reproduced installation blocker
 
@@ -47,7 +79,7 @@ done
 
 The app fix also separates verification, extraction, and named-partition compilation in progress messages, throttles download UI updates, records memory warnings in the diagnostic journal, and replaces the blanket generation alert with stage-aware handling. Bounded download/checksum work continues after a warning; extraction, compilation, and generation retain cancellation protection. Completed downloaded archives remain available for verification on retry. Compilation itself restarts on a retry. No weights, partition boundaries, model precision, or diffusion steps were changed. The simulator regression test hashes a 64 MiB file inside an outer autorelease pool and checks both the expected digest and bounded footprint growth; all 11 unit and 2 UI tests passed locally.
 
-The phone screenshot and Mac reproduction support this as a concrete installation bug; they do not prove that it is the only remaining device constraint. The fix and diagnostic capture are available in TestFlight 0.1.0 (8). On 21 November 2026 (Pacific), the tester confirmed installing build 8 and reaching “Downloading T5.zip.” Given the bundled archive order and sequential installation code, this indicates that STDiT verification, extraction, and compilation of all 58 STDiT partitions returned successfully in that attempt. The original blocker was passed. This is an inference from the reported UI stage, not a reviewed device journal or proof of model loading/prediction. T5 and VAE preparation, full installation validation, and genuine generation remain pending. No device timing or memory improvement is inferred from this progress report.
+The fix and diagnostic capture are available in TestFlight 0.1.0 (8). The later exported installation journal confirms that the original installation blocker was passed and all 102 partitions were prepared. Genuine generation remains blocked by the first TDTM prediction described above. There is no matched build 5 device log from which to calculate a device-memory or latency improvement.
 
 ## Measurement implementation
 
@@ -59,6 +91,7 @@ The benchmark runs the existing MOVD engine with the same models, partition boun
 - A journal entry before each operation and success/error afterward. Logs without a terminal event remain incomplete and are exportable after relaunch; the last started operation is evidence of where execution was interrupted, not proof of its cause.
 - Process physical-footprint samples every 250 ms, thermal state, and cumulative process CPU time. CPU time excludes work charged to separate system services and includes instrumentation overhead.
 - The OS process-lifetime footprint high-water mark, explicitly distinct from a run-specific peak. Samples can miss spikes between observations. No GPU-utilization value is inferred from CPU time or requested compute units.
+- The memory-limit candidate additionally records `os_proc_available_memory` on physical iOS devices. This field is absent in build 8 and simulator logs; missing values are not zero.
 - Hardware family, OS, app version/build, source revision, model revision, manifest hash, prompt, seed, and sampler settings.
 - For a completed benchmark, the actual MP4 and metadata, SHA-256, duration, dimensions, and frame rate. Container validity is distinct from visual quality.
 
@@ -74,8 +107,8 @@ The report preserves missing/failed measurements, lists every required partition
 
 ## Baseline execution order
 
-1. Pause the old installation and update to the replacement instrumented beta through TestFlight. Keep the app installed to preserve its downloaded archives; deleting the app removes them. Do not update during active installation or generation.
-2. Retry installation over Wi-Fi, keeping the app open. Record errors and the exact progress stage. Export the installation journal, including failed attempts.
+1. Keep the installed model and build 8 evidence. Update through TestFlight only when the next candidate is available, with no generation in progress. Deleting the app removes its model and logs.
+2. Installation is now verified on the target phone and need not be repeated for an app update. Preserve the successful installation journal and failed generation attempts.
 3. Let the phone cool to nominal thermal state. Record charging state, battery level, Low Power Mode, ambient conditions, other activity, and first-versus-repeat run. These environmental details are not currently captured automatically.
 4. Run the sailboat prompt, seed 42, duration 2 seconds. The target is 24 frames at 12 FPS and 256 × 256. Keep the app in the foreground. Preserve failed runs as well as successes.
 5. If successful, export the MP4 and journal, inspect real motion and prompt adherence, then repeat with Airplane Mode enabled and Wi-Fi explicitly off. That second run establishes offline operation after installation.
@@ -103,4 +136,4 @@ After parity and a completed baseline, vary one factor at a time. First evaluate
 
 ## Next recommendation
 
-**Finish T5 and VAE installation, preserve the setup journal, then complete and preserve one genuine 2-second physical-device generation.** If it fails, use the last journal entry and Core ML error to resolve that concrete failure without changing architecture. Once it succeeds, use measured loading versus prediction cost and memory evidence to select the next experiment. Float16 is a candidate for reducing model/tensor storage and enabling some Neural Engine-compatible work, but it is not yet a measured improvement. No baseline/optimized inference-performance comparison can responsibly be reported at the present evidence level.
+**Test the requested memory allowance against the reproducible first-TDTM memory interruption, then complete and preserve one genuine 2-second physical-device generation.** Keep the failed build 8 baseline and change one factor at a time. Float16 remains a candidate for reducing model/tensor storage and enabling some Neural Engine-compatible work, but it is not yet a measured improvement. No baseline/optimized inference-performance comparison can responsibly be reported without a completed candidate and comparable evidence.

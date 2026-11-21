@@ -1,0 +1,45 @@
+{
+  "scope": "User-supplied physical-device installation and two interrupted generations; raw journals remain local",
+  "manifestSHA256": "6c7f5eb70c180bb9b89a0c8165bbd8b9baca5458b58d2bbe853a4a1a6c06b469",
+  "logs": [
+    {
+      "logFilename": "1-generation-52A232F6-5FEC-4F84-AE6F-6124ABE5FE15.jsonl",
+      "sha256": "229269356a6debb96c683c7a0ac779c2a40eac63d57b758226c0513f4be36f99",
+      "bytes": 56634,
+      "events": 170,
+      "kind": "generation",
+      "startedAtUTC": "2026-11-21T08:10:22Z",
+      "sourceRevision": "fd113f2c1cbbd724247406c587fe1826fac90a68",
+      "lastObservedElapsedSeconds": 14.254589374992065,
+      "status": "incomplete",
+      "sampledPeakFootprintBytes": 3383038384,
+      "memoryWarnings": 1
+    },
+    {
+      "logFilename": "2-installation-98DEC195-E171-4EBD-9CB0-1CDD6961F948.jsonl",
+      "sha256": "4ff094f354d11d5522cc6496504c801e6f42ebde29eb23d555bf7c43813409bb",
+      "bytes": 326007,
+      "events": 1170,
+      "kind": "installation",
+      "startedAtUTC": "2026-11-21T08:06:22Z",
+      "sourceRevision": "fd113f2c1cbbd724247406c587fe1826fac90a68",
+      "lastObservedElapsedSeconds": 236.25705720833503,
+      "status": "succeeded",
+      "sampledPeakFootprintBytes": 110200552,
+      "memoryWarnings": 0
+    },
+    {
+      "logFilename": "3-generation-32140C6B-305F-4B2E-813E-23003F73563E.jsonl",
+      "sha256": "777597226a3f943a1ee835804bbc9c6ef18f5a14fe4732b75ce7cd7f5e8b5c5d",
+      "bytes": 50704,
+      "events": 149,
+      "kind": "generation",
+      "startedAtUTC": "2026-11-21T08:11:02Z",
+      "sourceRevision": "fd113f2c1cbbd724247406c587fe1826fac90a68",
+      "lastObservedElapsedSeconds": 9.008055041718762,
+      "status": "incomplete",
+      "sampledPeakFootprintBytes": 3186020544,
+      "memoryWarnings": 1
+    }
+  ]
+}

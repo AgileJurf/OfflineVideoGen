@@ -8,6 +8,7 @@ public final class BenchmarkLog: @unchecked Sendable {
     public struct Snapshot: Codable, Sendable {
         public let footprintBytes: UInt64?
         public let processLifetimePeakBytes: UInt64?
+        public let availableProcessMemoryBytes: UInt64?
         public let processCPUSeconds: Double?
         public let thermalState: String
     }
@@ -54,6 +55,7 @@ public final class BenchmarkLog: @unchecked Sendable {
         values["expectedPartitions"] = MOVDModel.requiredNames.joined(separator: ",")
         values["gpuUtilization"] = "not measured; requires Instruments"
         values["memorySemantics"] = "phys_footprint samples; lifetime peak covers the entire app process, not this operation"
+        values["availableMemorySemantics"] = "os_proc_available_memory: advisory additional bytes the app may allocate before its current limit; not device free RAM; absent on simulator"
         values["cpuSemantics"] = "getrusage process CPU seconds; includes logger overhead and excludes separate Core ML service processes"
         #if targetEnvironment(simulator)
         values["executionEnvironment"] = "simulator"
@@ -152,8 +154,14 @@ public final class BenchmarkLog: @unchecked Sendable {
         case .critical: thermal = "critical"
         @unknown default: thermal = "unknown"
         }
+        #if os(iOS) && !targetEnvironment(simulator)
+        let availableMemory: UInt64? = UInt64(os_proc_available_memory())
+        #else
+        let availableMemory: UInt64? = nil
+        #endif
         return Snapshot(footprintBytes: result == KERN_SUCCESS ? info.phys_footprint : nil,
                         processLifetimePeakBytes: result == KERN_SUCCESS && info.ledger_phys_footprint_peak > 0 ? UInt64(info.ledger_phys_footprint_peak) : nil,
+                        availableProcessMemoryBytes: availableMemory,
                         processCPUSeconds: usageStatus == 0 ? seconds : nil, thermalState: thermal)
     }
 
