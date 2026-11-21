@@ -5,6 +5,39 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testBenchmarkJournalPreservesFailureWithoutSuccess() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("failed.jsonl")
+        let log = try BenchmarkLog(url: url, kind: "unit-test")
+        XCTAssertThrowsError(try log.measure("missing-partition", phase: "load") {
+            try MLModel(contentsOf: root.appendingPathComponent("missing.mlmodelc"))
+        })
+        try log.finish(status: "failed")
+        let events = try String(contentsOf: url, encoding: .utf8).split(separator: "\n").map {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any])
+        }
+        XCTAssertEqual(events.compactMap { $0["event"] as? String }.filter { $0 != "sample" }, ["started", "begin", "failure", "finished"])
+        XCTAssertEqual((events.last?["fields"] as? [String: String])?["status"], "failed")
+        let failure = try XCTUnwrap(events.first { $0["event"] as? String == "failure" })
+        XCTAssertEqual(failure["partition"] as? String, "missing-partition")
+        XCTAssertGreaterThanOrEqual(failure["durationSeconds"] as? Double ?? -1, 0)
+        XCTAssertNotNil((failure["snapshot"] as? [String: Any])?["footprintBytes"])
+    }
+
+    func testInterruptedBenchmarkJournalHasNoCompletionEvent() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("interrupted.jsonl")
+        var log: BenchmarkLog? = try BenchmarkLog(url: url, kind: "unit-test")
+        _ = log?.begin("some-partition", phase: "predict")
+        log = nil
+        let contents = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(contents.contains("some-partition"))
+        XCTAssertFalse(contents.contains("finished"))
+        XCTAssertFalse(contents.contains("succeeded"))
+    }
+
     func testBundledTokenizerEncodesPromptWithoutModelDownload() throws {
         let ids = try MOVDEngine.promptTokenIDs("A small sailboat glides across a calm lake.")
         XCTAssertGreaterThan(ids.count, 1)

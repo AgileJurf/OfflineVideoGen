@@ -133,6 +133,33 @@ struct SetupView: View {
                     Button("Install model") { model.install() }.accessibilityIdentifier("installModelButton")
                 }
             } header: { Text("Offline video model") }
+            Section("Device benchmark") {
+                Text("Run the unchanged 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                Picker("Prompt", selection: $model.benchmarkPromptIndex) {
+                    Text("Sailboat").tag(0)
+                    Text("Flag").tag(1)
+                    Text("Rolling ball").tag(2)
+                }.disabled(model.working)
+                TextField("Seed", text: $model.benchmarkSeed).keyboardType(.numberPad).disabled(model.working)
+                Button("Run 2-second baseline", action: model.runBaselineBenchmark)
+                    .disabled(!model.installed || model.working).accessibilityIdentifier("runBaselineBenchmark")
+                Button("Inspect compute plans", action: model.inspectComputePlans)
+                    .disabled(!model.installed || model.working || model.videos.isEmpty)
+                Text("Compute-plan inspection becomes available after a video completes. It estimates compatible hardware; it does not measure GPU or Neural Engine utilization.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if model.working && !model.installing {
+                    ProgressView(value: model.progress.fraction)
+                    Text(model.progress.message).font(.caption)
+                    Button("Cancel benchmark") { model.cancel() }
+                }
+                if !model.benchmarkFiles.isEmpty {
+                    ShareLink(items: model.benchmarkFiles) { Label("Export benchmark files", systemImage: "square.and.arrow.up") }
+                        .disabled(model.working)
+                    Text("Includes prompts, seeds, measurements, errors, and completed benchmark videos. Export remains available after relaunch, including interrupted attempts.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Section("About this build") {
                 LabeledContent("Engine", value: "MOVD / Open-Sora")
                 LabeledContent("Output", value: "256 × 256 · 12 FPS")

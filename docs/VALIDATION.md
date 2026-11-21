@@ -11,6 +11,8 @@
 | Model specification inspection | Parsed all 103 package specifications; corrected the int32-to-float32 temporal-count boundary |
 | Xcode Cloud workflow | Build 2 passed both required actions: Test — iOS and Analyze — iOS; 0 reported errors, warnings, test failures, or analysis issues |
 | Distribution packaging checks | Opaque 1024 × 1024 icon; exempt-encryption metadata; bundled dependency license notices |
+| Internal TestFlight | Build 5 archived and delivered successfully; 0.1.0 (5) shown as Testing; tester confirmed installation and model download started |
+| Benchmark instrumentation tests | 9 unit + 2 UI tests passed locally on iOS 18.4 simulator; 3 report-parser tests passed. These validate measurement code, not model performance |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 

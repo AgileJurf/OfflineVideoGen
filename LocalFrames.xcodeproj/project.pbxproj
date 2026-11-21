@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		70DD95CE5C1A4A1EB33E1003 /* build-revision.txt in Resources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */; };
 		70DD95CE5C1A4A1EB33E1001 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */; };
 		09DAF5CEF579DFFB8EE764A1 /* LocalFramesTests/LocalFramesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E66C14A7DCC17C6A58C6578 /* LocalFramesTests/LocalFramesTests.swift */; };
 		1828C28FB9E556EB412347C8 /* LocalFrames/Views/RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64955CBB9888BE58AD2B1590 /* LocalFrames/Views/RootView.swift */; };
@@ -42,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LocalFrames/Resources/build-revision.txt"; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LocalFrames/Resources/ThirdPartyNotices.txt; sourceTree = "<group>"; };
 		08EE3AD642B89C82D2B4C20A /* LocalFramesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LocalFramesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		241EB42AFE25A1EF142275AC /* LocalFramesUITests/LocalFramesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesUITests/LocalFramesUITests.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				3EAE767F204296473D3FF2C3 /* LocalFrames/Resources/model-manifest.json */,
 				DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */,
 				70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */,
+				70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */,
 				7E66C14A7DCC17C6A58C6578 /* LocalFramesTests/LocalFramesTests.swift */,
 				241EB42AFE25A1EF142275AC /* LocalFramesUITests/LocalFramesUITests.swift */,
 				3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */,
@@ -242,6 +245,7 @@
 				2463BF9F68A03EAAA7001AC5 /* LocalFrames/Resources/PrivacyInfo.xcprivacy in Resources */,
 				F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */,
 				70DD95CE5C1A4A1EB33E1001 /* ThirdPartyNotices.txt in Resources */,
+				70DD95CE5C1A4A1EB33E1003 /* build-revision.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

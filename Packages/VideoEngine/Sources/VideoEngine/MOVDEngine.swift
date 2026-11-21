@@ -9,10 +9,11 @@ public actor MOVDEngine {
     public init() {}
 
     public func generate(_ request: GenerationRequest, modelsAt directory: URL, output: URL,
+                         benchmark: BenchmarkLog? = nil,
                          progress: @Sendable (GenerationProgress) -> Void) async throws -> GenerationMetrics {
         try MOVDModel.validateInstallation(at: directory)
         let started = ProcessInfo.processInfo.systemUptime
-        let runner = ModelRunner(directory: directory)
+        let runner = ModelRunner(directory: directory, benchmark: benchmark)
         try runner.checkpoint()
         progress(.init(0.01, "Encoding your prompt"))
         let encoding = try encode(request.prompt, runner: runner)

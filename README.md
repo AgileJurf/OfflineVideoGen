@@ -35,6 +35,7 @@ The library supports playback, replay, deletion, regeneration, Photos saving, an
 
 - [Feasibility and model choice](docs/FEASIBILITY.md)
 - [Validation record and acceptance gates](docs/VALIDATION.md)
+- [Device benchmark evidence and procedure](docs/BENCHMARK_REPORT.md)
 - [Third-party code and model provenance](docs/THIRD_PARTY_NOTICES.md)
 
 The released weights have been downloaded and hashed locally, and all 103 package specifications were inspected. The app and both test targets compile with Xcode 16.4; seven unit and two UI tests passed on the iOS 18.4 simulator with ad hoc signing. Full-model inference, prompt quality, offline completion, peak memory, repeated generation, Photos export, and physical iPhone behavior remain unverified. Do not describe this build as a proven offline video generator until those gates pass.

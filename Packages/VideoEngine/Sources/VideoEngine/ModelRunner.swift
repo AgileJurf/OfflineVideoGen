@@ -4,10 +4,11 @@ import Foundation
 /// Loads one partition at a time. No model or tensor is cached across generations.
 final class ModelRunner {
     let directory: URL
+    let benchmark: BenchmarkLog?
     var peakMemory: UInt64 = 0
     var thermalStates = Set<String>()
 
-    init(directory: URL) { self.directory = directory }
+    init(directory: URL, benchmark: BenchmarkLog? = nil) { self.directory = directory; self.benchmark = benchmark }
 
     func checkpoint() throws {
         try Task.checkCancellation()
@@ -44,8 +45,24 @@ final class ModelRunner {
             #else
             config.computeUnits = cpuOnly ? .cpuOnly : .cpuAndGPU
             #endif
-            let model = try MLModel(contentsOf: directory.appendingPathComponent(name + ".mlmodelc"), configuration: config)
-            let result = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: inputs))
+            let modelURL = directory.appendingPathComponent(name + ".mlmodelc")
+            let unitLabel = config.computeUnits == .cpuOnly ? "cpuOnly" : "cpuAndGPU"
+            let model: MLModel
+            if let benchmark {
+                model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel]) {
+                    try MLModel(contentsOf: modelURL, configuration: config)
+                }
+            } else { model = try MLModel(contentsOf: modelURL, configuration: config) }
+            let provider = try MLDictionaryFeatureProvider(dictionary: inputs)
+            let result: MLFeatureProvider
+            if let benchmark {
+                let shapes = inputs.keys.sorted().map { key in
+                    "\(key):\(inputs[key]?.multiArrayValue?.shape.map(\.intValue) ?? [])"
+                }.joined(separator: ";")
+                result = try benchmark.measure(name, phase: "predict", fields: ["requestedComputeUnits": unitLabel, "inputShapes": shapes]) {
+                    try model.prediction(from: provider)
+                }
+            } else { result = try model.prediction(from: provider) }
             try checkpoint()
             return Dictionary(uniqueKeysWithValues: result.featureNames.compactMap { key in
                 result.featureValue(for: key).map { (key, $0) }

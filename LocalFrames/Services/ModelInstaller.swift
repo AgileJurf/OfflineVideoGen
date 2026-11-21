@@ -58,7 +58,7 @@ actor ModelInstaller {
         if FileManager.default.fileExists(atPath: root.path) { try FileManager.default.removeItem(at: root) }
     }
 
-    func install(_ manifest: ModelManifest, progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
+    func install(_ manifest: ModelManifest, benchmark: BenchmarkLog? = nil, progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         var resources = URLResourceValues()
@@ -80,12 +80,24 @@ actor ModelInstaller {
             let offset = completedBytes
             if !fm.fileExists(atPath: zip.path) {
                 let downloader = ModelDownloader(destination: zip, resumeFile: resume)
-                try await downloader.download(archive.url) { bytes in
-                    progress(.init((Double(offset) + 0.6 * Double(bytes)) / Double(totalBytes), "Downloading \(archive.name)"))
+                let start = benchmark?.begin(archive.name, phase: "download", fields: ["expectedBytes": String(archive.bytes)])
+                do {
+                    try await downloader.download(archive.url) { bytes in
+                        progress(.init((Double(offset) + 0.6 * Double(bytes)) / Double(totalBytes), "Downloading \(archive.name)"))
+                    }
+                    if let start { benchmark?.end(archive.name, phase: "download", started: start) }
+                } catch {
+                    if let start { benchmark?.end(archive.name, phase: "download", started: start, error: error) }
+                    throw error
                 }
-            }
+            } else { benchmark?.record("archive_reused", partition: archive.name) }
             progress(.init((Double(offset) + 0.6 * Double(archive.bytes)) / Double(totalBytes), "Verifying \(archive.name)"))
-            guard try Self.sha256(zip) == archive.sha256 else {
+            let checksum: String
+            if let benchmark {
+                checksum = try benchmark.measure(archive.name, phase: "checksum") { try Self.sha256(zip) }
+            } else { checksum = try Self.sha256(zip) }
+            benchmark?.record("checksum_result", partition: archive.name, fields: ["actual": checksum, "expected": archive.sha256])
+            guard checksum == archive.sha256 else {
                 try? fm.removeItem(at: zip)
                 try? fm.removeItem(at: resume)
                 throw ModelInstallError.checksum(archive.name)
@@ -95,7 +107,11 @@ actor ModelInstaller {
             let extractionProgress = Progress()
             try await withTaskCancellationHandler {
                 try Task.checkCancellation()
-                try fm.unzipItem(at: zip, to: extracted, progress: extractionProgress)
+                if let benchmark {
+                    try benchmark.measure(archive.name, phase: "extract") {
+                        try fm.unzipItem(at: zip, to: extracted, progress: extractionProgress)
+                    }
+                } else { try fm.unzipItem(at: zip, to: extracted, progress: extractionProgress) }
             } onCancel: { extractionProgress.cancel() }
             defer { try? fm.removeItem(at: extracted) }
             guard let enumerator = fm.enumerator(at: extracted, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
@@ -117,7 +133,15 @@ actor ModelInstaller {
                 try Task.checkCancellation()
                 progress(.init((Double(offset) + Double(archive.bytes) * (0.6 + 0.39 * Double(index) / Double(neededModels.count))) / Double(totalBytes), "Preparing model \(index + 1) of \(neededModels.count)"))
                 guard let source = packages[name] else { throw ModelInstallError.invalidArchive }
-                let compiled = try await MLModel.compileModel(at: source)
+                let start = benchmark?.begin(name, phase: "compile")
+                let compiled: URL
+                do {
+                    compiled = try await MLModel.compileModel(at: source)
+                    if let start { benchmark?.end(name, phase: "compile", started: start) }
+                } catch {
+                    if let start { benchmark?.end(name, phase: "compile", started: start, error: error) }
+                    throw error
+                }
                 defer { try? fm.removeItem(at: compiled) }
                 try fm.moveItem(at: compiled, to: staging.appendingPathComponent(name + ".mlmodelc"))
             }

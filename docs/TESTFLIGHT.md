@@ -27,6 +27,8 @@ The upstream model weights are unchanged. Absence of app-level filtering does no
 
 ## Distribution
 
-The **TestFlight Beta** Xcode Cloud workflow is intended for manually started internal releases after reviewing the simulator workflow. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Public source availability does not make the TestFlight beta publicly installable.
+The **TestFlight Beta** Xcode Cloud workflow uses a manual start condition on `main`. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Build 5, version 0.1.0, successfully reached Testing and the internal tester was invited. Public source availability does not make the TestFlight beta publicly installable.
+
+For instrumented device testing, follow the [benchmark record and procedure](BENCHMARK_REPORT.md). The benchmark controls are added after Build 5; use the newer instrumented beta when available. Complete active setup before updating.
 
 See [Xcode Cloud](XCODE_CLOUD.md) and the [validation record](VALIDATION.md) for observed build results. Device inference remains a separate validation gate.
