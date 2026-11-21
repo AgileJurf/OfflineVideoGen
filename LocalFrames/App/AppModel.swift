@@ -376,7 +376,7 @@ final class AppModel: ObservableObject {
         operation = Task {
             defer { try? FileManager.default.removeItem(at: prepared.directory); finish() }
             do {
-                let result = try await smoothingClient.smooth(prepared, consentID: previewID, enabled: support.enabled) { text in
+                let result = try await smoothingClient.smooth(prepared, consentID: previewID, enabled: support.enabled) { [weak self] text in
                     Task { @MainActor [weak self] in
                         guard let self, self.smoothingActive else { return }
                         self.progress = .init(0, text)
