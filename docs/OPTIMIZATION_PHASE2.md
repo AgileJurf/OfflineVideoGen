@@ -43,6 +43,8 @@ Example after running the original spatial probe:
 
 Each report records package byte counts/hashes, input/output hashes, finite checks, error metrics, software versions and limitations. Mac timings are diagnostic with uncontrolled caches and must not be described as iPhone performance. Run-specific artifacts are excluded from the app and public repository.
 
+The completed single-partition synthetic results, including the rejected INT8 candidate, are summarized in [PRECISION_SCREENING.md](PRECISION_SCREENING.md). No candidate was installed on the phone.
+
 Apple documents [typed precision and mixed precision](https://apple.github.io/coremltools/docs-guides/source/typed-execution.html), and [weight/activation quantization](https://apple.github.io/coremltools/docs-guides/source/opt-quantization-api.html). Weight-only INT8 compression does not by itself change Float32 operation precision or prove Neural Engine acceleration. Full Float32 ML Programs cannot run on the Neural Engine. FP16 candidates need fresh compute-plan and runtime checks; do not force the spatial chain onto GPU/ANE solely because a planner accepts it.
 
 ## Sampler, guidance and loading experiments

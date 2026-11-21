@@ -20,6 +20,8 @@ struct BenchmarkSummary: Identifiable, Sendable {
     var modelRevision = "unknown"
     var configuration = "unknown"
     var prompt = ""
+    var effectivePrompt = ""
+    var style = VisualStyle.default.name
     var seed = ""
     var elapsedSeconds = 0.0
     var peakMemoryBytes: UInt64 = 0
@@ -73,6 +75,8 @@ struct BenchmarkSummary: Identifiable, Sendable {
                 result.modelRevision = e.fields["modelRevision"] ?? "unknown"
                 result.configuration = e.fields["configuration"] ?? "unknown"
                 result.prompt = e.fields["prompt"] ?? ""
+                result.effectivePrompt = e.fields["effectiveModelPrompt"] ?? result.prompt
+                result.style = e.fields["visualStyle"].flatMap(VisualStyle.init(rawValue:))?.name ?? VisualStyle.default.name
                 result.seed = e.fields["seed"] ?? ""
                 result.width = e.fields["width"] ?? "unknown"
                 result.height = e.fields["height"] ?? "unknown"
@@ -80,7 +84,9 @@ struct BenchmarkSummary: Identifiable, Sendable {
             }
             if e.event == "memory_warning" { result.memoryWarnings += 1 }
             if e.event == "checkpoint_restored" { result.restoredSteps = Int(e.fields["completedSteps"] ?? "") ?? 0 }
-            if e.event == "checkpoint_saved" { result.completedSteps = max(result.completedSteps, Int(e.fields["completedSteps"] ?? "") ?? 0) }
+            if e.event == "checkpoint_saved" || e.event == "diffusion_step_completed" {
+                result.completedSteps = max(result.completedSteps, Int(e.fields["completedSteps"] ?? "") ?? 0)
+            }
             if e.event == "finished" { result.status = e.fields["status"] ?? "unknown"; result.failure = e.fields["error"] }
             if let name = e.partition, MOVDModel.requiredNames.contains(name), let phase = e.phase {
                 if e.event == "begin" { result.lastOperation = name + " / " + phase }

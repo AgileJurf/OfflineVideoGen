@@ -37,7 +37,7 @@ public actor MOVDEngine {
             benchmark?.record("checkpoint_restored", fields: ["completedSteps": String(saved.completedSteps)])
         } else {
             report(.init(0.01, "Encoding your prompt"))
-            encoding = try await encode(request.prompt, runner: runner)
+            encoding = try await encode(request.effectivePrompt, runner: runner)
         }
         let latent = try await denoise(request, encoding: encoding, runner: runner, saved: saved,
                                        checkpointURL: checkpointURL, progress: report)
@@ -73,7 +73,11 @@ public actor MOVDEngine {
         let count: Int
     }
 
-    static func promptTokenIDs(_ prompt: String) throws -> [Int] {
+    public static func promptTokenCount(_ prompt: String) throws -> Int {
+        try tokenizePrompt(prompt).ids.count
+    }
+
+    private static func tokenizePrompt(_ prompt: String) throws -> (ids: [Int], eos: Int) {
         func config(_ name: String) throws -> Config {
             guard let resource = Bundle.module.url(forResource: name, withExtension: nil) else {
                 throw GenerationError.modelMissing(name)
@@ -88,9 +92,14 @@ public actor MOVDEngine {
         let tokenizer = try PreTrainedTokenizer(tokenizerConfig: config("tokenizer_config.json"),
                                                tokenizerData: config("tokenizer.json"))
         let tokens = tokenizer.tokenize(text: prompt)
+        return (tokens.map { tokenizer.convertTokenToId($0) ?? 0 }, tokenizer.eosTokenId ?? 1)
+    }
+
+    static func promptTokenIDs(_ prompt: String) throws -> [Int] {
+        let tokens = try tokenizePrompt(prompt)
         // Attention masks scale with prompt length. Reject rather than silently changing the prompt.
-        guard tokens.count <= 63 else { throw GenerationError.promptTooLong }
-        return tokens.map { tokenizer.convertTokenToId($0) ?? 0 } + [tokenizer.eosTokenId ?? 1]
+        guard tokens.ids.count <= 63 else { throw GenerationError.conditioningTooLong(tokens.ids.count) }
+        return tokens.ids + [tokens.eos]
     }
 
     private func encode(_ prompt: String, runner: ModelRunner) async throws -> Encoding {
@@ -198,6 +207,7 @@ public actor MOVDEngine {
             let next = await (latent + guided * (delta / 1000)).shapedArray(of: Float32.self)
             latent = MLTensor(next)
             try save(next, completedSteps: index + 1)
+            runner.benchmark?.record("diffusion_step_completed", fields: ["completedSteps": String(index + 1)])
         }
         return await latent.shapedArray(of: Float32.self)
     }

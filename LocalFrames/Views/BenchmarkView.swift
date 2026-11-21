@@ -70,13 +70,17 @@ private struct BenchmarkSessionView: View {
                 LabeledContent("Configuration", value: session.configuration)
                 LabeledContent("Seed", value: session.seed)
                 Text(session.prompt)
+                LabeledContent("Style", value: session.style)
+                if session.effectivePrompt != session.prompt {
+                    DisclosureGroup("Effective model prompt") { Text(session.effectivePrompt).font(.caption).textSelection(.enabled) }
+                }
                 LabeledContent(session.sessionLabel + " time", value: String(format: "%.2f s", session.elapsedSeconds))
                 LabeledContent("Model loading", value: String(format: "%.2f s", session.totalLoadSeconds))
                 LabeledContent("Model predictions", value: String(format: "%.2f s", session.totalPredictionSeconds))
                 LabeledContent("Peak sampled memory", value: ByteCountFormatter.string(fromByteCount: Int64(session.peakMemoryBytes), countStyle: .memory))
                 LabeledContent("Thermal states", value: session.thermalStates.sorted().joined(separator: ", "))
                 LabeledContent("Memory warnings", value: String(session.memoryWarnings))
-                LabeledContent("Saved diffusion progress", value: "\(session.completedSteps)/21")
+                LabeledContent("Completed diffusion evaluations", value: "\(session.completedSteps)/21")
                 LabeledContent("Restored evaluations", value: String(session.restoredSteps))
                 LabeledContent("New diffusion evaluations", value: String(max(0, session.completedSteps - session.restoredSteps)))
                 LabeledContent("Requested output", value: "\(session.width) × \(session.height) · \(session.fps) FPS")
@@ -122,8 +126,11 @@ struct VideoComparisonView: View {
                     Button("Pause", systemImage: "pause.fill") { leftPlayer?.pause(); rightPlayer?.pause() }
                 }.buttonStyle(.bordered)
                 if let left, let right {
-                    if left.prompt != right.prompt || left.seed != right.seed || left.duration != right.duration {
-                        Text("Prompts, seeds, or duration differ. Use matched cases for an optimization comparison.").foregroundStyle(.orange)
+                    if left.effectivePrompt != right.effectivePrompt || left.seed != right.seed || left.duration != right.duration {
+                        Text("Model prompts, styles, seeds, or duration differ. This can be a style comparison, but it is not a matched inference-performance comparison.").foregroundStyle(.orange)
+                    }
+                    if left.isCrop || right.isCrop {
+                        Text("A cropped copy reuses its original’s generation measurements. Crop export does not run a new diffusion job.").foregroundStyle(.orange)
                     }
                     if (left.metrics.resumedFromStep ?? 0) > 0 || (right.metrics.resumedFromStep ?? 0) > 0 {
                         Text("At least one output was resumed. Its session duration is not a full generation time.").foregroundStyle(.orange)
@@ -151,6 +158,8 @@ struct VideoComparisonView: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(label).font(.headline)
             Text(video.prompt)
+            Text("Style: " + video.style.name)
+            Text(video.isCrop ? "Center-cropped copy" : "Native square output")
             Text("Seed \(video.seed)")
             Text(video.metrics.profileID ?? "Earlier baseline")
             Text(video.metrics.precision ?? "Original model precision")

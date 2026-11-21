@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A12000000000000000000003 /* GenerationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* GenerationOptionsView.swift */; };
+		A12000000000000000000001 /* VideoCropExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* VideoCropExporter.swift */; };
 		A11000000000000000000001 /* BenchmarkSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000003 /* BenchmarkSummary.swift */; };
 		A11000000000000000000002 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000004 /* BenchmarkView.swift */; };
 		70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */; };
@@ -46,6 +48,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A12000000000000000000004 /* GenerationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationOptionsView.swift; sourceTree = "<group>"; };
+		A12000000000000000000002 /* VideoCropExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/VideoCropExporter.swift; sourceTree = "<group>"; };
 		A11000000000000000000003 /* BenchmarkSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BenchmarkSummary.swift; sourceTree = "<group>"; };
 		A11000000000000000000004 /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/BenchmarkView.swift; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BackgroundGeneration.swift; sourceTree = "<group>"; };
@@ -100,6 +104,8 @@
 		B28B7AF69320201D1CF206EB = {
 			isa = PBXGroup;
 			children = (
+				A12000000000000000000002 /* VideoCropExporter.swift */,
+				A12000000000000000000004 /* GenerationOptionsView.swift */,
 				A11000000000000000000003 /* BenchmarkSummary.swift */,
 				A11000000000000000000004 /* BenchmarkView.swift */,
 				B1550ED80F46BEA14D5A9DBA /* LocalFrames/App/LocalFramesApp.swift */,
@@ -284,6 +290,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12000000000000000000001 /* VideoCropExporter.swift in Sources */,
+				A12000000000000000000003 /* GenerationOptionsView.swift in Sources */,
 				A11000000000000000000001 /* BenchmarkSummary.swift in Sources */,
 				A11000000000000000000002 /* BenchmarkView.swift in Sources */,
 				70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */,

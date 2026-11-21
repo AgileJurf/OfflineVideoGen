@@ -8,6 +8,13 @@ import AVFoundation
 final class AppModel: ObservableObject {
     @Published var prompt = ""
     @Published var duration = 2
+    @Published var visualStyle: VisualStyle = .default { didSet { saveCreationPreferences() } }
+    @Published var outputFraming: OutputFraming = .square { didSet { saveCreationPreferences() } }
+    @Published var useFixedSeed = false { didSet { saveCreationPreferences() } }
+    @Published var generationSeed = "42" { didSet { saveCreationPreferences() } }
+    @Published var recordCreationDiagnostics = false { didSet { saveCreationPreferences() } }
+    @Published var creationRequestID = UUID()
+    @Published var exportingCrop = false
     @Published var videos: [VideoRecord] = []
     @Published var selectedVideo: VideoRecord?
     @Published var installed = false
@@ -36,6 +43,15 @@ final class AppModel: ObservableObject {
     let temporaryDirectory: URL
     let benchmarkDirectory: URL
     let resumeDirectory: URL
+    private let preferencesURL: URL
+    private var preferencesLoaded = false
+    private struct CreationPreferences: Codable {
+        let style: VisualStyle
+        let framing: OutputFraming
+        let useFixedSeed: Bool
+        let seed: String
+        var recordDiagnostics: Bool? = nil
+    }
     private let engine = MOVDEngine()
     private var operation: Task<Void, Never>?
     private var activeBenchmarkLog: BenchmarkLog?
@@ -74,6 +90,35 @@ final class AppModel: ObservableObject {
         temporaryDirectory = support.appendingPathComponent("Temporary", isDirectory: true)
         benchmarkDirectory = support.appendingPathComponent("Benchmarks", isDirectory: true)
         resumeDirectory = support.appendingPathComponent("ResumableBaseline", isDirectory: true)
+        preferencesURL = support.appendingPathComponent("creation-preferences.json")
+        if let data = try? Data(contentsOf: preferencesURL),
+           let preferences = try? JSONDecoder().decode(CreationPreferences.self, from: data) {
+            visualStyle = preferences.style; outputFraming = preferences.framing
+            useFixedSeed = preferences.useFixedSeed; generationSeed = preferences.seed
+            recordCreationDiagnostics = preferences.recordDiagnostics ?? false
+        }
+        preferencesLoaded = true
+    }
+
+    private func saveCreationPreferences() {
+        guard preferencesLoaded else { return }
+        let preferences = CreationPreferences(style: visualStyle, framing: outputFraming,
+                                              useFixedSeed: useFixedSeed, seed: generationSeed,
+                                              recordDiagnostics: recordCreationDiagnostics)
+        do {
+            try FileManager.default.createDirectory(at: preferencesURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(preferences).write(to: preferencesURL, options: .atomic)
+        } catch { notice = "Your selection is available for this session, but could not be remembered." }
+    }
+
+    func reuseSettings(_ video: VideoRecord) {
+        guard !working, video.canReuseSettings else { return }
+        prompt = video.prompt; duration = video.duration; visualStyle = video.style
+        outputFraming = video.isCrop ? video.framing : (video.requestedFraming ?? .square)
+        useFixedSeed = true; generationSeed = String(video.seed)
+        selectedVideo = nil
+        creationRequestID = UUID()
+        notice = "Saved prompt, style, framing and seed restored. Review them before generating."
     }
 
     func load() async {
@@ -152,17 +197,21 @@ final class AppModel: ObservableObject {
         guard !benchmarking || pendingBaseline == nil || resuming != nil else { return }
         do {
             let seed: UInt64
-            if benchmarking {
-                guard let value = UInt64(benchmarkSeed) else {
+            if benchmarking || useFixedSeed {
+                guard let value = UInt64(benchmarking ? benchmarkSeed : generationSeed) else {
                     errorMessage = "Enter a whole-number seed from 0 to 18446744073709551615."
                     return
                 }
                 seed = value
             } else { seed = UInt64.random(in: 0...UInt64.max) }
-            let request = try resuming?.request ?? GenerationRequest(prompt: prompt, duration: duration, seed: seed)
+            let request = try resuming?.request ?? GenerationRequest(prompt: prompt, duration: duration, seed: seed,
+                                                                      style: benchmarking ? .default : visualStyle)
+            let framing: OutputFraming = benchmarking ? .square : outputFraming
             var job: BaselineJob? = benchmarking ? (resuming ?? BaselineJob(id: UUID(), request: request)) : nil
-            let log = benchmarking ? try makeBenchmarkLog(kind: "generation", fields: [
+            let log = (benchmarking || recordCreationDiagnostics) ? try makeBenchmarkLog(kind: "generation", fields: [
                 "prompt": request.prompt, "seed": String(request.seed), "durationSeconds": String(request.duration),
+                "effectiveModelPrompt": request.effectivePrompt, "visualStyle": request.style.rawValue,
+                "generationMode": GenerationMode.textToVideo.rawValue, "requestedFraming": framing.rawValue,
                 "width": String(request.width), "height": String(request.height), "fps": String(request.framesPerSecond),
                 "configuration": "baseline-fp32-stdit-vae-t5-int8-spatial-cpu",
                 "decoderExecutionPolicy": MOVDModel.decoderExecutionPolicy,
@@ -170,7 +219,7 @@ final class AppModel: ObservableObject {
                 "schedule": "30 points; leap index 20; 21 predictions; TDTM first 10; CFG 7; latent frames 20",
                 "cacheCondition": "uncontrolled OS cache; record first/repeat run separately; process is not restarted automatically",
                 "baselineJobID": job?.id.uuidString ?? "", "resumedFromJournal": resuming?.previousJournal ?? "",
-                "checkpointPolicy": "Exact Float32 state after each completed diffusion step; checkpoint I/O and pauses included in session wall time"
+                "checkpointPolicy": benchmarking ? "Exact Float32 state after each completed diffusion step; checkpoint I/O and pauses included in session wall time" : "Create job; no saved-baseline checkpoint; pauses included in session wall time"
             ]) : nil
             if var updated = job {
                 updated.previousJournal = log?.url.lastPathComponent
@@ -216,7 +265,7 @@ final class AppModel: ObservableObject {
                     }
                     log?.record("engine_completed", fields: ["elapsedSeconds": String(metrics.elapsedSeconds)])
                     try Task.checkCancellation()
-                    let item = try await self.library.add(temporaryURL: output, request: request, metrics: metrics)
+                    let item = try await self.library.add(temporaryURL: output, request: request, metrics: metrics, requestedFraming: framing)
                     self.videos = try await self.library.list()
                     if let log {
                         let videoURL = self.library.videoURL(item.id)
@@ -226,9 +275,9 @@ final class AppModel: ObservableObject {
                         guard let track = tracks.first else { throw GenerationError.encodingFailed("No video track") }
                         let fps = try await track.load(.nominalFrameRate)
                         let size = try await track.load(.naturalSize)
-                        guard abs(videoDuration - 2) < 0.05, abs(fps - 12) < 0.1,
-                              Int(size.width) == 256, Int(size.height) == 256 else {
-                            throw GenerationError.encodingFailed("Benchmark output dimensions or duration differ from the requested baseline")
+                        guard abs(videoDuration - Double(request.duration)) < 0.05, abs(fps - Float(request.framesPerSecond)) < 0.1,
+                              Int(size.width) == request.width, Int(size.height) == request.height else {
+                            throw GenerationError.encodingFailed("Output dimensions, frame rate or duration differ from the generation request")
                         }
                         let artifact = log.url.deletingPathExtension().appendingPathExtension("mp4")
                         try FileManager.default.copyItem(at: videoURL, to: artifact)
@@ -240,7 +289,12 @@ final class AppModel: ObservableObject {
                     }
                     if benchmarking { try self.clearSavedBaseline() }
                     succeeded = true
-                    self.selectedVideo = item
+                    var preview = item
+                    if framing.isCrop {
+                        do { preview = try await self.makeCrop(item, framing: framing) }
+                        catch { self.notice = "The square video was saved. The crop did not finish; you can retry it from the video preview." }
+                    }
+                    self.selectedVideo = preview
                 } catch is CancellationError {
                     try? log?.finish(status: "cancelled", fields: ["checkpointRetained": String(checkpoint != nil)])
                     self.notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
@@ -251,6 +305,32 @@ final class AppModel: ObservableObject {
               }
             }
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func makeCrop(_ video: VideoRecord, framing: OutputFraming) async throws -> VideoRecord {
+        let output = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        defer { try? FileManager.default.removeItem(at: output) }
+        let started = ProcessInfo.processInfo.systemUptime
+        progress = .init(0, "Saving \(framing.name) crop · square original preserved")
+        try await VideoCropExporter.export(source: library.videoURL(video.id), destination: output, framing: framing) { value in
+            Task { @MainActor in self.progress = .init(value, "Saving \(framing.name) crop · square original preserved") }
+        }
+        try Task.checkCancellation()
+        let item = try await library.addCrop(temporaryURL: output, original: video, framing: framing,
+                                            elapsedSeconds: ProcessInfo.processInfo.systemUptime - started)
+        videos = try await library.list()
+        return item
+    }
+
+    func exportCrop(_ video: VideoRecord, framing: OutputFraming) {
+        guard !working, !video.isCrop, framing.isCrop else { return }
+        working = true; exportingCrop = true; notice = nil
+        operation = Task {
+            defer { finish() }
+            do { selectedVideo = try await makeCrop(video, framing: framing) }
+            catch is CancellationError { notice = "Crop export cancelled. The original video is unchanged." }
+            catch { errorMessage = error.localizedDescription }
+        }
     }
 
     func install() {
@@ -309,13 +389,13 @@ final class AppModel: ObservableObject {
         activeBenchmarkLog?.record("scene_changed", fields: ["state": inForeground ? "foreground" : "background"])
         if !inForeground, working, generationControl == nil {
             operation?.cancel()
-            notice = "Model setup or inspection paused while the app was in the background."
+            notice = "Work paused while the app was in the background. Completed videos are kept."
         }
     }
 
     private func finish(success: Bool = false) {
         BackgroundGeneration.shared.finish(success: success)
-        working = false; installing = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        working = false; installing = false; exportingCrop = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
         refreshBenchmarkFiles(); refreshSavedBaseline()
     }
 

@@ -5,13 +5,155 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testStyledJournalCountsCompletedStepsWithoutBaselineCheckpoints() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("style.jsonl")
+        let log = try BenchmarkLog(url: url, kind: "generation", metadata: ["prompt": "A flag waves.",
+            "effectiveModelPrompt": "A flag waves. Visual style: cinematic.", "visualStyle": "cinematic"], sampleInterval: 100)
+        log.record("diffusion_step_completed", fields: ["completedSteps": "11"])
+        try log.finish(status: "cancelled")
+        let summary = try BenchmarkSummary.read(url)
+        XCTAssertEqual(summary.completedSteps, 11)
+        XCTAssertEqual(summary.restoredSteps, 0)
+        XCTAssertEqual(summary.status, "cancelled")
+        XCTAssertEqual(summary.style, "Cinematic")
+        XCTAssertNotEqual(summary.prompt, summary.effectivePrompt)
+    }
+
+    func testStyleConditioningPreservesTheSceneAndRejectsOverflowWithoutTruncation() throws {
+        let scene = "A red flag waves gently in the wind."
+        for style in VisualStyle.allCases {
+            let request = try GenerationRequest(prompt: scene, duration: 2, seed: 42, style: style)
+            XCTAssertEqual(request.prompt, scene)
+            XCTAssertEqual(request.effectivePrompt, style.applying(to: scene))
+            XCTAssertLessThanOrEqual(try MOVDEngine.promptTokenCount(request.effectivePrompt), 63)
+            let restored = try JSONDecoder().decode(GenerationRequest.self, from: JSONEncoder().encode(request))
+            XCTAssertEqual(restored, request)
+        }
+        let boundary = Array(repeating: "cat", count: 63).joined(separator: " ")
+        XCTAssertEqual(try MOVDEngine.promptTokenCount(boundary), 63)
+        XCTAssertNoThrow(try GenerationRequest(prompt: boundary, duration: 2, seed: 42))
+        XCTAssertThrowsError(try GenerationRequest(prompt: boundary, duration: 2, seed: 42, style: .cinematic)) { error in
+            guard case GenerationError.conditioningTooLong(let count) = error else { return XCTFail("Wrong error: \(error)") }
+            XCTAssertGreaterThan(count, 63)
+        }
+    }
+
+    func testEarlierBaselineRequestRemainsExactlyCompatible() throws {
+        let json = #"{"prompt":"A flag waves.","duration":2,"seed":42,"width":256,"height":256,"framesPerSecond":12}"#
+        let old = try JSONDecoder().decode(GenerationRequest.self, from: Data(json.utf8))
+        let current = try GenerationRequest(prompt: "A flag waves.", duration: 2, seed: 42)
+        XCTAssertEqual(old, current, "Existing checkpoint request equality must survive the style fields")
+        XCTAssertEqual(old.effectivePrompt, old.prompt)
+        XCTAssertEqual(old.style, .default)
+        XCTAssertNil(old.visualStyle)
+        XCTAssertNil(old.modelPrompt)
+    }
+
+    @MainActor
+    func testCreationSettingsPersistLocallyWithoutChangingTheBaseline() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = AppModel(root: root)
+        first.visualStyle = .watercolor; first.outputFraming = .portrait
+        first.useFixedSeed = true; first.generationSeed = "2026"
+        first.recordCreationDiagnostics = true
+        let relaunched = AppModel(root: root)
+        XCTAssertEqual(relaunched.visualStyle, .watercolor)
+        XCTAssertEqual(relaunched.outputFraming, .portrait)
+        XCTAssertTrue(relaunched.useFixedSeed)
+        XCTAssertEqual(relaunched.generationSeed, "2026")
+        XCTAssertTrue(relaunched.recordCreationDiagnostics)
+        let baseline = try GenerationRequest(prompt: AppModel.benchmarkPrompts[0], duration: 2, seed: 42)
+        XCTAssertEqual(baseline.style, .default)
+        XCTAssertEqual(baseline.width, 256)
+    }
+
+    func testCropCopiesArePlayableAndPreserveTheOriginalAndMetadata() async throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let fixture = root.appendingPathComponent("original.mp4")
+        let encoder = try VideoEncoder(output: fixture, width: 256, height: 256, fps: 12)
+        var pixels = [Float32](repeating: -1, count: 3 * 4 * 256 * 256)
+        // Three vertical bands distinguish cropping from scaling the full square.
+        for t in 0..<4 { for y in 0..<256 { for x in 0..<256 {
+            let channel = x < 56 ? 0 : (x < 200 ? 1 : 2)
+            pixels[((channel * 4 + t) * 256 + y) * 256 + x] = 1
+        } } }
+        let tensor = MLShapedArray<Float32>(scalars: pixels, shape: [1, 3, 4, 256, 256])
+        for _ in 0..<6 { try await encoder.append(tensor, limit: 24) }
+        try await encoder.finish(expectedFrames: 24)
+        let library = VideoLibrary(root: root.appendingPathComponent("Library"))
+        let request = try GenerationRequest(prompt: "Synthetic crop I/O fixture", duration: 2, seed: 123, style: .anime)
+        let metrics = GenerationMetrics(elapsedSeconds: 0, peakSampledMemoryBytes: 0, thermalStates: [], environment: "synthetic-io-test-only", modelRevision: MOVDModel.revision)
+        let original = try await library.add(temporaryURL: fixture, request: request, metrics: metrics)
+        let originalURL = library.videoURL(original.id)
+        let hash = try ModelInstaller.sha256(originalURL)
+        for framing in [OutputFraming.portrait, .landscape] {
+            let destination = root.appendingPathComponent(framing.rawValue + ".mp4")
+            try await VideoCropExporter.export(source: originalURL, destination: destination, framing: framing)
+            let asset = AVURLAsset(url: destination)
+            let seconds = try await asset.load(.duration).seconds
+            XCTAssertEqual(seconds, 2, accuracy: 0.02)
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            let track = try XCTUnwrap(tracks.first)
+            let size = try await track.load(.naturalSize)
+            XCTAssertEqual(size, CGSize(width: framing.width, height: framing.height))
+            let reader = try AVAssetReader(asset: asset)
+            let output = AVAssetReaderTrackOutput(track: track, outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+            reader.add(output); XCTAssertTrue(reader.startReading())
+            var frames = 0
+            while let sample = output.copyNextSampleBuffer() {
+                if frames == 0, let buffer = CMSampleBufferGetImageBuffer(sample) {
+                    CVPixelBufferLockBaseAddress(buffer, .readOnly)
+                    defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+                    let base = try XCTUnwrap(CVPixelBufferGetBaseAddress(buffer)).assumingMemoryBound(to: UInt8.self)
+                    let stride = CVPixelBufferGetBytesPerRow(buffer)
+                    let middle = (framing.height / 2) * stride + (framing.width / 2) * 4
+                    XCTAssertGreaterThan(Int(base[middle + 1]) - Int(base[middle + 2]), 100, "The center green band must remain centered")
+                    let edge = (framing.height / 2) * stride + 8 * 4
+                    let dominant = framing == .portrait ? 1 : 2
+                    let other = framing == .portrait ? 2 : 1
+                    XCTAssertGreaterThan(Int(base[edge + dominant]) - Int(base[edge + other]), 100,
+                                         "Check band identity despite lossy H.264 color conversion: portrait removes the red edge; landscape preserves it")
+                }
+                frames += 1
+            }
+            XCTAssertEqual(reader.status, .completed)
+            XCTAssertEqual(frames, 24)
+            let crop = try await library.addCrop(temporaryURL: destination, original: original, framing: framing, elapsedSeconds: 1)
+            XCTAssertEqual(crop.parentVideoID, original.id)
+            XCTAssertEqual(crop.style, .anime)
+            XCTAssertEqual(crop.seed, 123)
+            XCTAssertEqual(crop.effectivePrompt, request.effectivePrompt)
+            XCTAssertTrue(crop.isCrop)
+            XCTAssertTrue(crop.canReuseSettings)
+        }
+        XCTAssertEqual(try ModelInstaller.sha256(originalURL), hash)
+        let cancelledURL = root.appendingPathComponent("cancelled-crop.mp4")
+        let cancelled = Task { try await VideoCropExporter.export(source: originalURL, destination: cancelledURL, framing: .portrait) }
+        cancelled.cancel()
+        do { try await cancelled.value; XCTFail("A cancelled crop must not be saved") } catch is CancellationError { }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: cancelledURL.path))
+        XCTAssertEqual(try ModelInstaller.sha256(originalURL), hash)
+        try await library.delete(original)
+        let retained = try await library.list()
+        XCTAssertEqual(retained.count, 2, "Deleting a parent must not remove its independently saved copies")
+        XCTAssertTrue(retained.allSatisfy { $0.parentVideoID == original.id && $0.style == .anime })
+    }
+
     func testFallbackPixelBuffersProducePlayableVideoWhenAdaptorPoolIsMissing() async throws {
         let root = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = root.appendingPathComponent("fallback.mp4")
         let encoder = try VideoEncoder(output: url, width: 32, height: 32, fps: 12, poolProvider: { _ in nil })
-        let values = (0..<(3 * 24 * 32 * 32)).map { Float32($0 % 256) / 127.5 - 1 }
+        let elementCount: Int = 3 * 24 * 32 * 32
+        let values: [Float32] = (0..<elementCount).map { index -> Float32 in
+            Float32(index % 256) / Float32(127.5) - Float32(1)
+        }
         try await encoder.append(MLShapedArray(scalars: values, shape: [1, 3, 24, 32, 32]), limit: 24)
         try await encoder.finish(expectedFrames: 24)
         let asset = AVURLAsset(url: url)
@@ -466,6 +608,13 @@ final class LocalFramesTests: XCTestCase {
                                         environment: "synthetic-io-test-only", modelRevision: MOVDModel.revision)
         let library = VideoLibrary(root: root.appendingPathComponent("Library"))
         let item = try await library.add(temporaryURL: url, request: request, metrics: metrics)
+        let legacyFields: Set<String> = ["id", "prompt", "duration", "width", "height", "framesPerSecond", "seed", "createdAt", "metrics"]
+        let currentJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(item)) as? [String: Any])
+        let legacyJSON = currentJSON.filter { legacyFields.contains($0.key) }
+        let legacy = try JSONDecoder().decode(VideoRecord.self, from: JSONSerialization.data(withJSONObject: legacyJSON))
+        XCTAssertEqual(legacy.style, .default)
+        XCTAssertEqual(legacy.effectivePrompt, request.prompt)
+        XCTAssertTrue(legacy.canReuseSettings)
         let reloaded = try await library.list()
         XCTAssertEqual(reloaded.map(\.id), [item.id])
         XCTAssertEqual(reloaded.first?.prompt, request.prompt)

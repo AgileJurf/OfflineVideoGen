@@ -7,18 +7,28 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     public let width: Int
     public let height: Int
     public let framesPerSecond: Int
+    // Optional fields keep existing baseline checkpoints readable and equal.
+    public let visualStyle: VisualStyle?
+    public let modelPrompt: String?
+    public var effectivePrompt: String { modelPrompt ?? prompt }
+    public var style: VisualStyle { visualStyle ?? .default }
 
-    public init(prompt: String, duration: Int, seed: UInt64 = UInt64.random(in: 0...UInt64.max)) throws {
+    public init(prompt: String, duration: Int, seed: UInt64 = UInt64.random(in: 0...UInt64.max), style: VisualStyle = .default) throws {
         let clean = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { throw GenerationError.invalidPrompt }
         guard clean.count <= 500 else { throw GenerationError.promptTooLong }
         guard (2...5).contains(duration) else { throw GenerationError.invalidDuration }
+        let effective = style.applying(to: clean)
+        let count = try MOVDEngine.promptTokenCount(effective)
+        guard count <= 63 else { throw GenerationError.conditioningTooLong(count) }
         self.prompt = clean
         self.duration = duration
         self.seed = seed
         width = 256
         height = 256
         framesPerSecond = 12
+        visualStyle = style == .default ? nil : style
+        modelPrompt = style == .default ? nil : effective
     }
 
     public var frameCount: Int { duration * framesPerSecond }
@@ -75,11 +85,13 @@ public enum GenerationError: LocalizedError {
     case invalidPrompt, promptTooLong, invalidDuration, modelMissing(String)
     case incompatibleModel(String), memoryPressure, tooHot, interrupted, insufficientStorage
     case encodingFailed(String), invalidTensor, invalidCheckpoint
+    case conditioningTooLong(Int)
 
     public var errorDescription: String? {
         switch self {
         case .invalidPrompt: return "Describe the motion you want to generate."
         case .promptTooLong: return "Use a shorter prompt (up to 500 characters and 63 model tokens)."
+        case .conditioningTooLong(let count): return "Your scene and style use \(count) model tokens; the limit is 63. Shorten your scene or choose Default. Nothing has been truncated."
         case .invalidDuration: return "Choose a duration from 2 to 5 seconds."
         case .modelMissing(let name): return "The model is incomplete (\(name)). Reinstall the model in Setup."
         case .incompatibleModel(let detail): return "This model cannot run with the current engine: \(detail)"

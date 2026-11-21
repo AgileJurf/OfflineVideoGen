@@ -1,4 +1,5 @@
 import SwiftUI
+import VideoEngine
 
 struct RootView: View {
     @EnvironmentObject private var model: AppModel
@@ -12,11 +13,13 @@ struct RootView: View {
             NavigationStack { SetupView() }
                 .tabItem { Label("Setup", systemImage: "square.and.arrow.down") }.tag(2)
         }
+        .onChange(of: model.creationRequestID) { tab = 0 }
     }
 }
 
 struct CreateView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var tokenCount: Int?
     let openSetup: () -> Void
     var body: some View {
         ScrollView {
@@ -32,10 +35,19 @@ struct CreateView: View {
                 }
                 Label("Experimental build · performance testing", systemImage: "flask")
                     .font(.caption).foregroundStyle(.orange)
+                HStack {
+                    Menu {
+                        Label("Text to Video", systemImage: "checkmark")
+                        Button("Image to Video · model unavailable") { }.disabled(true)
+                        Button("Extend Video · model unavailable") { }.disabled(true)
+                    } label: { Label("Text to Video", systemImage: "text.bubble") }
+                    Spacer()
+                    NavigationLink("Capabilities") { ModelCapabilitiesView() }.font(.caption)
+                }
                 VStack(alignment: .leading, spacing: 12) {
                     Text("YOUR SCENE").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     TextField("A small sailboat glides across a calm lake at sunrise…", text: $model.prompt, axis: .vertical)
-                        .lineLimit(4...7).accessibilityIdentifier("promptInput")
+                        .lineLimit(4...7).disabled(model.working).accessibilityIdentifier("promptInput")
                     HStack {
                         Text("Include an action, a subject, and a setting.")
                         Spacer()
@@ -46,7 +58,7 @@ struct CreateView: View {
                     Text("DURATION").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Picker("Duration", selection: $model.duration) {
                         ForEach(2...5, id: \.self) { Text("\($0) sec").tag($0) }
-                    }.pickerStyle(.segmented).accessibilityIdentifier("durationPicker")
+                    }.pickerStyle(.segmented).disabled(model.working).accessibilityIdentifier("durationPicker")
                     HStack {
                         Label("256 × 256", systemImage: "square.dashed")
                         Spacer()
@@ -55,6 +67,7 @@ struct CreateView: View {
                         Label("On device", systemImage: "iphone")
                     }.font(.caption).foregroundStyle(.secondary)
                 }
+                GenerationOptionsView(tokenCount: $tokenCount)
                 if !model.installed {
                     Button(action: openSetup) {
                         Label("Install the video model to begin", systemImage: "arrow.down.circle")
@@ -67,20 +80,23 @@ struct CreateView: View {
                         Text(model.progressMessage).font(.subheadline)
                         if model.isGenerating { Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("generationETA") }
                         Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
-                        Button(model.installing ? "Pause installation" : "Cancel generation", role: .cancel) { model.cancel() }
+                        Button(model.installing ? "Pause installation" : (model.exportingCrop ? "Cancel export" : "Cancel generation"), role: .cancel) { model.cancel() }
                     }.padding().background(.mint.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
                 } else {
                     Button(action: model.generate) {
                         Label("Generate Video", systemImage: "sparkles").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
                     }.buttonStyle(.borderedProminent)
-                        .disabled(!model.installed || model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.prompt.count > 500)
+                        .disabled(!model.installed || model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  || model.prompt.count > 500 || tokenCount == nil || (tokenCount ?? 0) > 63
+                                  || (model.useFixedSeed && UInt64(model.generationSeed) == nil))
                         .accessibilityIdentifier("generateButton")
                 }
                 if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
                 Text("Your prompts and videos stay in this app. Internet is needed only to install the model.")
                     .font(.footnote).foregroundStyle(.secondary)
             }.padding(24)
-        }.navigationTitle("Local Frames").navigationBarTitleDisplayMode(.inline)
+        }.scrollDismissesKeyboard(.interactively)
+            .navigationTitle("Local Frames").navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -103,6 +119,7 @@ struct LibraryView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(video.prompt).font(.subheadline.weight(.medium)).lineLimit(2)
                                 Text("\(video.duration)s · \(video.width) × \(video.height) · \(video.framesPerSecond) FPS").font(.caption).foregroundStyle(.secondary)
+                                Text(video.style.name + (video.isCrop ? " · cropped copy" : " · original")).font(.caption2).foregroundStyle(.mint)
                                 Text(video.createdAt, style: .date).font(.caption2).foregroundStyle(.secondary)
                             }
                         }
@@ -137,6 +154,9 @@ struct SetupView: View {
                 }
             } header: { Text("Offline video model") }
             Section("Device benchmark") {
+                Toggle("Record local diagnostics for Create jobs", isOn: $model.recordCreationDiagnostics).disabled(model.working)
+                Text("Optional logs include prompts, seeds, partition timings, sampled memory and thermal state. They stay on this iPhone unless you export them. Baseline tests always record logs.")
+                    .font(.caption).foregroundStyle(.secondary)
                 NavigationLink("Benchmark results and comparisons") { BenchmarkView() }
                     .accessibilityIdentifier("openBenchmarks")
                 Text("Run the unchanged 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
@@ -179,6 +199,7 @@ struct SetupView: View {
                 }
             }
             Section("About this build") {
+                NavigationLink("Model capabilities and optional models") { ModelCapabilitiesView() }
                 LabeledContent("Engine", value: "MOVD / Open-Sora")
                 LabeledContent("Output", value: "256 × 256 · 12 FPS")
                 LabeledContent("Duration", value: "2–5 seconds")

@@ -2,6 +2,8 @@
 
 ## Observed results
 
+The current expansion's software checks and remaining physical acceptance gates are recorded in [EXPANSION_TEST_REPORT.md](EXPANSION_TEST_REPORT.md). Historical rows below retain their original scope and are not claims about newer builds.
+
 | Check | Status |
 | --- | --- |
 | Model archive download and SHA-256 calculation | Completed for all three upstream archives |

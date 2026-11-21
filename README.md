@@ -2,7 +2,7 @@
 
 A standalone SwiftUI research application for offline text-to-video generation on iPhone, using the released MOVD / Open-Sora Core ML model partitions.
 
-**Development status: experimental. Xcode Cloud Build 2 passed its simulator test and iOS analysis actions. No successful full-model inference has been demonstrated yet.** Build and simulator test results do not establish iPhone memory, thermal, Neural Engine, or generation performance.
+**Development status: experimental, with incremental device validation required.** See the [validation record](docs/VALIDATION.md) for software checks and [generation compatibility report](docs/GENERATION_EXPANSION.md) for enabled and blocked features. Build and simulator tests do not establish iPhone performance or video quality. New device journals and output evidence remain private.
 
 The initial target is 256 × 256, 12 FPS, and 2–5 seconds. Inference uses temporal video diffusion and a video VAE. Model files download once and remain in the app sandbox; generation has no network service dependency.
 
@@ -33,11 +33,19 @@ The 2-second benchmark saves completed motion steps and offers **Resume saved ba
 
 The library supports playback, replay, deletion, regeneration, Photos saving, and Files export. A completed generation stores its seed and sampled timing/memory/thermal metrics locally. No analytics or remote inference service is configured.
 
+Create offers twelve prompt-based visual styles with an explicit 63-token scene-plus-style budget, fixed seeds, and saved settings. Default preserves the unstyled prompt. Portrait and landscape options create clearly labeled 144 × 256 / 256 × 144 center-cropped copies; the native square original is retained. Image-to-video and AI continuation remain unavailable pending compatible encoder and conditioning exports. The capability screen explains these limits. No additional model is downloaded by these controls.
+
+Optional local diagnostics for Create jobs can be enabled in Setup. They include prompts and remain on the device unless manually exported. The benchmark screen supports side-by-side playback; precision and faster sampler presets require measured physical-device comparisons before activation.
+
 ## Evidence and remaining work
 
 - [Feasibility and model choice](docs/FEASIBILITY.md)
 - [Validation record and acceptance gates](docs/VALIDATION.md)
 - [Device benchmark evidence and procedure](docs/BENCHMARK_REPORT.md)
+- [Optimization and reproducible comparison protocol](docs/OPTIMIZATION_PHASE2.md)
+- [Synthetic precision screening](docs/PRECISION_SCREENING.md)
+- [Generation expansion and exact model blockers](docs/GENERATION_EXPANSION.md)
+- [Expansion test report](docs/EXPANSION_TEST_REPORT.md)
 - [Third-party code and model provenance](docs/THIRD_PARTY_NOTICES.md)
 
-The released weights have been downloaded and hashed locally, and all 103 package specifications were inspected. The app and both test targets compile with Xcode 16.4; seven unit and two UI tests passed on the iOS 18.4 simulator with ad hoc signing. Full-model inference, prompt quality, offline completion, peak memory, repeated generation, Photos export, and physical iPhone behavior remain unverified. Do not describe this build as a proven offline video generator until those gates pass.
+The released weights have been downloaded and hashed locally, and all 103 package specifications were inspected. Regression tests cover the tokenizer, saved-baseline compatibility, video writing, crop geometry, library metadata and UI persistence. Every new inference configuration still requires fresh physical-device completion, numerical and visual checks, offline testing and repeated measurements. The original model and build-18 rollback source are preserved.
