@@ -4,6 +4,8 @@ Local Frames is an experimental native MOVD / Open-Sora video diffusion app. Gen
 
 ## Optional 24 FPS smoothing beta
 
+Available in **0.1.0 (31)**, released to Personal Device Testing on 21 November 2026. The source passed 56/56 Xcode Cloud tests; a successful smoothing upload from the physical iPhone remains to be verified.
+
 Enable **Setup → Online support and model updates → Enable online support**, then choose a compatible 2-second square 12 FPS clip. Preview it and approve that exact upload to Hugging Face’s community `1inkusFace/RIFE` helper. An action is also available in compatible video previews while support is enabled. No clip is uploaded by enabling the switch or finishing generation. Every retry requires another review and approval.
 
 Keep the app foregrounded on Wi-Fi. Anonymous shared free quota may be exhausted; no credentials, credits or paid fallback are used. Cancellation/backgrounding stops local work without automatically retrying, but cannot guarantee that a clip already sent is deleted from the helper. Its retention period is unspecified. The original video is preserved, and a successful result is separately saved as 48 frames at 24 FPS for exactly two seconds. This is optional frame interpolation, not faster diffusion or higher-resolution generation.
@@ -35,7 +37,7 @@ The upstream model weights are unchanged. Absence of app-level filtering does no
 
 ## Distribution
 
-The **TestFlight Beta** Xcode Cloud workflow uses a manual start condition on `main`. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Build 5, version 0.1.0, successfully reached Testing and the internal tester was invited. Public source availability does not make the TestFlight beta publicly installable.
+The **TestFlight Beta** Xcode Cloud workflow uses a manual start condition on `main`. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Build 31, version 0.1.0, reached Testing with one internal tester and saved testing notes. Public source availability does not make the TestFlight beta publicly installable.
 
 For instrumented device testing, follow the [benchmark record and procedure](BENCHMARK_REPORT.md). The benchmark controls are added after Build 5; use the newer instrumented beta when available. Complete active setup before updating.
 
