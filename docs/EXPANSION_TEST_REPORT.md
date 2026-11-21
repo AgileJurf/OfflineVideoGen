@@ -39,7 +39,9 @@ Cloud Build 19 tested the preceding measurement/export-fallback commit `e8876c6`
 
 [Cloud Build 22](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/858d08a1-36a3-4c32-9fd7-95d331bf578f/summary) archived the same `db44919` source. App Store Connect showed both **Archive — iOS** and **TestFlight Internal Testing — iOS** as succeeded. The build's app-store export was listed as 2.1 MB; this excludes the separately installed MOVD weights and is not an installed app-size measurement.
 
-The browser session expired during the export-download verification step. The signed package was not independently inspected in this increment. Saving the build's testing notes and confirming its final status in the existing tester group require a renewed App Store Connect sign-in; successful Cloud delivery alone does not establish physical installation or generation.
+After renewing the expired App Store Connect session, version **0.1.0 (22)** was confirmed as **Testing** in the existing **Personal Device Testing** group (one tester), and the device test instructions were saved. [Build 22 TestFlight details](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/apps/6837604336/testflight/ios/4082b87e-25a6-4485-baa9-ab6459ff6b20).
+
+The separate export-download inspection did not complete, so no independent signed-package/entitlement inspection is claimed for this increment. TestFlight availability does not establish physical installation or successful generation. Update the existing installation without deleting its model or library; no new model download is required.
 
 ## Device acceptance still required
 
