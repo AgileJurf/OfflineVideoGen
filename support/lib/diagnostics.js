@@ -50,7 +50,7 @@ export async function acceptReport({ body, consent, store, inspect, now = new Da
     return { status: 503, body: { error: 'diagnostics-unavailable' } };
   }
   try {
-    // put() does not return expiresAt. Confirm the provider's TTL using head().
+    // Confirm persisted expiration independently through the provider's metadata API.
     const metadata = await inspect(saved.url);
     const expiry = new Date(metadata.expiresAt).getTime();
     if (!Number.isFinite(expiry) || expiry <= now.getTime() || expiry > now.getTime() + 32 * 86400000) return { status: 503, body: { error: 'retention-not-confirmed' } };

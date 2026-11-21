@@ -20,7 +20,7 @@ Vercel documents Hobby as personal/noncommercial, capped rather than automatical
 
 Blob's Hobby allowance is 1 GB-month, 2,000 advanced operations, 10,000 simple operations and 10 GB transfer. Overages disable Blob access without additional charges. One global create-only slot per two hours allows at most 372 stored reports in 31 days, or about 12 MiB of payload. Each accepted upload plus its TTL uses two advanced operations, and expiry verification uses a metadata read. Failed attempts and dashboard activity also consume quota, so the slot cap is not a guarantee against quota exhaustion. Clients handle 429/503 without automatic retries or background queues. Keep Hobby; switching to Pro would change the billing behavior. [Blob pricing](https://vercel.com/docs/vercel-blob/usage-and-pricing).
 
-Every report uses `access: private`, `allowOverwrite: false`, `addRandomSuffix: false` and `ttlDays: 30`. `head()` verifies expiration because `put()` does not return it. Expiration is rounded to UTC midnight and deletion is processed daily; allow about 32 days. A successful response exposes no storage URL. No report body or request headers are logged by application code. Hosting still processes request metadata such as IP addresses. [TTL API](https://vercel.com/docs/vercel-blob/using-blob-sdk#expire-blobs-automatically).
+Every report uses `access: private`, `allowOverwrite: false`, `addRandomSuffix: false` and `ttlDays: 30`. A separate `head()` request verifies persisted expiration. Expiration is rounded to UTC midnight and deletion is processed daily; allow about 32 days. A successful response exposes no storage URL. No report body or request headers are logged by application code. Hosting still processes request metadata such as IP addresses. [TTL API](https://vercel.com/docs/vercel-blob/using-blob-sdk#expire-blobs-automatically).
 
 ## App behavior and model updates
 
@@ -41,3 +41,7 @@ This deployment retains the original working source URLs and hashes; no mirror h
 ## Operational verification
 
 Use only synthetic, nonpersonal fixtures for deployment tests. Verify static manifest equality with the bundled hashes; POST without consent must fail; unknown fields must fail; one valid synthetic report must store privately with TTL; a second in the same slot must return 429. Do not upload real device reports on the user's behalf without explicit report-specific consent. Public deployment endpoints are independent from the app's offline generation tests.
+
+Production is live at [localframes-support.vercel.app](https://localframes-support.vercel.app). All nine acceptance checks passed on 21 November 2026. Run `node scripts/verify-deployment.mjs` for the non-storage checks; add `--store-synthetic` only when intentionally reserving the current two-hour slot with fabricated data. See [acceptance report](../docs/SUPPORT_TEST_REPORT.md).
+
+The existing deployment uses Vercel's Active CPU configuration, which ignores the legacy `memory` value in `vercel.json`. Do not interpret that field as a measured or enforced 1 GB process limit. The ten-second function limit and request-body cap are separate controls.

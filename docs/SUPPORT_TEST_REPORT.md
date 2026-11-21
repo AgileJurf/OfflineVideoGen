@@ -23,20 +23,31 @@ Date: 21 November 2026. This report covers software verification, not a new phys
 | Inference compatibility | Changed hashes, inventory, hosts, unsupported minimum app version and unapproved step count rejected |
 | Model rollback | Filesystem fixture activates candidate while preserving original, then restores original |
 | Report concurrency / retention | Mocked create-only storage allows one report per two-hour slot; verifies provider expiration metadata |
-| Live Vercel service | Pending deployment and synthetic endpoint verification |
-| Xcode Cloud / TestFlight | Pending this source revision |
+| Live Vercel service | Production deployed at `https://localframes-support.vercel.app`; all nine synthetic endpoint checks passed at 2026-11-21 20:48:04 UTC |
+| Xcode Cloud | Build 24 passed static analysis and all 48 tests on Xcode 27.2; source `02b93e47bb567c28ca551f3bea0923b307846ec5` |
+| TestFlight | Build 25 archived and distributed from the tested `02b93e4` source; Personal Device Testing shows Testing with one tester |
 | Physical iPhone support and Airplane Mode regression | Pending installation of the new build; simulator tests are not physical-device validation |
 
 The first UI pass failed because the test tapped the label instead of the native switch. The corrected test taps the switch and asserts its value before checking the enabled state; the complete suite then passed. A general final error no longer replaces a more specific Core ML partition failure in the report.
 
-## Acceptance still required
+Cloud build: `7483089b-8773-42cb-bc0c-df87a7eb6284`. Suites: LocalFramesTests 33/33, SupportTests 10/10, LocalFramesUITests 5/5. The released build 22 source is preserved at `baseline/testflight-build-22` (`db449195eb25200042db1f992d0eb8a39ed74535`).
 
-Verify the deployed manifest against the bundled model, reject a POST without consent, reject unknown fields, store one synthetic report privately with expiration, and reject a second report in the same slot. Do not upload real device evidence for these tests.
+Release build: Xcode Cloud 25 (`0d5410c5-287c-4b91-95aa-715075032a93`), TestFlight `0.1.0 (25)` (`862a8aec-9311-4405-8ec7-948767c67cfa`). Archive and internal distribution both succeeded. Release notes distinguish connected support from the unimplemented hybrid GPU work. No iOS inference source changed after Cloud 24's test pass.
 
-On the iPhone, check the catalog over Wi-Fi, relaunch with Airplane Mode enabled, and complete the fixed two-second baseline with the installed model. Review a diagnostic payload and send it only by explicit choice. A fresh full model transfer, interruption/resume, and staged model replacement require separate physical acceptance; no new host or replacement weights are offered in this release.
+## Live acceptance
+
+Production deployment `5ju9DgL9rkMc5jBZDqPtwMw9seT5` uses source `02b93e4`. The separate `localframes-diagnostics` Blob store is Private, connected only to the support project's Production environment. The account remains Hobby. No credential was copied into the repository or app.
+
+`support/scripts/verify-deployment.mjs --store-synthetic` compared the live configuration and manifest to their repository originals (both HTTP 200), verified GET refusal (405), missing consent (403), non-JSON content (415), unknown fields (400), oversized payload (413), one fabricated report stored with verified provider expiration (201), and a second report refused with Retry-After 7200 (429). No user video, prompt or device journal was sent. The synthetic report occupies its two-hour slot and expires under the same policy as other reports. Running without `--store-synthetic` performs only the non-storage checks.
+
+## Physical acceptance still required
+
+On the iPhone, check the catalog over Wi-Fi and confirm the cached configuration survives a disconnected relaunch. Review a diagnostic payload and send it only by explicit choice. A fresh full model transfer, interruption/resume, and staged model replacement require separate physical acceptance; no new host or replacement weights are offered in this release. Earlier successful offline generation remains established; repeating that proof is not a prerequisite to enabling this support release. A future inference change still needs its own physical regression test.
 
 ## Performance and limits
 
 No inference speed, memory or video-quality improvement is claimed. The service supports diagnosing bottlenecks and distributing future models/settings after physical validation. It cannot add compute capacity to offline inference. The next optimization remains a measured model/sampler experiment against the preserved baseline, not a remote setting guessed to be faster.
+
+Hybrid generation, with local generation retaining an active role and optional free remote assistance, is investigated separately in [HYBRID_SUPPORT_RESEARCH.md](HYBRID_SUPPORT_RESEARCH.md). A community interpolation helper refused the synthetic request because its anonymous GPU quota was insufficient. No remotely enhanced video or speedup is claimed, and the tested support release does not upload media.
 
 Hobby hosting and Blob quotas are shared with the account's other projects. The service caps stored payloads, does not proxy model files, and tolerates quota exhaustion. See [deployment, retention, free-tier and Hugging Face details](../support/README.md). Exact T5 redistribution provenance remains unresolved, so the existing source URLs are retained and no Hugging Face mirror is published.
