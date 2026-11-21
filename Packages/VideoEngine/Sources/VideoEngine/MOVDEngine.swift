@@ -38,12 +38,12 @@ public actor MOVDEngine {
         let count: Int
     }
 
-    private func encode(_ prompt: String, runner: ModelRunner) throws -> Encoding {
-        guard let resources = Bundle.module.url(forResource: "Resources", withExtension: nil) else {
-            throw GenerationError.modelMissing("tokenizer resources")
-        }
+    static func promptTokenIDs(_ prompt: String) throws -> [Int] {
         func config(_ name: String) throws -> Config {
-            let data = try Data(contentsOf: resources.appendingPathComponent(name))
+            guard let resource = Bundle.module.url(forResource: name, withExtension: nil) else {
+                throw GenerationError.modelMissing(name)
+            }
+            let data = try Data(contentsOf: resource)
             guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 throw GenerationError.incompatibleModel("tokenizer configuration")
             }
@@ -55,7 +55,11 @@ public actor MOVDEngine {
         let tokens = tokenizer.tokenize(text: prompt)
         // Attention masks scale with prompt length. Reject rather than silently changing the prompt.
         guard tokens.count <= 63 else { throw GenerationError.promptTooLong }
-        let ids = tokens.map { tokenizer.convertTokenToId($0) ?? 0 } + [tokenizer.eosTokenId ?? 1]
+        return tokens.map { tokenizer.convertTokenToId($0) ?? 0 } + [tokenizer.eosTokenId ?? 1]
+    }
+
+    private func encode(_ prompt: String, runner: ModelRunner) throws -> Encoding {
+        let ids = try Self.promptTokenIDs(prompt)
         let padded = ids + Array(repeating: 0, count: 300 - ids.count)
         let attention = MLShapedArray<Float32>(scalars: (0..<300).map { $0 < ids.count ? 0 : -Float32.greatestFiniteMagnitude }, shape: [1, 1, 1, 300])
         let embedded = try runner.predict("t5embed-tokens", ["input_ids": feature(.init(scalars: padded.map(Float32.init), shape: [1, 300]))])

@@ -2,6 +2,12 @@
 
 The public source repository is [AgileJurf/OfflineVideoGen](https://github.com/AgileJurf/OfflineVideoGen). The shared scheme is **LocalFrames**, the project is **LocalFrames.xcodeproj**, and the app bundle ID is **com.agilejurf.localframes**.
 
+## Configured workflow
+
+**Build and Test** is connected to this repository and App Store Connect's LocalFrames product. It runs a required **Test — iOS** action on an iPhone 17 Pro Max simulator and a required **Analyze — iOS** action for Any iOS Device. The environment follows the latest stable Xcode release (27.2 at setup). Pushes to `main` trigger builds; changes confined to Markdown documentation are excluded. No TestFlight post-action is enabled.
+
+[View builds in App Store Connect](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/groups) (developer-account access required).
+
 ## First workflow
 
 Apple's [first-workflow instructions](https://developer.apple.com/documentation/xcode/configuring-your-first-xcode-cloud-workflow) start in Xcode. Browser sign-in to Apple Developer or App Store Connect does not configure Xcode's Accounts settings.

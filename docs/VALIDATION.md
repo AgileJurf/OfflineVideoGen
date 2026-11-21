@@ -7,9 +7,9 @@
 | Model archive download and SHA-256 calculation | Completed for all three upstream archives |
 | Shared Xcode project and pinned packages | Present |
 | Xcode 16.4 generic iOS simulator build-for-testing | Passed for the app, unit tests, and UI tests |
-| Local simulator test execution | Passed: 6 unit + 2 UI tests, 0 failures; iPhone 16 Pro Max simulator, iOS 18.4 |
+| Local simulator test execution | Passed: 7 unit + 2 UI tests, 0 failures; iPhone 16 Pro Max simulator, iOS 18.4, ad hoc signing |
 | Model specification inspection | Parsed all 103 package specifications; corrected the int32-to-float32 temporal-count boundary |
-| Xcode Cloud workflow | Account signed in; onboarding in progress |
+| Xcode Cloud workflow | Build and Test created; first run exposed a tokenizer resource-bundle signing error, fixed with processed resources; rerun pending |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 
@@ -17,7 +17,7 @@ Build success and synthetic encoder fixtures are not diffusion validation. No sa
 
 ## Automated suite
 
-The six unit tests exercise request validation, missing-model failure without a fabricated video, manifest partition coverage, checksum tamper detection, real AVFoundation MP4 duration/frame rate with library persistence/deletion, and partial-output cleanup. The two UI tests exercise prompt entry, disabled generation before model installation, setup navigation, and the empty library.
+The seven unit tests exercise bundled tokenizer loading and prompt encoding, request validation, missing-model failure without a fabricated video, manifest partition coverage, checksum tamper detection, real AVFoundation MP4 duration/frame rate with library persistence/deletion, and partial-output cleanup. The two UI tests exercise prompt entry, disabled generation before model installation, setup navigation, and the empty library.
 
 ## Required real-model checks
 

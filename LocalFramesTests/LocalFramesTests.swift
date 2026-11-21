@@ -5,6 +5,14 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testBundledTokenizerEncodesPromptWithoutModelDownload() throws {
+        let ids = try MOVDEngine.promptTokenIDs("A small sailboat glides across a calm lake.")
+        XCTAssertGreaterThan(ids.count, 1)
+        XCTAssertLessThanOrEqual(ids.count, 64)
+        XCTAssertEqual(ids.last, 1) // T5 end-of-sequence token.
+        XCTAssertTrue(ids.dropLast().allSatisfy { $0 > 0 })
+    }
+
     func testRequestRejectsEmptyPromptAndUnsupportedDurations() throws {
         XCTAssertThrowsError(try GenerationRequest(prompt: " \n ", duration: 2))
         XCTAssertThrowsError(try GenerationRequest(prompt: "waves", duration: 1))

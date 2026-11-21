@@ -11,6 +11,6 @@ let package = Package(
     targets: [
         .target(name: "VideoEngine", dependencies: [
             .product(name: "Transformers", package: "swift-transformers")
-        ], resources: [.copy("Resources")])
+        ], resources: [.process("Resources")])
     ]
 )
