@@ -10,24 +10,34 @@ final class LocalFramesUITests: XCTestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
         let toggle = app.switches["enableOnlineSupport"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        // Newer iOS Form snapshots omit off-screen rows. Reveal a control before querying it.
+        func reveal(_ element: XCUIElement) {
+            for _ in 0..<8 where !toggle.isHittable { app.swipeDown() }
+            for _ in 0..<8 where !element.isHittable { app.swipeUp() }
+            XCTAssertTrue(element.waitForExistence(timeout: 5))
+        }
+        let updates = app.buttons["checkSupportUpdates"]
+        let smoothing = app.buttons["chooseSmoothingClip"]
         XCTAssertEqual(toggle.value as? String, "0")
-        XCTAssertFalse(app.buttons["chooseSmoothingClip"].isEnabled)
-        XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
+        reveal(smoothing); XCTAssertFalse(smoothing.isEnabled)
+        reveal(updates); XCTAssertFalse(updates.isEnabled)
+        reveal(toggle)
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         XCTAssertEqual(toggle.value as? String, "1")
-        XCTAssertTrue(app.buttons["chooseSmoothingClip"].isEnabled)
-        XCTAssertTrue(app.buttons["checkSupportUpdates"].isEnabled)
+        reveal(smoothing); XCTAssertTrue(smoothing.isEnabled)
+        reveal(updates); XCTAssertTrue(updates.isEnabled)
         XCTAssertFalse(app.buttons["Cancel support request"].exists, "Enabling support must not initiate network work")
         XCTAssertFalse(app.buttons["Send this report"].exists)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Optional online support with manual checks"; screenshot.lifetime = .keepAlways; add(screenshot)
-        app.buttons["chooseSmoothingClip"].tap()
+        reveal(smoothing); smoothing.tap()
         XCTAssertTrue(app.staticTexts["noSmoothingClips"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists, "An empty library must not offer an upload")
         app.navigationBars.buttons.element(boundBy: 0).tap()
+        reveal(toggle)
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertFalse(app.buttons["chooseSmoothingClip"].isEnabled)
-        XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
+        reveal(smoothing); XCTAssertFalse(smoothing.isEnabled)
+        reveal(updates); XCTAssertFalse(updates.isEnabled)
     }
     @MainActor
     func testStylesFramingPersistAndUnsupportedModesStayUnavailable() throws {

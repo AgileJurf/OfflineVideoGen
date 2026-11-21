@@ -32,6 +32,8 @@ The full local regression run passed **56/56 tests**: 33 existing engine/library
 
 Manual Simulator review confirmed the exact synthetic clip renders in the consent preview, Upload starts disabled, explicit consent enables it, and leaving/reopening the same clip resets consent and disables Upload again. The review made no upload, and online support was turned off afterward. The final local app build passed after the comparison-view labels were updated.
 
+Initial Cloud Build 28 passed 55/56 tests. Its UI failure queried the off-screen model-update button, which the newer iOS Form snapshot omitted. The test now scrolls each control into view before inspection; the corrected test passed locally (46.47 seconds). Cloud also identified an implicit-strong/explicit-weak nested progress capture warning, resolved by making both captures explicit. Neither correction changes inference or helper settings. The release requires a fresh passing Cloud run of the corrected source.
+
 A single live anonymous test of the **actual native HTTP/media implementation**, compiled for macOS, ran at 22:15 UTC on 21 November 2026. It uploaded only the committed synthetic moving-shapes fixture and reached the job stage, but returned no output (`unavailable`, 1.069 seconds to failure). This is a service availability failure, not a latency improvement. No credentials or personal clip were sent. The earlier anonymous official-client probe explicitly reported quota refusal; this native response did not identify a more specific cause. A signed-in browser success does not prove anonymous native availability.
 
 The native probe deliberately requires an explicit synthetic-upload flag and makes no retries:
