@@ -10,6 +10,7 @@ This report covers software validation of prompt styles, explicit crop exports, 
 | --- | --- |
 | Local Xcode 16.4 app compilation | Passed |
 | Final local regression suite, iPhone 16 Pro Max simulator / iOS 18.4 | 33 unit tests and 4 UI tests passed |
+| Xcode Cloud Build 21, iPhone 17 Pro Max simulator / iOS 27.2 | 33 unit tests and 4 UI tests passed; iOS analysis passed, with zero reported warnings, analysis issues, test failures or build errors |
 | Tokenizer and all 12 style instructions | Short fixed scene accepted for every style; original scene and effective prompt survive JSON roundtrip |
 | Token boundary | A 63-token scene is accepted unchanged with Default; adding Cinematic is rejected without truncation |
 | Baseline compatibility | Earlier request JSON remains equal to the new Default request; existing bit-exact checkpoint and recovery tests pass |
@@ -26,11 +27,19 @@ The first crop test used an absolute color threshold inappropriate for a lossy H
 
 UI screenshots were exported and visually inspected for selected-state visibility, framing disclosure, token count and readable layout. Synthetic test footage and interface illustrations are not presented as AI output.
 
-Local artifacts are retained in ignored `build/LocalFrames-ExpansionFinal.xcresult`, `build/LocalFrames-ExpansionCrop.xcresult`, `build/ExpansionUIScreenshots/` and `build/CapabilityAudit/`. The final Cloud run must also validate the small prompt-length UI guard and explicit numeric types added after the local test build.
+Local artifacts are retained in ignored `build/LocalFrames-ExpansionFinal.xcresult`, `build/LocalFrames-ExpansionCrop.xcresult`, `build/ExpansionUIScreenshots/` and `build/CapabilityAudit/`. Cloud Build 21 validated the final source, including the prompt-length UI guard, explicit numeric types and extracted style-card view added after the local full-suite build. The targeted local style/framing UI test also passed after the view extraction.
 
 ## Cloud validation history
 
-Cloud Build 19 tested the preceding measurement/export-fallback commit `e8876c6`, not the expansion. Its iOS analysis passed, but the newer Swift compiler could not type-check a synthetic pixel-array expression in the test target. The expression now has explicit element-count and Float32 types. Build 20 reached another type-check timeout in the expansion's style-card view; that view is now a separate component with explicit style types. These are compiler compatibility fixes; no inference arithmetic changed. The next Cloud run will test the combined candidate before TestFlight distribution.
+Cloud Build 19 tested the preceding measurement/export-fallback commit `e8876c6`, not the expansion. Its iOS analysis passed, but the newer Swift compiler could not type-check a synthetic pixel-array expression in the test target. The expression now has explicit element-count and Float32 types. Build 20 reached another type-check timeout in the expansion's style-card view; that view is now a separate component with explicit style types. These are compiler compatibility fixes; no inference arithmetic changed.
+
+[Cloud Build 21](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/81235cc0-d3df-4502-b599-38dafbe88829/summary) passed all 37 tests and iOS analysis for `db449195eb25200042db1f992d0eb8a39ed74535`, using Xcode 27.2 (27B52) on macOS Golden Gate 27.2.1 (26B131). The test destination was an **iPhone 17 Pro Max simulator**, not a physical device. No MOVD weights were downloaded or executed by these software tests.
+
+## Development distribution
+
+[Cloud Build 22](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/858d08a1-36a3-4c32-9fd7-95d331bf578f/summary) archived the same `db44919` source. App Store Connect showed both **Archive — iOS** and **TestFlight Internal Testing — iOS** as succeeded. The build's app-store export was listed as 2.1 MB; this excludes the separately installed MOVD weights and is not an installed app-size measurement.
+
+The browser session expired during the export-download verification step. The signed package was not independently inspected in this increment. Saving the build's testing notes and confirming its final status in the existing tester group require a renewed App Store Connect sign-in; successful Cloud delivery alone does not establish physical installation or generation.
 
 ## Device acceptance still required
 
