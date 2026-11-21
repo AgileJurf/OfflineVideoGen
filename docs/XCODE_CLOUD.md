@@ -8,6 +8,8 @@ The public source repository is [AgileJurf/OfflineVideoGen](https://github.com/A
 
 [View builds in App Store Connect](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/groups) (developer-account access required).
 
+**Initial validation completed:** Build 2 passed Test — iOS and Analyze — iOS on source revision `3326475`. Both runs were started manually; the `main` push condition and Markdown exclusion are configured, but automatic triggering has not yet been demonstrated. See the [validation record](VALIDATION.md) for the exact tested revision and remaining real-model gates.
+
 ## First workflow
 
 Apple's [first-workflow instructions](https://developer.apple.com/documentation/xcode/configuring-your-first-xcode-cloud-workflow) start in Xcode. Browser sign-in to Apple Developer or App Store Connect does not configure Xcode's Accounts settings.

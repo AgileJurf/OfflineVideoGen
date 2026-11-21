@@ -2,7 +2,7 @@
 
 A standalone SwiftUI research application for offline text-to-video generation on iPhone, using the released MOVD / Open-Sora Core ML model partitions.
 
-**Development status: experimental. No successful iPhone inference or Xcode Cloud test run has been demonstrated yet.** Build and simulator test results do not establish iPhone memory, thermal, Neural Engine, or generation performance.
+**Development status: experimental. Xcode Cloud Build 2 passed its simulator test and iOS analysis actions. No successful full-model inference has been demonstrated yet.** Build and simulator test results do not establish iPhone memory, thermal, Neural Engine, or generation performance.
 
 The initial target is 256 × 256, 12 FPS, and 2–5 seconds. Inference uses temporal video diffusion and a video VAE. Model files download once and remain in the app sandbox; generation has no network service dependency.
 
