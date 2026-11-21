@@ -1,0 +1,64 @@
+{
+  "scope": "Standalone checksum regression on Intel Mac; not iPhone or video inference performance",
+  "os": "macOS 15.8.3",
+  "compiler": "Xcode 16.4 Swift, -O",
+  "fixture": "256 MiB sparse zero-filled file",
+  "fixtureBytes": 268435456,
+  "readChunkBytes": 1048576,
+  "metric": "task_vm_info.ledger_phys_footprint_peak in each fresh process",
+  "fullArchiveFixedRun": {
+    "archive": "STDiT-TDTM.zip",
+    "bytes": 8896191116,
+    "mode": "bounded",
+    "elapsedSeconds": 181.39660114599974,
+    "processLifetimePeakFootprintBytes": 2023424,
+    "kernelStatus": 0,
+    "sha256": "7430806d03d94bed32fbff7a9d0c27d36af073dff6f9da4f31cfd3785bff391c",
+    "matchesPinnedManifest": true,
+    "baselineRun": null
+  },
+  "runs": [
+    {
+      "mode": "baseline",
+      "elapsedSeconds": 0.8848323929996695,
+      "processLifetimePeakFootprintBytes": 269336576,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    },
+    {
+      "mode": "bounded",
+      "elapsedSeconds": 0.7609231779933907,
+      "processLifetimePeakFootprintBytes": 1884160,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    },
+    {
+      "mode": "baseline",
+      "elapsedSeconds": 0.8104886880028062,
+      "processLifetimePeakFootprintBytes": 269299712,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    },
+    {
+      "mode": "bounded",
+      "elapsedSeconds": 0.6835187710239552,
+      "processLifetimePeakFootprintBytes": 1871872,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    },
+    {
+      "mode": "baseline",
+      "elapsedSeconds": 0.7878637549874838,
+      "processLifetimePeakFootprintBytes": 269291520,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    },
+    {
+      "mode": "bounded",
+      "elapsedSeconds": 0.6906474889838137,
+      "processLifetimePeakFootprintBytes": 1875968,
+      "kernelStatus": 0,
+      "sha256": "a6d72ac7690f53be6ae46ba88506bd97302a093f7108472bd9efc3cefda06484"
+    }
+  ]
+}

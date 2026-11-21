@@ -16,8 +16,7 @@ struct LocalFramesApp: App {
                     if phase == .background { model.interrupt() }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
-                    model.cancel()
-                    model.errorMessage = "Memory is low. Generation was stopped. Close other apps before trying again."
+                    model.handleMemoryWarning()
                 }
                 .alert("Local Frames", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
                     Button("OK") { model.errorMessage = nil }

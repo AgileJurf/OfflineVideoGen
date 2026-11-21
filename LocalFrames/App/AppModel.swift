@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
         didSet { UIApplication.shared.isIdleTimerDisabled = working }
     }
     @Published var installing = false
+    @Published var installationStage: ModelInstallationStage = .preparing
     @Published var progress = GenerationProgress(0, "Ready")
     @Published var errorMessage: String?
     @Published var notice: String?
@@ -33,6 +34,8 @@ final class AppModel: ObservableObject {
     let benchmarkDirectory: URL
     private let engine = MOVDEngine()
     private var operation: Task<Void, Never>?
+    private var activeBenchmarkLog: BenchmarkLog?
+    private var pausedForMemory = false
 
     init(root: URL? = nil) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
@@ -84,6 +87,8 @@ final class AppModel: ObservableObject {
             ]) : nil
             working = true
             installing = false
+            activeBenchmarkLog = log
+            pausedForMemory = false
             progress = .init(0, "Preparing generation")
             operation = Task {
                 let output = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
@@ -137,18 +142,26 @@ final class AppModel: ObservableObject {
             let log = try makeBenchmarkLog(kind: "installation", fields: ["expectedDownloadBytes": String(manifest.archives.reduce(Int64(0)) { $0 + $1.bytes })])
             working = true
             installing = true
+            installationStage = .preparing
+            activeBenchmarkLog = log
+            pausedForMemory = false
+            notice = nil
             progress = .init(0, "Preparing model download")
             operation = Task {
                 defer { finish() }
                 do {
-                    try await installer.install(manifest, benchmark: log) { progress in
+                    try await installer.install(manifest, benchmark: log, stage: { stage in
+                        Task { @MainActor in self.installationStage = stage }
+                    }) { progress in
                         Task { @MainActor in self.progress = progress }
                     }
                     installed = await installer.isInstalled()
                     try log.finish(status: installed ? "succeeded" : "failed")
                 } catch is CancellationError {
                     try? log.finish(status: "cancelled")
-                    notice = "Installation paused. Tap Install to resume available downloads."
+                    notice = pausedForMemory
+                        ? "Model preparation paused after iOS reported memory pressure. Completed downloads are kept. Tap Install to retry preparation."
+                        : "Installation paused. Tap Install to resume available downloads."
                 } catch {
                     try? log.finish(status: "failed", fields: ["error": String(describing: error)])
                     errorMessage = error.localizedDescription
@@ -169,7 +182,27 @@ final class AppModel: ObservableObject {
         if working { operation?.cancel(); notice = "Work paused because the app was interrupted. Keep Local Frames open while generating." }
     }
 
-    private func finish() { working = false; installing = false; operation = nil; refreshBenchmarkFiles() }
+    private func finish() { working = false; installing = false; operation = nil; activeBenchmarkLog = nil; refreshBenchmarkFiles() }
+
+    func handleMemoryWarning() {
+        activeBenchmarkLog?.record("memory_warning", fields: ["activity": installing ? "installation" : "generation", "installationStage": installationStage.rawValue])
+        guard working else { return }
+        if installing {
+            if installationStage.shouldPauseForMemoryWarning {
+                pausedForMemory = true
+                cancel()
+                notice = "Model preparation is pausing after iOS reported memory pressure. Completed downloads will be kept."
+            } else {
+                // Network download and checksum verification use bounded buffers.
+                // A system warning alone is not a reason to discard or restart these stages.
+                notice = "iOS reported low memory. Installation is continuing."
+            }
+        } else {
+            cancel()
+            errorMessage = "Work stopped after iOS reported memory pressure."
+                + (activeBenchmarkLog == nil ? "" : " The diagnostic log is retained.")
+        }
+    }
 
     private func makeBenchmarkLog(kind: String, fields: [String: String] = [:]) throws -> BenchmarkLog {
         var metadata = fields
@@ -195,6 +228,7 @@ final class AppModel: ObservableObject {
             let log = try makeBenchmarkLog(kind: "compute-plans", fields: ["evidenceType": "planner estimates, not runtime placement or utilization"])
             working = true
             installing = false
+            activeBenchmarkLog = log
             progress = .init(0, "Preparing compute-plan inspection")
             operation = Task {
                 defer { finish() }

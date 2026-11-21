@@ -1,6 +1,6 @@
 # iPhone 17 Pro Max feasibility and benchmark record
 
-Status: **baseline device execution pending; no performance improvement established**. This is a record of current evidence and the measurement procedure, not a completed device-performance result.
+Status: **baseline device execution pending; no iPhone generation performance improvement established**. This is a record of current evidence and the measurement procedure, not a completed device-performance result.
 
 ## Observed evidence
 
@@ -8,7 +8,7 @@ Status: **baseline device execution pending; no performance improvement establis
 | --- | --- |
 | Installable physical-device beta | Xcode Cloud Build 5 archived and distributed successfully; TestFlight 0.1.0 (5) is Testing in the internal group |
 | Physical iPhone identification | Paired wired iPhone 17 Pro Max, hardware family iPhone18,2, iOS 27.3 beta; Developer Mode enabled |
-| Model download on the phone | Tester confirmed the app is installed and model download is running; completion and compilation are not yet established |
+| Model installation on the phone | Build 5 stopped with a memory warning while showing “Verifying STDiT-TDTM.zip.” That archive had downloaded; the old label also persisted during extraction. Full installation and compilation remain unverified |
 | Genuine 2-second generation | No completed physical-device MP4 or measurement log received yet |
 | All 102 required partitions | Inventory known; runtime loading and prediction coverage remain unmeasured on the phone |
 | Generation time, memory, thermal state, CPU | No physical-device benchmark values available yet |
@@ -18,7 +18,36 @@ Status: **baseline device execution pending; no performance improvement establis
 | Visual quality, motion, prompt adherence | Awaiting actual baseline and candidate videos |
 | Rollback | Public tag `baseline/testflight-build-5` preserves source `df73d09de302b28e0e6af6ee16ff24211e9cdb35`; original archives and pinned hashes remain unchanged |
 
-The Mac has Xcode 16.4 on macOS 15.8.3 (Intel). CoreDevice reports that its personalized developer image lacks the requested hardware variant. Refreshing Apple's Xcode device-support components did not resolve it. A compatible Xcode/device-support environment is needed for Instruments. TestFlight can install and run the app independently of that debugger connection. Simulator test passes are not iPhone performance measurements.
+The Mac has Xcode 16.4 on macOS 15.8.3 (Intel). CoreDevice reports that its personalized developer image lacks the requested hardware variant. Refreshing Apple's Xcode device-support components did not resolve it. A compatible Xcode/device-support environment is needed for Instruments. Apple's [current compatibility table](https://developer.apple.com/xcode/system-requirements) lists Xcode 27.3 beta 2 with the matching iOS 27.3 SDK and requires macOS 26.6 or later. TestFlight can install and run the app independently of that debugger connection. Simulator test passes are not iPhone performance measurements.
+
+## Reproduced installation blocker
+
+The checksum loop used 1 MiB `FileHandle` reads, but Foundation's autoreleased read buffers survived the synchronous loop. A standalone optimized Swift probe reproduced growing memory on the Intel Mac. Wrapping each read and hash update in an `autoreleasepool` bounds buffer lifetime without changing the bytes hashed or skipping integrity verification.
+
+Three fresh-process pairs hashed the same 256 MiB sparse zero-filled fixture. The measured metric was `task_vm_info.ledger_phys_footprint_peak`, the OS process-lifetime footprint high-water mark, not a heap-allocation counter:
+
+| Run | Original peak bytes | Fixed peak bytes | SHA-256 equality |
+| --- | ---: | ---: | --- |
+| 1 | 269,336,576 | 1,884,160 | Identical |
+| 2 | 269,299,712 | 1,871,872 | Identical |
+| 3 | 269,291,520 | 1,875,968 | Identical |
+
+The fixed probe also completed the actual 8,896,191,116-byte STDiT archive: 181.397 seconds, 2,023,424 bytes process-lifetime peak footprint, and the expected SHA-256 `7430806d03d94bed32fbff7a9d0c27d36af073dff6f9da4f31cfd3785bff391c`. The original loop was not run against the full archive. These are standalone Mac checksum measurements, not the iPhone app's total memory or video-generation performance. Disk/cache conditions were not controlled for a latency comparison. Raw sanitized results are in [CHECKSUM_MEMORY_RESULTS.json](CHECKSUM_MEMORY_RESULTS.json).
+
+Reproduce the paired fixture measurement on macOS:
+
+```sh
+swiftc -O scripts/benchmark_checksum_memory.swift -o /tmp/localframes-checksum-probe
+mkfile -n 256m /tmp/localframes-checksum-fixture.bin
+for run in 1 2 3; do
+  /tmp/localframes-checksum-probe baseline /tmp/localframes-checksum-fixture.bin
+  /tmp/localframes-checksum-probe bounded /tmp/localframes-checksum-fixture.bin
+done
+```
+
+The app fix also separates verification, extraction, and named-partition compilation in progress messages, throttles download UI updates, records memory warnings in the diagnostic journal, and replaces the blanket generation alert with stage-aware handling. Bounded download/checksum work continues after a warning; extraction, compilation, and generation retain cancellation protection. Completed downloaded archives remain available for verification on retry. Compilation itself restarts on a retry. No weights, partition boundaries, model precision, or diffusion steps were changed. The simulator regression test hashes a 64 MiB file inside an outer autorelease pool and checks both the expected digest and bounded footprint growth; all 11 unit and 2 UI tests passed locally.
+
+The phone screenshot and Mac reproduction support this as a concrete installation bug; they do not prove that it is the only remaining device constraint. The next device check is installing the replacement beta over the existing app and retrying setup with the retained archive.
 
 ## Measurement implementation
 
@@ -45,8 +74,8 @@ The report preserves missing/failed measurements, lists every required partition
 
 ## Baseline execution order
 
-1. Finish installation over Wi-Fi, keeping the app open. Record errors verbatim. Do not update an app during active installation or generation.
-2. Install the instrumented beta through TestFlight after setup finishes. Updating preserves the app's model sandbox; deleting the app does not.
+1. Pause the old installation and update to the replacement instrumented beta through TestFlight. Keep the app installed to preserve its downloaded archives; deleting the app removes them. Do not update during active installation or generation.
+2. Retry installation over Wi-Fi, keeping the app open. Record errors and the exact progress stage. Export the installation journal, including failed attempts.
 3. Let the phone cool to nominal thermal state. Record charging state, battery level, Low Power Mode, ambient conditions, other activity, and first-versus-repeat run. These environmental details are not currently captured automatically.
 4. Run the sailboat prompt, seed 42, duration 2 seconds. The target is 24 frames at 12 FPS and 256 × 256. Keep the app in the foreground. Preserve failed runs as well as successes.
 5. If successful, export the MP4 and journal, inspect real motion and prompt adherence, then repeat with Airplane Mode enabled and Wi-Fi explicitly off. That second run establishes offline operation after installation.
@@ -74,4 +103,4 @@ After parity and a completed baseline, vary one factor at a time. First evaluate
 
 ## Next recommendation
 
-**Complete and preserve one genuine 2-second physical-device generation first.** If it fails, use the last journal entry and Core ML error to resolve that concrete failure without changing architecture. Once it succeeds, use measured loading versus prediction cost and memory evidence to select the next experiment. Float16 is a candidate for reducing model/tensor storage and enabling some Neural Engine-compatible work, but it is not yet a measured improvement. No baseline/optimized performance comparison can responsibly be reported at the present evidence level.
+**Verify the checksum-memory fix on the phone, then complete and preserve one genuine 2-second physical-device generation.** If it fails, use the last journal entry and Core ML error to resolve that concrete failure without changing architecture. Once it succeeds, use measured loading versus prediction cost and memory evidence to select the next experiment. Float16 is a candidate for reducing model/tensor storage and enabling some Neural Engine-compatible work, but it is not yet a measured improvement. No baseline/optimized inference-performance comparison can responsibly be reported at the present evidence level.

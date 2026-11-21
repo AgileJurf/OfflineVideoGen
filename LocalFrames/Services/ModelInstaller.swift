@@ -43,6 +43,12 @@ enum ModelInstallError: LocalizedError {
     }
 }
 
+enum ModelInstallationStage: String, Sendable {
+    case preparing, downloading, verifying, extracting, compiling, complete
+
+    var shouldPauseForMemoryWarning: Bool { self == .extracting || self == .compiling }
+}
+
 actor ModelInstaller {
     let root: URL
     var installed: URL { root.appendingPathComponent("Installed", isDirectory: true) }
@@ -58,7 +64,9 @@ actor ModelInstaller {
         if FileManager.default.fileExists(atPath: root.path) { try FileManager.default.removeItem(at: root) }
     }
 
-    func install(_ manifest: ModelManifest, benchmark: BenchmarkLog? = nil, progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
+    func install(_ manifest: ModelManifest, benchmark: BenchmarkLog? = nil,
+                 stage: @escaping @Sendable (ModelInstallationStage) -> Void = { _ in },
+                 progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         var resources = URLResourceValues()
@@ -79,6 +87,7 @@ actor ModelInstaller {
             let resume = root.appendingPathComponent(archive.name + ".resume")
             let offset = completedBytes
             if !fm.fileExists(atPath: zip.path) {
+                stage(.downloading)
                 let downloader = ModelDownloader(destination: zip, resumeFile: resume)
                 let start = benchmark?.begin(archive.name, phase: "download", fields: ["expectedBytes": String(archive.bytes)])
                 do {
@@ -91,6 +100,7 @@ actor ModelInstaller {
                     throw error
                 }
             } else { benchmark?.record("archive_reused", partition: archive.name) }
+            stage(.verifying)
             progress(.init((Double(offset) + 0.6 * Double(archive.bytes)) / Double(totalBytes), "Verifying \(archive.name)"))
             let checksum: String
             if let benchmark {
@@ -105,6 +115,8 @@ actor ModelInstaller {
             let extracted = root.appendingPathComponent("Extracting", isDirectory: true)
             if fm.fileExists(atPath: extracted.path) { try fm.removeItem(at: extracted) }
             let extractionProgress = Progress()
+            stage(.extracting)
+            progress(.init((Double(offset) + 0.6 * Double(archive.bytes)) / Double(totalBytes), "Extracting \(archive.name)"))
             try await withTaskCancellationHandler {
                 try Task.checkCancellation()
                 if let benchmark {
@@ -131,7 +143,8 @@ actor ModelInstaller {
             let neededModels = archive.models.filter { MOVDModel.requiredNames.contains($0) }
             for (index, name) in neededModels.enumerated() {
                 try Task.checkCancellation()
-                progress(.init((Double(offset) + Double(archive.bytes) * (0.6 + 0.39 * Double(index) / Double(neededModels.count))) / Double(totalBytes), "Preparing model \(index + 1) of \(neededModels.count)"))
+                stage(.compiling)
+                progress(.init((Double(offset) + Double(archive.bytes) * (0.6 + 0.39 * Double(index) / Double(neededModels.count))) / Double(totalBytes), "Compiling \(name) · \(index + 1) of \(neededModels.count)"))
                 guard let source = packages[name] else { throw ModelInstallError.invalidArchive }
                 let start = benchmark?.begin(name, phase: "compile")
                 let compiled: URL
@@ -160,6 +173,7 @@ actor ModelInstaller {
             try? fm.removeItem(at: root.appendingPathComponent(archive.name))
             try? fm.removeItem(at: root.appendingPathComponent(archive.name + ".resume"))
         }
+        stage(.complete)
         progress(.init(1, "Model installed"))
     }
 
@@ -167,9 +181,16 @@ actor ModelInstaller {
         let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
         var hash = SHA256()
-        while let data = try file.read(upToCount: 1024 * 1024), !data.isEmpty {
+        while true {
             try Task.checkCancellation()
-            hash.update(data: data)
+            // Foundation's FileHandle read buffers can remain autoreleased for this
+            // entire synchronous loop. Bound their lifetime while hashing multi-GB archives.
+            let count: Int = try autoreleasepool {
+                guard let data = try file.read(upToCount: 1024 * 1024), !data.isEmpty else { return 0 }
+                hash.update(data: data)
+                return data.count
+            }
+            if count == 0 { break }
         }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
@@ -186,6 +207,7 @@ final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Se
     private var progress: (@Sendable (Int64) -> Void)?
     private var downloadError: Error?
     private var cancelled = false
+    private var lastProgressTime: TimeInterval = 0
 
     init(destination: URL, resumeFile: URL) { self.destination = destination; self.resumeFile = resumeFile }
 
@@ -219,6 +241,9 @@ final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Se
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now - lastProgressTime >= 0.2 || totalBytesWritten == totalBytesExpectedToWrite else { return }
+        lastProgressTime = now
         progress?(totalBytesWritten)
     }
 

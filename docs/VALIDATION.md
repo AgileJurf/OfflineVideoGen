@@ -13,6 +13,8 @@
 | Distribution packaging checks | Opaque 1024 × 1024 icon; exempt-encryption metadata; bundled dependency license notices |
 | Internal TestFlight | Build 5 archived and delivered successfully; 0.1.0 (5) shown as Testing; tester confirmed installation and model download started |
 | Benchmark instrumentation tests | 9 unit + 2 UI tests passed locally on iOS 18.4 simulator; 3 report-parser tests passed. These validate measurement code, not model performance |
+| Installation checksum regression | Reproduced on Intel Mac in 3 fresh-process pairs; identical SHA-256 with bounded buffer lifetimes. Fixed probe verified the complete 8.9 GB STDiT archive against its pinned digest. See [benchmark record](BENCHMARK_REPORT.md#reproduced-installation-blocker) |
+| Memory-fix simulator suite | 11 unit + 2 UI tests passed, 0 failures, including bounded-memory checksum and stage-aware memory-warning handling. Physical-device retry pending |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 
@@ -26,7 +28,7 @@ Cloud Build 3 automatically started on the `main` push of `f76a027e56e5df7d2aa2a
 
 ## Automated suite
 
-The seven unit tests exercise bundled tokenizer loading and prompt encoding, request validation, missing-model failure without a fabricated video, manifest partition coverage, checksum tamper detection, real AVFoundation MP4 duration/frame rate with library persistence/deletion, and partial-output cleanup. The two UI tests exercise prompt entry, disabled generation before model installation, setup navigation, and the empty library.
+The eleven unit tests exercise bundled tokenizer loading and prompt encoding, request validation, missing-model failure without a fabricated video, manifest partition coverage, checksum tamper detection and bounded memory, failure/interruption journals, stage-aware memory-warning handling, real AVFoundation MP4 duration/frame rate with library persistence/deletion, and partial-output cleanup. The two UI tests exercise prompt entry, disabled generation before model installation, setup navigation, and the empty library.
 
 ## Required real-model checks
 

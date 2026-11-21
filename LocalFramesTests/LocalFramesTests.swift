@@ -5,6 +5,43 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testLargeChecksumKeepsFoundationReadBuffersBounded() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let url = root.appendingPathComponent("64MiB-zero-fixture.bin")
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        let file = try FileHandle(forWritingTo: url)
+        try file.truncate(atOffset: 64 * 1024 * 1024)
+        try file.close()
+        try autoreleasepool {
+            let before = try XCTUnwrap(BenchmarkLog.snapshot().footprintBytes)
+            let digest = try ModelInstaller.sha256(url)
+            let after = try XCTUnwrap(BenchmarkLog.snapshot().footprintBytes)
+            XCTAssertEqual(digest, "3b6a07d0d404fab4e23b6d34bc6696a6a312dd92821332385e5af7c01c421351")
+            XCTAssertLessThan(Int64(after) - Int64(before), 32 * 1024 * 1024,
+                              "Hashing must not retain the entire archive in autoreleased buffers")
+        }
+    }
+
+    @MainActor
+    func testMemoryWarningDoesNotCancelBoundedInstallationStages() {
+        let model = AppModel(root: temporaryDirectory())
+        model.working = true
+        model.installing = true
+        model.installationStage = .verifying
+        model.handleMemoryWarning()
+        XCTAssertNil(model.errorMessage)
+        XCTAssertTrue(model.notice?.contains("continuing") == true)
+        XCTAssertFalse(ModelInstallationStage.downloading.shouldPauseForMemoryWarning)
+        XCTAssertTrue(ModelInstallationStage.compiling.shouldPauseForMemoryWarning)
+        XCTAssertTrue(ModelInstallationStage.extracting.shouldPauseForMemoryWarning)
+        model.working = false
+        model.notice = nil
+        model.handleMemoryWarning()
+        XCTAssertNil(model.notice)
+    }
+
     func testBenchmarkJournalPreservesFailureWithoutSuccess() throws {
         let root = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

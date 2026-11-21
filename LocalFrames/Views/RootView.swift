@@ -123,6 +123,7 @@ struct SetupView: View {
                 Text("A genuine video diffusion model with temporal attention and a video decoder. This experimental port still needs inference validation.")
                 Text("Download: approximately 14.1 GB. Allow 50 GB free during installation. Wi-Fi required.")
                     .font(.footnote).foregroundStyle(.secondary)
+                if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
                 if model.working {
                     ProgressView(value: model.progress.fraction)
                     Text(model.progress.message).font(.caption)
