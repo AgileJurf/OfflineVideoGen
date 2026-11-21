@@ -63,6 +63,23 @@ class BenchmarkReportTests(unittest.TestCase):
             self.assertIn("load: fixture failure", report)
             self.assertIn("GPU utilization | Not measured", report)
 
+    def test_resumed_timing_is_not_reported_as_complete_generation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resumed.jsonl"
+            base = dict(schemaVersion=1, snapshot={}, fields={})
+            events = [dict(base, sequence=0, elapsedSeconds=0, event="started", fields={"kind": "generation", "baselineJobID": "fixture", "resumedFromJournal": "earlier.jsonl"}),
+                      dict(base, sequence=1, elapsedSeconds=1, event="checkpoint_restored", fields={"completedSteps": "11"}),
+                      dict(base, sequence=2, elapsedSeconds=2, event="pause_begin", fields={"reason": "cooling"}),
+                      dict(base, sequence=3, elapsedSeconds=12, event="pause_end", durationSeconds=10),
+                      dict(base, sequence=4, elapsedSeconds=13, event="background_granted", fields={"resource": "gpu"}),
+                      dict(base, sequence=5, elapsedSeconds=20, event="engine_completed", fields={"elapsedSeconds": "20"})]
+            path.write_text("\n".join(json.dumps(x) for x in events))
+            report = render([summarize(path)])
+            self.assertIn("11 motion steps previously saved", report)
+            self.assertIn("do not represent the complete generation", report)
+            self.assertIn("total 10.000 seconds", report)
+            self.assertIn("not proof of uninterrupted background completion", report)
+
     def test_artifact_path_cannot_escape_export_directory(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "unsafe.jsonl"

@@ -108,7 +108,7 @@ def render(runs):
             continue
         meta, events = run["metadata"], run["events"]
         lines += ["| Field | Observed value |", "| --- | --- |"]
-        for key in ["kind", "startedAt", "executionEnvironment", "hardware", "os", "appVersion", "appBuild", "sourceRevision", "modelRevision", "manifestSHA256", "configuration", "memoryLimitRequest", "prompt", "seed", "schedule", "cacheCondition", "sampleIntervalSeconds"]:
+        for key in ["kind", "startedAt", "executionEnvironment", "hardware", "os", "appVersion", "appBuild", "sourceRevision", "modelRevision", "manifestSHA256", "configuration", "memoryLimitRequest", "prompt", "seed", "schedule", "cacheCondition", "sampleIntervalSeconds", "baselineJobID", "resumedFromJournal", "checkpointPolicy"]:
             if key in meta:
                 lines.append(f"| {key} | {escape(meta[key])} |")
         lines += [f"| Outcome | {escape(run['outcome'])} |",
@@ -129,7 +129,19 @@ def render(runs):
             lines += [""]
         engine = next((x for x in events if x.get("event") == "engine_completed"), None)
         if engine:
-            lines += [f"Engine wall time: {engine.get('fields', {}).get('elapsedSeconds', 'unknown')} seconds. This excludes subsequent library persistence, artifact copying, and hashing.", ""]
+            lines += [f"Engine session wall time: {engine.get('fields', {}).get('elapsedSeconds', 'unknown')} seconds. This includes cooling waits and checkpoint I/O, and excludes subsequent library persistence, artifact copying, and hashing.", ""]
+        pauses = [x for x in events if x.get("event") == "pause_end"]
+        if pauses:
+            lines += [f"Recorded pause intervals: {len(pauses)}; total {number(sum(x.get('durationSeconds', 0) for x in pauses))} seconds. An unfinished pause may not be included.", ""]
+        restored = next((x for x in events if x.get("event") == "checkpoint_restored"), None)
+        if restored or meta.get("resumedFromJournal"):
+            step = restored.get("fields", {}).get("completedSteps", "unknown") if restored else "unknown"
+            lines += [f"**Resumed session**, with {escape(step)} motion steps previously saved. This session's time and partition coverage do not represent the complete generation. Keep the earlier journals with the same baselineJobID; do not report this segment as a full-generation speedup.", ""]
+        background = [x for x in events if x.get("event") in ("background_requested", "background_granted", "background_unavailable", "background_expired", "scene_changed")]
+        if background:
+            lines += ["Background lifecycle evidence:", ""]
+            lines += [f"- {number(x.get('elapsedSeconds'))} s: {escape(x['event'])}; {escape(x.get('fields', {}))}" for x in background]
+            lines += ["", "A background grant is not proof of uninterrupted background completion; correlate scene events and completed model operations.", ""]
         if run["problems"]:
             lines += ["Evidence limitations:", ""] + [f"- {escape(x)}" for x in run["problems"]] + [""]
         if meta.get("kind") == "generation":

@@ -27,7 +27,9 @@ The [internal TestFlight guide](docs/TESTFLIGHT.md) covers installation, model s
 
 In **Setup**, install the MOVD model over Wi-Fi. The three upstream archives total **14,133,836,614 bytes**. The app requires 50 GB free during extraction and compilation; that is a conservative setup allowance, not a measured installed size. SHA-256 checks occur before extraction. Downloads can resume when the server supplies valid resume data; interrupted model compilation starts again.
 
-After installation, enter a short prompt, select 2–5 seconds, and generate with the app in the foreground. The engine performs T5 prompt encoding, STDiT temporal diffusion, temporal/spatial VAE decoding, and H.264 MP4 encoding locally. It loads one Core ML partition at a time. Cancellation and thermal/memory checks occur between predictions; a running Core ML prediction cannot be interrupted immediately.
+After installation, enter a short prompt, select 2–5 seconds, and start generation. The engine performs T5 prompt encoding, STDiT temporal diffusion, temporal/spatial VAE decoding, and H.264 MP4 encoding locally. It loads one Core ML partition at a time. Serious/critical heat pauses work until nominal; cancellation and memory checks remain active. A running Core ML prediction cannot be interrupted immediately.
+
+The 2-second benchmark saves completed motion steps and offers **Resume saved baseline** after relaunch. iOS 26+ builds request supported background GPU execution; if unavailable, work pauses while the app is backgrounded and continues on returning. Background time is controlled by iOS. See [continuation and recovery](docs/RESUMABLE_BASELINE.md) for measured versus unverified behavior.
 
 The library supports playback, replay, deletion, regeneration, Photos saving, and Files export. A completed generation stores its seed and sampled timing/memory/thermal metrics locally. No analytics or remote inference service is configured.
 

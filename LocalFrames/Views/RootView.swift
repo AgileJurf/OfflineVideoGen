@@ -64,8 +64,8 @@ struct CreateView: View {
                 if model.working {
                     VStack(alignment: .leading, spacing: 12) {
                         ProgressView(value: model.progress.fraction)
-                        Text(model.progress.message).font(.subheadline)
-                        Text("Keep the app open. Generation can take several minutes.").font(.caption).foregroundStyle(.secondary)
+                        Text(model.progressMessage).font(.subheadline)
+                        Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
                         Button(model.installing ? "Pause installation" : "Cancel generation", role: .cancel) { model.cancel() }
                     }.padding().background(.mint.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
                 } else {
@@ -115,6 +115,7 @@ struct LibraryView: View {
 struct SetupView: View {
     @EnvironmentObject private var model: AppModel
     @State private var confirmDelete = false
+    @State private var confirmDiscardBaseline = false
     var body: some View {
         Form {
             Section {
@@ -126,7 +127,7 @@ struct SetupView: View {
                 if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
                 if model.working {
                     ProgressView(value: model.progress.fraction)
-                    Text(model.progress.message).font(.caption)
+                    Text(model.progressMessage).font(.caption)
                     if model.installing { Button("Pause installation") { model.cancel() } }
                 } else if model.installed {
                     Button("Delete model", role: .destructive) { confirmDelete = true }
@@ -143,16 +144,25 @@ struct SetupView: View {
                     Text("Rolling ball").tag(2)
                 }.disabled(model.working)
                 TextField("Seed", text: $model.benchmarkSeed).keyboardType(.numberPad).disabled(model.working)
+                if let saved = model.savedBaselineDescription, !model.working {
+                    Text(saved).font(.footnote)
+                    Button("Resume saved baseline", action: model.resumeBaseline)
+                        .disabled(!model.installed).accessibilityIdentifier("resumeBaseline")
+                    Button("Discard saved baseline", role: .destructive) { confirmDiscardBaseline = true }
+                }
                 Button("Run 2-second baseline", action: model.runBaselineBenchmark)
-                    .disabled(!model.installed || model.working).accessibilityIdentifier("runBaselineBenchmark")
+                    .disabled(!model.installed || model.working || model.savedBaselineDescription != nil).accessibilityIdentifier("runBaselineBenchmark")
+                Text("Pauses automatically for cooling and continues when the phone is cool. Completed motion steps are saved for recovery after relaunch.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Button("Inspect compute plans", action: model.inspectComputePlans)
                     .disabled(!model.installed || model.working || model.videos.isEmpty)
                 Text("Compute-plan inspection becomes available after a video completes. It estimates compatible hardware; it does not measure GPU or Neural Engine utilization.")
                     .font(.caption).foregroundStyle(.secondary)
                 if model.working && !model.installing {
                     ProgressView(value: model.progress.fraction)
-                    Text(model.progress.message).font(.caption)
-                    Button("Cancel benchmark") { model.cancel() }
+                    Text(model.progressMessage).font(.caption)
+                    Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
+                    Button("Pause benchmark") { model.cancel() }
                 }
                 if !model.benchmarkFiles.isEmpty {
                     ShareLink(items: model.benchmarkFiles) { Label("Export benchmark files", systemImage: "square.and.arrow.up") }
@@ -172,6 +182,9 @@ struct SetupView: View {
         }.navigationTitle("Setup")
             .confirmationDialog("Delete the installed model? Your videos will remain in the library.", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Delete model", role: .destructive) { Task { await model.removeModel() } }
+            }
+            .confirmationDialog("Discard the saved baseline progress? Exported logs and videos will remain.", isPresented: $confirmDiscardBaseline, titleVisibility: .visible) {
+                Button("Discard saved baseline", role: .destructive, action: model.discardSavedBaseline)
             }
     }
 }

@@ -34,17 +34,20 @@ public struct GenerationProgress: Sendable {
 }
 
 public struct GenerationMetrics: Codable, Sendable {
+    /// Wall time for this invocation only; includes cooling and checkpoint writes.
     public var elapsedSeconds: Double
     public var peakSampledMemoryBytes: UInt64
     public var thermalStates: [String]
     public var environment: String
     public var modelRevision: String
+    public var pausedSeconds: Double? = nil
+    public var resumedFromStep: Int? = nil
 }
 
 public enum GenerationError: LocalizedError {
     case invalidPrompt, promptTooLong, invalidDuration, modelMissing(String)
     case incompatibleModel(String), memoryPressure, tooHot, interrupted, insufficientStorage
-    case encodingFailed(String), invalidTensor
+    case encodingFailed(String), invalidTensor, invalidCheckpoint
 
     public var errorDescription: String? {
         switch self {
@@ -59,6 +62,7 @@ public enum GenerationError: LocalizedError {
         case .insufficientStorage: return "There is not enough free storage. Free space and try again."
         case .encodingFailed(let detail): return "The video could not be saved: \(detail)"
         case .invalidTensor: return "The model returned an invalid video frame. Try a new seed."
+        case .invalidCheckpoint: return "This saved baseline is damaged or incompatible. Discard the saved baseline to start a new one."
         }
     }
 }

@@ -5,12 +5,15 @@ import Foundation
 final class ModelRunner {
     let directory: URL
     let benchmark: BenchmarkLog?
+    let control: GenerationControl
     var peakMemory: UInt64 = 0
     var thermalStates = Set<String>()
 
-    init(directory: URL, benchmark: BenchmarkLog? = nil) { self.directory = directory; self.benchmark = benchmark }
+    init(directory: URL, benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl()) {
+        self.directory = directory; self.benchmark = benchmark; self.control = control
+    }
 
-    func checkpoint() throws {
+    func checkpoint() async throws {
         try Task.checkCancellation()
         let thermal = ProcessInfo.processInfo.thermalState
         let label: String
@@ -22,7 +25,7 @@ final class ModelRunner {
         @unknown default: label = "unknown"
         }
         thermalStates.insert(label)
-        guard thermal != .serious && thermal != .critical else { throw GenerationError.tooHot }
+        try await control.checkpoint(benchmark: benchmark)
         #if os(iOS) && !targetEnvironment(simulator)
         guard os_proc_available_memory() > 256 * 1024 * 1024 else { throw GenerationError.memoryPressure }
         #endif
@@ -36,8 +39,8 @@ final class ModelRunner {
         if status == KERN_SUCCESS { peakMemory = max(peakMemory, info.phys_footprint) }
     }
 
-    func predict(_ name: String, _ inputs: [String: MLFeatureValue], cpuOnly: Bool = false) throws -> [String: MLFeatureValue] {
-        try checkpoint()
+    func predict(_ name: String, _ inputs: [String: MLFeatureValue], cpuOnly: Bool = false) async throws -> [String: MLFeatureValue] {
+        try await checkpoint()
         let output: [String: MLFeatureValue] = try autoreleasepool {
             let config = MLModelConfiguration()
             #if targetEnvironment(simulator)
@@ -63,12 +66,13 @@ final class ModelRunner {
                     try model.prediction(from: provider)
                 }
             } else { result = try model.prediction(from: provider) }
-            try checkpoint()
+            try Task.checkCancellation()
             return Dictionary(uniqueKeysWithValues: result.featureNames.compactMap { key in
                 result.featureValue(for: key).map { (key, $0) }
             })
         }
-        try checkpoint()
+        // Release the loaded model before waiting for cooling or foreground access.
+        try await checkpoint()
         return output
     }
 }

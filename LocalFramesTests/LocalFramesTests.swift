@@ -5,6 +5,120 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testThermalPauseWaitsThroughFairAndResumesAtNominal() async throws {
+        let index = LockedValue(0)
+        let pauses = LockedValue<[GenerationControl.PauseReason?]>([])
+        let temperatures: [ProcessInfo.ThermalState] = [.serious, .fair, .nominal]
+        let control = GenerationControl(thermalState: { temperatures[min(index.read(), 2)] }, wait: {
+            index.modify { $0 += 1 }
+        }, onPause: { value in pauses.modify { $0.append(value) } })
+        try await control.checkpoint()
+        XCTAssertEqual(index.read(), 2, "Fair must not immediately restart a thermally paused workload")
+        XCTAssertEqual(pauses.read(), [.cooling, nil])
+    }
+
+    func testBackgroundWaitResumesOnlyAfterPermissionOrForeground() async throws {
+        let entered = expectation(description: "Waiting for foreground")
+        let control = GenerationControl(thermalState: { .nominal }, wait: {
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }, onPause: { if $0 == .foregroundRequired { entered.fulfill() } })
+        control.setForeground(false)
+        let resumed = LockedValue(false)
+        let worker = Task { try await control.checkpoint(); resumed.modify { $0 = true } }
+        await fulfillment(of: [entered], timeout: 2)
+        XCTAssertFalse(resumed.read())
+        control.allowBackgroundExecution(true)
+        try await worker.value
+        XCTAssertTrue(resumed.read())
+        control.allowBackgroundExecution(false)
+        control.setForeground(true)
+        try await control.checkpoint()
+    }
+
+    func testCoolingWaitRemainsCancellableAndJournalRecordsPause() async throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = try BenchmarkLog(url: root.appendingPathComponent("cooling.jsonl"), kind: "unit-test")
+        let entered = expectation(description: "Cooling pause")
+        let control = GenerationControl(thermalState: { .critical }, wait: {
+            try await Task.sleep(nanoseconds: 10_000_000_000)
+        }, onPause: { if $0 == .cooling { entered.fulfill() } })
+        let worker = Task { try await control.checkpoint(benchmark: log) }
+        await fulfillment(of: [entered], timeout: 2)
+        worker.cancel()
+        do { try await worker.value; XCTFail("Cancellation must leave the cooling wait") }
+        catch is CancellationError { }
+        try log.finish(status: "cancelled")
+        let entries = try String(contentsOf: log.url).split(separator: "\n").map { try JSONSerialization.jsonObject(with: Data($0.utf8)) as! [String: Any] }
+        XCTAssertEqual(entries.filter { $0["event"] as? String == "pause_begin" }.count, 1)
+        XCTAssertEqual(entries.filter { $0["event"] as? String == "pause_end" }.count, 1)
+        XCTAssertEqual((entries.first { $0["event"] as? String == "pause_end" }?["fields"] as? [String: String])?["resumed"], "false")
+    }
+
+    func testCheckpointPreservesFloatBitsStepAndRequestAcrossReload() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("state.checkpoint")
+        let request = try GenerationRequest(prompt: "A sailboat moves.", duration: 2, seed: 42)
+        let scalars: [Float32] = [0, -0.0, 1.0 / 3, -17, .leastNonzeroMagnitude]
+        let tensor = GenerationCheckpoint.Tensor(MLShapedArray(scalars: scalars, shape: [5]))
+        let state = GenerationCheckpoint.State(version: 1, modelRevision: MOVDModel.revision,
+            configuration: GenerationCheckpoint.configuration, request: request, completedSteps: 11,
+            latent: tensor, hidden: tensor, unconditional: tensor, mask: tensor, tokenCount: 15)
+        try GenerationCheckpoint.write(state, to: url)
+        let restored = try GenerationCheckpoint.read(at: url)
+        XCTAssertEqual(restored.completedSteps, 11)
+        XCTAssertEqual(restored.request, request)
+        XCTAssertEqual(try restored.latent.array(expectedShape: [5]).scalars.map(\.bitPattern), scalars.map(\.bitPattern))
+        XCTAssertThrowsError(try restored.latent.array(expectedShape: [1, 5]))
+        XCTAssertEqual(try GenerationCheckpoint.summary(at: url).completedSteps, 11)
+        // A changed payload must not silently become different diffusion inputs.
+        var envelope = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as? [String: Any])
+        var payload = try XCTUnwrap(envelope["payload"] as? Data)
+        payload[payload.count / 2] ^= 1
+        envelope["payload"] = payload
+        try PropertyListSerialization.data(fromPropertyList: envelope, format: .binary, options: 0).write(to: url)
+        XCTAssertThrowsError(try GenerationCheckpoint.read(at: url))
+    }
+
+    func testCheckpointRejectsIncompatibleScheduleAndNonfiniteTensors() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tensor = GenerationCheckpoint.Tensor(MLShapedArray<Float32>(scalars: [.nan], shape: [1]))
+        XCTAssertThrowsError(try tensor.array(expectedShape: [1]))
+        let state = GenerationCheckpoint.State(version: 1, modelRevision: MOVDModel.revision,
+            configuration: "different-sampler", request: try GenerationRequest(prompt: "A flag waves.", duration: 2, seed: 42),
+            completedSteps: 11, latent: tensor, hidden: tensor, unconditional: tensor, mask: tensor, tokenCount: 5)
+        let url = root.appendingPathComponent("state.checkpoint")
+        try GenerationCheckpoint.write(state, to: url)
+        XCTAssertThrowsError(try GenerationCheckpoint.read(at: url))
+    }
+
+    @MainActor
+    func testAppRestoresSavedBaselineAfterRelaunchWithoutDeletingCheckpoint() async throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(root: root)
+        let id = UUID()
+        try FileManager.default.createDirectory(at: model.resumeDirectory, withIntermediateDirectories: true)
+        let request = try GenerationRequest(prompt: "A flag waves.", duration: 2, seed: 42)
+        let requestObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request))
+        let job: [String: Any] = ["id": id.uuidString, "request": requestObject, "previousJournal": "first-session.jsonl"]
+        try JSONSerialization.data(withJSONObject: job).write(to: model.resumeDirectory.appendingPathComponent("pending.json"))
+        let tensor = GenerationCheckpoint.Tensor(MLShapedArray<Float32>(scalars: [1], shape: [1]))
+        let state = GenerationCheckpoint.State(version: 1, modelRevision: MOVDModel.revision,
+            configuration: GenerationCheckpoint.configuration, request: request, completedSteps: 11,
+            latent: tensor, hidden: tensor, unconditional: tensor, mask: tensor, tokenCount: 5)
+        let checkpoint = model.resumeDirectory.appendingPathComponent(id.uuidString + ".checkpoint")
+        try GenerationCheckpoint.write(state, to: checkpoint)
+        await model.load()
+        XCTAssertTrue(model.savedBaselineDescription?.contains("11 of 21") == true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: checkpoint.path))
+        model.discardSavedBaseline()
+        XCTAssertNil(model.savedBaselineDescription)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: checkpoint.path))
+    }
+
     func testLargeChecksumKeepsFoundationReadBuffersBounded() throws {
         let root = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -173,4 +287,12 @@ final class LocalFramesTests: XCTestCase {
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("LocalFramesTests-" + UUID().uuidString)
     }
+}
+
+private final class LockedValue<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+    init(_ value: Value) { self.value = value }
+    func read() -> Value { lock.withLock { value } }
+    func modify(_ body: (inout Value) -> Void) { lock.withLock { body(&value) } }
 }

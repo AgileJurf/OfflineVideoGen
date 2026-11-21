@@ -22,6 +22,9 @@ final class AppModel: ObservableObject {
     @Published var benchmarkFiles: [URL] = []
     @Published var benchmarkPromptIndex = 0
     @Published var benchmarkSeed = "42"
+    @Published var pauseReason: GenerationControl.PauseReason?
+    @Published var backgroundStatus = "Background support is checked when generation starts."
+    @Published var savedBaselineDescription: String?
     static let benchmarkPrompts = [
         "A small sailboat glides across a calm lake at sunrise.",
         "A red flag waves gently in the wind against a blue sky.",
@@ -32,10 +35,28 @@ final class AppModel: ObservableObject {
     let modelDirectory: URL
     let temporaryDirectory: URL
     let benchmarkDirectory: URL
+    let resumeDirectory: URL
     private let engine = MOVDEngine()
     private var operation: Task<Void, Never>?
     private var activeBenchmarkLog: BenchmarkLog?
     private var pausedForMemory = false
+    private var generationControl: GenerationControl?
+    private var loaded = false
+    private var inForeground = true
+    private var pendingBaseline: BaselineJob?
+    private struct BaselineJob: Codable {
+        let id: UUID
+        let request: GenerationRequest
+        var previousJournal: String?
+    }
+
+    var progressMessage: String {
+        switch pauseReason {
+        case .cooling: return "Paused to cool down. Generation will continue automatically when the phone is cool."
+        case .foregroundRequired: return "Paused while the app is in the background. Open Local Frames to continue."
+        case nil: return progress.message
+        }
+    }
 
     init(root: URL? = nil) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
@@ -45,9 +66,12 @@ final class AppModel: ObservableObject {
         installer = ModelInstaller(root: modelRoot)
         temporaryDirectory = support.appendingPathComponent("Temporary", isDirectory: true)
         benchmarkDirectory = support.appendingPathComponent("Benchmarks", isDirectory: true)
+        resumeDirectory = support.appendingPathComponent("ResumableBaseline", isDirectory: true)
     }
 
     func load() async {
+        guard !loaded else { return }
+        loaded = true
         do {
             // Each generation owns its file. An interrupted previous session leaves only this directory to clean.
             if FileManager.default.fileExists(atPath: temporaryDirectory.path) { try FileManager.default.removeItem(at: temporaryDirectory) }
@@ -55,6 +79,7 @@ final class AppModel: ObservableObject {
             videos = try await library.list()
             installed = await installer.isInstalled()
             refreshBenchmarkFiles()
+            refreshSavedBaseline()
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -67,8 +92,57 @@ final class AppModel: ObservableObject {
         beginGeneration(benchmarking: true)
     }
 
-    private func beginGeneration(benchmarking: Bool) {
+    func resumeBaseline() {
+        guard let pendingBaseline, !working, installed else { return }
+        prompt = pendingBaseline.request.prompt
+        duration = pendingBaseline.request.duration
+        benchmarkSeed = String(pendingBaseline.request.seed)
+        beginGeneration(benchmarking: true, resuming: pendingBaseline)
+    }
+
+    private func checkpointURL(for job: BaselineJob) -> URL { resumeDirectory.appendingPathComponent(job.id.uuidString + ".checkpoint") }
+
+    private func saveJob(_ job: BaselineJob) throws {
+        try FileManager.default.createDirectory(at: resumeDirectory, withIntermediateDirectories: true)
+        var directory = resumeDirectory
+        var values = URLResourceValues(); values.isExcludedFromBackup = true
+        try directory.setResourceValues(values)
+        try JSONEncoder().encode(job).write(to: resumeDirectory.appendingPathComponent("pending.json"), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        pendingBaseline = job
+    }
+
+    private func refreshSavedBaseline() {
+        let url = resumeDirectory.appendingPathComponent("pending.json")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            pendingBaseline = nil; savedBaselineDescription = nil; return
+        }
+        do {
+            let job = try JSONDecoder().decode(BaselineJob.self, from: Data(contentsOf: url))
+            pendingBaseline = job
+            let checkpoint = checkpointURL(for: job)
+            if FileManager.default.fileExists(atPath: checkpoint.path) {
+                let saved = try GenerationCheckpoint.summary(at: checkpoint)
+                guard saved.request == job.request else { throw GenerationError.invalidCheckpoint }
+                savedBaselineDescription = "Saved baseline: \(saved.completedSteps) of 21 motion steps completed. An unfinished step or video decoding may repeat after relaunch."
+            } else { savedBaselineDescription = "Saved baseline request. Prompt encoding will restart because no motion-step checkpoint was saved yet." }
+        } catch {
+            savedBaselineDescription = "Saved baseline cannot be read. Discard it to start a new baseline."
+        }
+    }
+
+    func discardSavedBaseline() {
+        guard !working else { return }
+        do { try clearSavedBaseline() } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func clearSavedBaseline() throws {
+        if FileManager.default.fileExists(atPath: resumeDirectory.path) { try FileManager.default.removeItem(at: resumeDirectory) }
+        pendingBaseline = nil; savedBaselineDescription = nil
+    }
+
+    private func beginGeneration(benchmarking: Bool, resuming: BaselineJob? = nil) {
         guard installed, !working else { return }
+        guard !benchmarking || pendingBaseline == nil || resuming != nil else { return }
         do {
             let seed: UInt64
             if benchmarking {
@@ -78,26 +152,56 @@ final class AppModel: ObservableObject {
                 }
                 seed = value
             } else { seed = UInt64.random(in: 0...UInt64.max) }
-            let request = try GenerationRequest(prompt: prompt, duration: duration, seed: seed)
+            let request = try resuming?.request ?? GenerationRequest(prompt: prompt, duration: duration, seed: seed)
+            var job: BaselineJob? = benchmarking ? (resuming ?? BaselineJob(id: UUID(), request: request)) : nil
             let log = benchmarking ? try makeBenchmarkLog(kind: "generation", fields: [
                 "prompt": request.prompt, "seed": String(request.seed), "durationSeconds": String(request.duration),
                 "width": String(request.width), "height": String(request.height), "fps": String(request.framesPerSecond),
                 "configuration": "baseline-fp32-stdit-vae-t5-int8", "schedule": "30 points; leap index 20; 21 predictions; TDTM first 10; CFG 7; latent frames 20",
-                "cacheCondition": "uncontrolled OS cache; record first/repeat run separately; process is not restarted automatically"
+                "cacheCondition": "uncontrolled OS cache; record first/repeat run separately; process is not restarted automatically",
+                "baselineJobID": job?.id.uuidString ?? "", "resumedFromJournal": resuming?.previousJournal ?? "",
+                "checkpointPolicy": "Exact Float32 state after each completed diffusion step; checkpoint I/O and pauses included in session wall time"
             ]) : nil
+            if var updated = job {
+                updated.previousJournal = log?.url.lastPathComponent
+                try saveJob(updated)
+                job = updated
+            }
             working = true
             installing = false
             activeBenchmarkLog = log
             pausedForMemory = false
+            pauseReason = nil
+            notice = nil
+            let control = GenerationControl { [weak self] reason in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.pauseReason = reason
+                    BackgroundGeneration.shared.report(self.progress, paused: reason == nil ? nil : self.progressMessage)
+                }
+            }
+            control.setForeground(inForeground)
+            generationControl = control
             progress = .init(0, "Preparing generation")
-            operation = Task {
+            let checkpoint = job.map { checkpointURL(for: $0) }
+            BackgroundGeneration.shared.statusChanged = { [weak self] status in self?.backgroundStatus = status }
+            BackgroundGeneration.shared.start(control: control, log: log, onExpiration: { [weak self] in
+                self?.operation?.cancel()
+                self?.notice = "Background execution ended. Resume the saved baseline in Setup."
+            }) { [self] in
+              self.operation = Task { [self] in
                 let output = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
-                defer { try? FileManager.default.removeItem(at: output); finish() }
+                var succeeded = false
+                defer { try? FileManager.default.removeItem(at: output); finish(success: succeeded) }
                 do {
                     let free = try temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage ?? 0
                     guard free > 1024 * 1024 * 1024 else { throw GenerationError.insufficientStorage }
-                    let metrics = try await engine.generate(request, modelsAt: modelDirectory, output: output, benchmark: log) { progress in
-                        Task { @MainActor in self.progress = progress }
+                    let metrics = try await engine.generate(request, modelsAt: modelDirectory, output: output,
+                                                            benchmark: log, control: control, checkpointURL: checkpoint) { progress in
+                        Task { @MainActor in
+                            self.progress = progress
+                            BackgroundGeneration.shared.report(progress, paused: self.pauseReason == nil ? nil : self.progressMessage)
+                        }
                     }
                     log?.record("engine_completed", fields: ["elapsedSeconds": String(metrics.elapsedSeconds)])
                     try Task.checkCancellation()
@@ -123,14 +227,17 @@ final class AppModel: ObservableObject {
                             "measuredFPS": String(fps), "measuredWidth": String(Int(size.width)), "measuredHeight": String(Int(size.height)),
                             "visualQuality": "not assessed; inspect exported video"])
                     }
+                    if benchmarking { try clearSavedBaseline() }
+                    succeeded = true
                     selectedVideo = item
                 } catch is CancellationError {
-                    try? log?.finish(status: "cancelled")
-                    notice = "Generation cancelled."
+                    try? log?.finish(status: "cancelled", fields: ["checkpointRetained": String(checkpoint != nil)])
+                    notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
                 } catch {
                     try? log?.finish(status: "failed", fields: ["error": String(describing: error)])
                     errorMessage = error.localizedDescription
                 }
+              }
             }
         } catch { errorMessage = error.localizedDescription }
     }
@@ -176,13 +283,30 @@ final class AppModel: ObservableObject {
         catch { errorMessage = error.localizedDescription }
     }
 
-    func cancel() { operation?.cancel() }
-
-    func interrupt() {
-        if working { operation?.cancel(); notice = "Work paused because the app was interrupted. Keep Local Frames open while generating." }
+    func cancel() {
+        if let operation { operation.cancel() }
+        else if working {
+            try? activeBenchmarkLog?.finish(status: "cancelled", fields: ["reason": "Cancelled before background task launch"])
+            finish()
+        }
     }
 
-    private func finish() { working = false; installing = false; operation = nil; activeBenchmarkLog = nil; refreshBenchmarkFiles() }
+    func sceneChanged(_ phase: ScenePhase) {
+        guard phase != .inactive else { return }
+        inForeground = phase == .active
+        generationControl?.setForeground(inForeground)
+        activeBenchmarkLog?.record("scene_changed", fields: ["state": inForeground ? "foreground" : "background"])
+        if !inForeground, working, generationControl == nil {
+            operation?.cancel()
+            notice = "Model setup or inspection paused while the app was in the background."
+        }
+    }
+
+    private func finish(success: Bool = false) {
+        BackgroundGeneration.shared.finish(success: success)
+        working = false; installing = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        refreshBenchmarkFiles(); refreshSavedBaseline()
+    }
 
     func handleMemoryWarning() {
         activeBenchmarkLog?.record("memory_warning", fields: ["activity": installing ? "installation" : "generation", "installationStage": installationStage.rawValue])

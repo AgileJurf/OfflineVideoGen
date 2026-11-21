@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct LocalFramesApp: App {
+    @UIApplicationDelegateAdaptor(LocalFramesAppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -13,7 +14,7 @@ struct LocalFramesApp: App {
                 .preferredColorScheme(.dark)
                 .task { await model.load() }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .background { model.interrupt() }
+                    model.sceneChanged(phase)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
                     model.handleMemoryWarning()
