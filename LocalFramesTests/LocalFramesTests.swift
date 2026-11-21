@@ -5,6 +5,53 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testETADoesNotInventUnknownDecoderTime() throws {
+        let request = try GenerationRequest(prompt: "A sailboat moves.", duration: 2, seed: 42)
+        let estimator = GenerationTimeEstimator(request: request, restoredSteps: nil, historyURL: nil)
+        XCTAssertNil(estimator.estimate)
+        let plan = GenerationTimeEstimator.operations(request: request, restoredSteps: nil)
+        XCTAssertEqual(plan.count, 746)
+        // Synthetic timing fixture only: all prompt operations and one complete motion step.
+        for operation in plan.prefix(56) { estimator.record(operation.name, seconds: 2) }
+        let phase = try XCTUnwrap(estimator.estimate)
+        XCTAssertFalse(phase.isFullJob)
+        XCTAssertEqual(phase.scope, "Current motion phase")
+        XCTAssertEqual(phase.seconds, 9 * 30 * 2, accuracy: 0.001)
+        XCTAssertTrue(phase.displayText.contains("Total finish time is still being estimated"))
+    }
+
+    func testETALearnsFullJobCostsAndCountsOnlyRemainingStepsOnResume() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try GenerationRequest(prompt: "A flag waves.", duration: 2, seed: 42)
+        let url = root.appendingPathComponent("timing.data")
+        let first = GenerationTimeEstimator(request: request, restoredSteps: nil, historyURL: url)
+        for operation in GenerationTimeEstimator.operations(request: request, restoredSteps: nil) { first.record(operation.name, seconds: 2) }
+        first.persist()
+        XCTAssertNil(first.estimate)
+        let resumed = GenerationTimeEstimator(request: request, restoredSteps: 11, historyURL: url)
+        let remaining = GenerationTimeEstimator.operations(request: request, restoredSteps: 11)
+        XCTAssertEqual(remaining.count, 390)
+        let estimate = try XCTUnwrap(resumed.estimate)
+        XCTAssertTrue(estimate.isFullJob)
+        XCTAssertEqual(estimate.seconds, 780, accuracy: 0.001)
+        resumed.record(remaining[0].name, seconds: 10)
+        XCTAssertGreaterThan(try XCTUnwrap(resumed.estimate).seconds, 778, "Recent slower work must raise the estimate for repeated operations")
+        resumed.record("unexpected-operation", seconds: 1)
+        XCTAssertNil(resumed.estimate, "A schedule mismatch must stop displaying an invalid estimate")
+    }
+
+    @MainActor
+    func testETAPausesForCoolingInsteadOfCountingDown() {
+        let model = AppModel(root: temporaryDirectory())
+        model.progress = GenerationProgress(0.4, "Generating motion", estimate: .init(seconds: 120, scope: "Estimated time remaining", isFullJob: true))
+        XCTAssertTrue(model.estimatedTimeMessage.contains("about 2 min"))
+        model.pauseReason = .cooling
+        XCTAssertTrue(model.estimatedTimeMessage.contains("estimate paused"))
+        model.pauseReason = nil
+        XCTAssertTrue(model.estimatedTimeMessage.contains("about 2 min"))
+    }
+
     func testThermalPauseWaitsThroughFairAndResumesAtNominal() async throws {
         let index = LockedValue(0)
         let pauses = LockedValue<[GenerationControl.PauseReason?]>([])
@@ -49,7 +96,7 @@ final class LocalFramesTests: XCTestCase {
         do { try await worker.value; XCTFail("Cancellation must leave the cooling wait") }
         catch is CancellationError { }
         try log.finish(status: "cancelled")
-        let entries = try String(contentsOf: log.url).split(separator: "\n").map { try JSONSerialization.jsonObject(with: Data($0.utf8)) as! [String: Any] }
+        let entries = try String(contentsOf: log.url, encoding: .utf8).split(separator: "\n").map { try JSONSerialization.jsonObject(with: Data($0.utf8)) as! [String: Any] }
         XCTAssertEqual(entries.filter { $0["event"] as? String == "pause_begin" }.count, 1)
         XCTAssertEqual(entries.filter { $0["event"] as? String == "pause_end" }.count, 1)
         XCTAssertEqual((entries.first { $0["event"] as? String == "pause_end" }?["fields"] as? [String: String])?["resumed"], "false")

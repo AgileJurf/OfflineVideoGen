@@ -20,6 +20,8 @@
 | Real-model end-to-end inference | Attempted twice on the target phone; neither completed. No MP4 or visual-quality result |
 | Physical iPhone generation | 28 partitions loaded and 27 predictions completed in each attempt. Both logs end inside `stdit3_TDTM_0` prediction after an iOS memory warning; highest recorded footprints 3.38 and 3.19 GB. See [measured results](BENCHMARK_REPORT.md#physical-device-results-from-build-8) |
 | Memory-limit candidate validation | 11 unit + 2 UI tests passed locally; 4 report-parser tests passed. Xcode Cloud Build 9 passed Test and Analyze for `8d0cd48`. Build 10 archived and delivered successfully; 0.1.0 (10) is Testing in Personal Device Testing |
+| Cooling/background continuation checks | 17 unit + 2 UI tests passed locally; Cloud Build 12 passed Test and Analyze for `0d931e4`, including compilation of the newer background task API path. These are simulator/static checks, not evidence of a physical background GPU grant |
+| Remaining-time indicator checks | 20 unit + 2 UI tests passed locally; 5 report-parser tests passed. ETA tests cover unmeasured decoder costs, local timing reuse, restored-step accounting, changing operation durations, and paused labels. Final Cloud and distribution checks pending |
 | Build 10 entitlement inspection | Downloaded App Store export contains the Increased Memory Limit entitlement in XML, DER, and the provisioning profile; both entitlement CodeDirectory hashes match. See [package verification and tool limitations](BUILD10_PACKAGE_VERIFICATION.json). Runtime memory allowance and generation success remain unmeasured |
 
 Build success and synthetic encoder fixtures are not diffusion validation. No sample output in this repository is presented as generated video.

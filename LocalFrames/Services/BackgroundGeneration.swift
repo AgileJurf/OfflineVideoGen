@@ -84,7 +84,8 @@ final class BackgroundGeneration {
         completion = { task.setTaskCompleted(success: $0) }
         update = { progress, paused in
             task.progress.completedUnitCount = max(task.progress.completedUnitCount, Int64(progress.fraction * 10_000))
-            task.updateTitle("Local Frames video", subtitle: paused ?? progress.message)
+            let estimate = progress.estimate.map { " · " + $0.displayText } ?? ""
+            task.updateTitle("Local Frames video", subtitle: paused ?? (progress.message + estimate))
         }
         let sessionControl = control
         let id = task.identifier
@@ -100,7 +101,7 @@ final class BackgroundGeneration {
         }
         control?.allowBackgroundExecution(true)
         log?.record("background_granted", fields: ["resource": "gpu"])
-        statusChanged?("Background generation is active. iOS may pause or end it; saved steps can be resumed.")
+        statusChanged?("Background generation is active. iOS may pause or end it.")
         launch()
     }
     #endif

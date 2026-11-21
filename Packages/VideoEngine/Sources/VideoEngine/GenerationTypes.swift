@@ -27,9 +27,22 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
 public struct GenerationProgress: Sendable {
     public let fraction: Double
     public let message: String
-    public init(_ fraction: Double, _ message: String) {
+    public let estimate: GenerationEstimate?
+    public init(_ fraction: Double, _ message: String, estimate: GenerationEstimate? = nil) {
         self.fraction = min(1, max(0, fraction))
         self.message = message
+        self.estimate = estimate
+    }
+}
+
+public struct GenerationEstimate: Sendable {
+    public let seconds: Double
+    public let scope: String
+    public let isFullJob: Bool
+
+    public var displayText: String {
+        let minutes = max(1, Int((seconds / 60).rounded(.up)))
+        return "\(scope): about \(minutes) min" + (isFullJob ? "" : " · Total finish time is still being estimated")
     }
 }
 

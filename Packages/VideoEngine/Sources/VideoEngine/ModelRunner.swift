@@ -6,6 +6,7 @@ final class ModelRunner {
     let directory: URL
     let benchmark: BenchmarkLog?
     let control: GenerationControl
+    var predictionCompleted: ((String, Double) -> Void)?
     var peakMemory: UInt64 = 0
     var thermalStates = Set<String>()
 
@@ -41,6 +42,7 @@ final class ModelRunner {
 
     func predict(_ name: String, _ inputs: [String: MLFeatureValue], cpuOnly: Bool = false) async throws -> [String: MLFeatureValue] {
         try await checkpoint()
+        let started = ProcessInfo.processInfo.systemUptime
         let output: [String: MLFeatureValue] = try autoreleasepool {
             let config = MLModelConfiguration()
             #if targetEnvironment(simulator)
@@ -71,6 +73,7 @@ final class ModelRunner {
                 result.featureValue(for: key).map { (key, $0) }
             })
         }
+        predictionCompleted?(name, ProcessInfo.processInfo.systemUptime - started)
         // Release the loaded model before waiting for cooling or foreground access.
         try await checkpoint()
         return output

@@ -65,6 +65,7 @@ struct CreateView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         ProgressView(value: model.progress.fraction)
                         Text(model.progressMessage).font(.subheadline)
+                        if model.isGenerating { Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("generationETA") }
                         Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
                         Button(model.installing ? "Pause installation" : "Cancel generation", role: .cancel) { model.cancel() }
                     }.padding().background(.mint.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
@@ -162,6 +163,10 @@ struct SetupView: View {
                     ProgressView(value: model.progress.fraction)
                     Text(model.progressMessage).font(.caption)
                     Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
+                    if model.isGenerating {
+                        Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("benchmarkETA")
+                        Text("Estimates adapt as work completes. Saving, cooling, and background waits can add time.").font(.caption2).foregroundStyle(.secondary)
+                    }
                     Button("Pause benchmark") { model.cancel() }
                 }
                 if !model.benchmarkFiles.isEmpty {

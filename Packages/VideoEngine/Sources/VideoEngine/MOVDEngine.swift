@@ -11,7 +11,8 @@ public actor MOVDEngine {
     public func generate(_ request: GenerationRequest, modelsAt directory: URL, output: URL,
                          benchmark: BenchmarkLog? = nil,
                          control: GenerationControl = GenerationControl(), checkpointURL: URL? = nil,
-                         progress: @Sendable (GenerationProgress) -> Void) async throws -> GenerationMetrics {
+                         timingHistoryURL: URL? = nil,
+                         progress: @escaping @Sendable (GenerationProgress) -> Void) async throws -> GenerationMetrics {
         try MOVDModel.validateInstallation(at: directory)
         let started = ProcessInfo.processInfo.systemUptime
         let runner = ModelRunner(directory: directory, benchmark: benchmark, control: control)
@@ -21,6 +22,13 @@ public actor MOVDEngine {
             saved = try GenerationCheckpoint.read(at: checkpointURL)
             guard saved?.request == request else { throw GenerationError.invalidCheckpoint }
         } else { saved = nil }
+        let estimator = GenerationTimeEstimator(request: request, restoredSteps: saved?.completedSteps, historyURL: timingHistoryURL)
+        defer { estimator.persist() }
+        runner.predictionCompleted = { name, seconds in
+            estimator.record(name, seconds: seconds)
+            progress(estimator.decorate(estimator.currentProgress))
+        }
+        let report: @Sendable (GenerationProgress) -> Void = { value in progress(estimator.decorate(value)) }
         let encoding: Encoding
         if let saved {
             encoding = Encoding(hidden: try saved.hidden.array(expectedShape: [1, 1, 300, 4096]),
@@ -28,13 +36,13 @@ public actor MOVDEngine {
                                 mask: try saved.mask.array(expectedShape: [1, 300]), count: saved.tokenCount)
             benchmark?.record("checkpoint_restored", fields: ["completedSteps": String(saved.completedSteps)])
         } else {
-            progress(.init(0.01, "Encoding your prompt"))
+            report(.init(0.01, "Encoding your prompt"))
             encoding = try await encode(request.prompt, runner: runner)
         }
         let latent = try await denoise(request, encoding: encoding, runner: runner, saved: saved,
-                                       checkpointURL: checkpointURL, progress: progress)
-        progress(.init(0.8, "Decoding video frames"))
-        try await decode(latent, request: request, output: output, runner: runner, progress: progress)
+                                       checkpointURL: checkpointURL, progress: report)
+        report(.init(0.8, "Decoding video frames"))
+        try await decode(latent, request: request, output: output, runner: runner, progress: report)
         #if targetEnvironment(simulator)
         let environment = "simulator-cpu"
         #else

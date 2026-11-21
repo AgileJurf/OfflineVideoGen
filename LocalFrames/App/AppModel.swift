@@ -58,6 +58,13 @@ final class AppModel: ObservableObject {
         }
     }
 
+    var estimatedTimeMessage: String {
+        if pauseReason != nil { return "Time estimate paused; cooling and background waits have no predictable duration." }
+        if progress.fraction >= 0.99 { return "Finishing and saving your video…" }
+        return progress.estimate?.displayText ?? "Estimating finish time from this device’s model timings…"
+    }
+    var isGenerating: Bool { generationControl != nil }
+
     init(root: URL? = nil) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
         library = VideoLibrary(root: support.appendingPathComponent("Library", isDirectory: true))
@@ -187,17 +194,18 @@ final class AppModel: ObservableObject {
             BackgroundGeneration.shared.statusChanged = { [weak self] status in self?.backgroundStatus = status }
             BackgroundGeneration.shared.start(control: control, log: log, onExpiration: { [weak self] in
                 self?.operation?.cancel()
-                self?.notice = "Background execution ended. Resume the saved baseline in Setup."
+                self?.notice = benchmarking ? "Background execution ended. Resume the saved baseline in Setup." : "Background execution ended. Open Local Frames to try generation again."
             }) { [self] in
               self.operation = Task { [self] in
-                let output = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+                let output = self.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
                 var succeeded = false
-                defer { try? FileManager.default.removeItem(at: output); finish(success: succeeded) }
+                defer { try? FileManager.default.removeItem(at: output); self.finish(success: succeeded) }
                 do {
-                    let free = try temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage ?? 0
+                    let free = try self.temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage ?? 0
                     guard free > 1024 * 1024 * 1024 else { throw GenerationError.insufficientStorage }
-                    let metrics = try await engine.generate(request, modelsAt: modelDirectory, output: output,
-                                                            benchmark: log, control: control, checkpointURL: checkpoint) { progress in
+                    let metrics = try await self.engine.generate(request, modelsAt: self.modelDirectory, output: output,
+                                                            benchmark: log, control: control, checkpointURL: checkpoint,
+                                                            timingHistoryURL: self.benchmarkDirectory.appendingPathComponent("timing-cache.data")) { progress in
                         Task { @MainActor in
                             self.progress = progress
                             BackgroundGeneration.shared.report(progress, paused: self.pauseReason == nil ? nil : self.progressMessage)
@@ -205,10 +213,10 @@ final class AppModel: ObservableObject {
                     }
                     log?.record("engine_completed", fields: ["elapsedSeconds": String(metrics.elapsedSeconds)])
                     try Task.checkCancellation()
-                    let item = try await library.add(temporaryURL: output, request: request, metrics: metrics)
-                    videos = try await library.list()
+                    let item = try await self.library.add(temporaryURL: output, request: request, metrics: metrics)
+                    self.videos = try await self.library.list()
                     if let log {
-                        let videoURL = library.videoURL(item.id)
+                        let videoURL = self.library.videoURL(item.id)
                         let asset = AVURLAsset(url: videoURL)
                         let videoDuration = try await asset.load(.duration).seconds
                         let tracks = try await asset.loadTracks(withMediaType: .video)
@@ -227,15 +235,15 @@ final class AppModel: ObservableObject {
                             "measuredFPS": String(fps), "measuredWidth": String(Int(size.width)), "measuredHeight": String(Int(size.height)),
                             "visualQuality": "not assessed; inspect exported video"])
                     }
-                    if benchmarking { try clearSavedBaseline() }
+                    if benchmarking { try self.clearSavedBaseline() }
                     succeeded = true
-                    selectedVideo = item
+                    self.selectedVideo = item
                 } catch is CancellationError {
                     try? log?.finish(status: "cancelled", fields: ["checkpointRetained": String(checkpoint != nil)])
-                    notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
+                    self.notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
                 } catch {
                     try? log?.finish(status: "failed", fields: ["error": String(describing: error)])
-                    errorMessage = error.localizedDescription
+                    self.errorMessage = error.localizedDescription
                 }
               }
             }
