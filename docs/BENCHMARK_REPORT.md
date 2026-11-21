@@ -1,12 +1,12 @@
 # iPhone 17 Pro Max feasibility and benchmark record
 
-Status: **physical installation verified; two baseline attempts interrupted in the first TDTM prediction; no completed video or generation speedup established**. Measurements below come from three exported build 8 journals, received on 21 November 2026 (Pacific).
+Status: **physical installation verified; two baseline attempts interrupted in the first TDTM prediction; no completed video or generation speedup established**. Measurements below come from three exported build 8 journals, received on 21 November 2026 (Pacific). TestFlight build 10 is available for the controlled memory-allowance experiment; its device results are pending.
 
 ## Observed evidence
 
 | Requested check | Current evidence |
 | --- | --- |
-| Installable physical-device beta | Replacement TestFlight 0.1.0 (8), source `fd113f2`, is Testing in the internal group. Cloud Build 7 passed 13 tests and static analysis; Build 8 archived and delivered successfully. Original build 5 remains available |
+| Installable physical-device beta | TestFlight 0.1.0 (10), source `8d0cd48`, is Testing in the internal group. Cloud Build 9 passed tests and static analysis; Build 10 archived and delivered successfully. Measured baseline build 8 and original build 5 remain available |
 | Physical iPhone identification | Paired wired iPhone 17 Pro Max, hardware family iPhone18,2, iOS 27.3 beta; Developer Mode enabled |
 | Model installation on the phone | Exported journal confirms all three SHA-256 checks, 102 successful compilations, and terminal installation success. STDiT archive was reused; T5 and VAE were downloaded during this recorded attempt |
 | Genuine 2-second generation | 0/2 completed. Both attempts ended during `stdit3_TDTM_0` prediction at step 1; no MP4 or terminal journal event |
@@ -48,7 +48,9 @@ The [detailed per-partition report](BUILD8_DEVICE_EVIDENCE.md) lists all 102 par
 
 ## Next controlled feasibility experiment
 
-Build 8 does not request Apple's [Increased Memory Limit entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.kernel.increased-memory-limit). The next candidate requests it and adds [available app-memory samples](https://developer.apple.com/documentation/os/os_proc_available_memory) so the device's actual allowance can be observed. This is advisory and device-dependent; the phone's physical RAM does not equal an app's allocation limit. It is not a memory-use reduction, confirmed fix, or speed improvement.
+Build 8 does not request Apple's [Increased Memory Limit entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.kernel.increased-memory-limit). TestFlight build 10 requests it and adds [available app-memory samples](https://developer.apple.com/documentation/os/os_proc_available_memory) so the device's actual allowance can be observed. This is advisory and device-dependent; the phone's physical RAM does not equal an app's allocation limit. It is not a memory-use reduction, confirmed fix, or speed improvement.
+
+Build 10 is available to the existing internal tester from source `8d0cd48164cad3a135f00bb562394c73623e7cdf`. Its 11 unit and 2 UI tests passed locally, 4 report-parser tests passed, and Cloud Build 9 passed Test and Analyze. Cloud Build 10 archived and delivered successfully. Inspection of the downloaded App Store export found the entitlement set to true in its XML and DER signature payloads and provisioning profile. Both entitlement payload hashes match the CodeDirectory. The older local `codesign` could not decode this export; this independent payload/hash inspection is not a full CMS signature validation or proof of a runtime memory grant. [Package hashes and inspection details](BUILD10_PACKAGE_VERIFICATION.json) preserve those limits explicitly.
 
 This candidate preserves model weights, precision, tensor shapes, sampler, guidance, compute-unit requests, and memory/thermal cancellation checks. Repeat the same sailboat/seed-42 run and export its journal. Success requires a genuine 2-second MP4 and successful partition coverage. If the same prediction still fails or no extra allowance is available, use that evidence to test a separate CPU-only placement for the failing partition or a validated, separately stored Float16 conversion. Do not combine those changes with this first experiment. The build 8 tag and TestFlight binary remain the comparison and rollback point.
 
@@ -107,7 +109,7 @@ The report preserves missing/failed measurements, lists every required partition
 
 ## Baseline execution order
 
-1. Keep the installed model and build 8 evidence. Update through TestFlight only when the next candidate is available, with no generation in progress. Deleting the app removes its model and logs.
+1. Keep the installed model and build 8 evidence. Update to 0.1.0 (10) through TestFlight with no generation in progress. Deleting the app removes its model and logs.
 2. Installation is now verified on the target phone and need not be repeated for an app update. Preserve the successful installation journal and failed generation attempts.
 3. Let the phone cool to nominal thermal state. Record charging state, battery level, Low Power Mode, ambient conditions, other activity, and first-versus-repeat run. These environmental details are not currently captured automatically.
 4. Run the sailboat prompt, seed 42, duration 2 seconds. The target is 24 frames at 12 FPS and 256 × 256. Keep the app in the foreground. Preserve failed runs as well as successes.

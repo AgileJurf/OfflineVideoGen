@@ -1,0 +1,20 @@
+{
+  "appVersion": "0.1.0",
+  "appBuild": "10",
+  "sourceRevision": "8d0cd48164cad3a135f00bb562394c73623e7cdf",
+  "entitlement": "com.apple.developer.kernel.increased-memory-limit",
+  "xmlValue": true,
+  "derValue": true,
+  "codeDirectorySHA256SlotMatches": {
+    "5": true,
+    "7": true
+  },
+  "embeddedProvisioningProfilePresent": true,
+  "ipaSHA256": "7adb6eaf1dd10ca5d7407e1cfdd7381188d503f180bb878e5a1cf02859f37176",
+  "exportZIP_SHA256": "fb4de0df93b96c52f369f3eeeabd223441fa5af0c966e95feb335f7c5e478510",
+  "inspection": "Decoded XML and DER from Mach-O LC_CODE_SIGNATURE; checked entitlement slots 5 and 7 against CodeDirectory SHA-256 hashes. This is payload inspection, not an independent full CMS signature validation.",
+  "localToolLimitation": "macOS 15.8.3 codesign did not decode this Cloud export and reported an invalid entitlements blob. Independent XML/DER parsing and hash checks above succeeded.",
+  "distribution": "Xcode Cloud build 10 archive and TestFlight internal distribution succeeded; App Store Connect shows 0.1.0 (10) Testing.",
+  "runtimeMemoryAllowance": "Not measured yet on the phone; entitlement presence does not establish an increased limit or a successful generation.",
+  "provisioningProfileValue": true
+}

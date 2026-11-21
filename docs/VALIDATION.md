@@ -19,7 +19,8 @@
 | Physical setup retry | Exported build 8 journal confirms all 3 archive hashes, all 102 compilation calls, and terminal installation success; resumed install took 236.257 seconds |
 | Real-model end-to-end inference | Attempted twice on the target phone; neither completed. No MP4 or visual-quality result |
 | Physical iPhone generation | 28 partitions loaded and 27 predictions completed in each attempt. Both logs end inside `stdit3_TDTM_0` prediction after an iOS memory warning; highest recorded footprints 3.38 and 3.19 GB. See [measured results](BENCHMARK_REPORT.md#physical-device-results-from-build-8) |
-| Memory-limit candidate, local validation | 11 unit + 2 UI tests passed on the iOS 18.4 simulator; 4 report-parser tests passed. Device-dependent memory allowance and signed distribution remain pending Cloud/device validation |
+| Memory-limit candidate validation | 11 unit + 2 UI tests passed locally; 4 report-parser tests passed. Xcode Cloud Build 9 passed Test and Analyze for `8d0cd48`. Build 10 archived and delivered successfully; 0.1.0 (10) is Testing in Personal Device Testing |
+| Build 10 entitlement inspection | Downloaded App Store export contains the Increased Memory Limit entitlement in XML, DER, and the provisioning profile; both entitlement CodeDirectory hashes match. See [package verification and tool limitations](BUILD10_PACKAGE_VERIFICATION.json). Runtime memory allowance and generation success remain unmeasured |
 
 Build success and synthetic encoder fixtures are not diffusion validation. No sample output in this repository is presented as generated video.
 
@@ -30,6 +31,8 @@ Build 1 exposed an invalid resource-bundle layout during signing. The tokenizer 
 Cloud Build 3 automatically started on the `main` push of `f76a027e56e5df7d2aa2afd8cd43d882a8e6b415`; its Test and Analyze checks both passed. This confirms push triggering for code/packaging changes.
 
 Cloud Build 6 passed Test and Analyze for benchmark instrumentation source `7b2b82d7a8f64efd6603235b11aad6421f039fb6`. Cloud Build 7 passed all 13 tests and Analyze for checksum-memory fix `fd113f2c1cbbd724247406c587fe1826fac90a68`, with no reported issues. These are simulator and static checks. Exported build 8 logs now verify physical installation and locate the two interrupted generation attempts; a completed video remains unverified.
+
+Cloud Build 9 passed Test and Analyze for `8d0cd48164cad3a135f00bb562394c73623e7cdf`. [Cloud Build 10](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/091564ca-3f49-498b-9f46-c5e631aa9b9c/summary) successfully archived and delivered that revision to internal TestFlight on 21 November 2026 (Pacific). The app-store IPA's version, build number, and embedded source revision match. TestFlight retry instructions were saved. Builds 5 and 8 remain available; update the existing app to preserve its installed model and evidence.
 
 ## Automated suite
 
