@@ -12,10 +12,11 @@
 | Xcode Cloud workflow | Build 2 passed both required actions: Test — iOS and Analyze — iOS; 0 reported errors, warnings, test failures, or analysis issues |
 | Distribution packaging checks | Opaque 1024 × 1024 icon; exempt-encryption metadata; bundled dependency license notices |
 | Internal TestFlight | Build 5 archived and delivered successfully; 0.1.0 (5) shown as Testing; tester confirmed installation and model download started |
-| Replacement internal TestFlight | Build 8 archived and delivered successfully from `fd113f2`; 0.1.0 (8) shown as Testing in Personal Device Testing. Includes checksum-memory fix and diagnostic capture; phone retry pending |
+| Replacement internal TestFlight | Build 8 archived and delivered successfully from `fd113f2`; 0.1.0 (8) shown as Testing in Personal Device Testing. Tester confirmed updating and reaching “Downloading T5.zip” on 21 November 2026 (Pacific) |
 | Benchmark instrumentation tests | 9 unit + 2 UI tests passed locally on iOS 18.4 simulator; 3 report-parser tests passed. These validate measurement code, not model performance |
 | Installation checksum regression | Reproduced on Intel Mac in 3 fresh-process pairs; identical SHA-256 with bounded buffer lifetimes. Fixed probe verified the complete 8.9 GB STDiT archive against its pinned digest. See [benchmark record](BENCHMARK_REPORT.md#reproduced-installation-blocker) |
-| Memory-fix simulator suite | 11 unit + 2 UI tests passed locally and in Xcode Cloud Build 7; Cloud static analysis also passed with no reported issues. Physical-device retry pending |
+| Memory-fix simulator suite | 11 unit + 2 UI tests passed locally and in Xcode Cloud Build 7; Cloud static analysis also passed with no reported issues |
+| Physical setup retry | Reported T5 download implies STDiT checksum, extraction, and 58 compilations completed in the sequential installer. Device journal, full installation, and actual inference remain unverified |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 
