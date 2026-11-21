@@ -18,12 +18,19 @@ final class LocalFramesUITests: XCTestCase {
         }
         let updates = app.buttons["checkSupportUpdates"]
         let smoothing = app.buttons["chooseSmoothingClip"]
+        let account = app.buttons["helperAccountSettings"]
         XCTAssertEqual(toggle.value as? String, "0")
+        reveal(account); XCTAssertFalse(account.isEnabled)
         reveal(smoothing); XCTAssertFalse(smoothing.isEnabled)
         reveal(updates); XCTAssertFalse(updates.isEnabled)
         reveal(toggle)
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         XCTAssertEqual(toggle.value as? String, "1")
+        reveal(account); XCTAssertTrue(account.isEnabled); account.tap()
+        XCTAssertTrue(app.navigationBars["Helper account"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["finishHelperConnection"].exists, "Opening account settings must not start sign-in")
+        XCTAssertFalse(app.staticTexts["Checking helper connection"].exists)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         reveal(smoothing); XCTAssertTrue(smoothing.isEnabled)
         reveal(updates); XCTAssertTrue(updates.isEnabled)
         XCTAssertFalse(app.buttons["Cancel support request"].exists, "Enabling support must not initiate network work")

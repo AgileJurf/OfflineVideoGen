@@ -16,9 +16,11 @@ struct OnlineSupportView: View {
             }
             Section("24 FPS smoothing · beta") {
                 Text("Create a smoother copy of a saved 2-second, 256 × 256, 12 FPS video using the free Hugging Face RIFE helper. Your original stays local. This is optional postprocessing, not faster diffusion.").font(.caption)
+                NavigationLink("Helper account and free quota") { HelperAccountView(account: model.helperAccount, support: support) }
+                    .disabled(!support.enabled || model.working).accessibilityIdentifier("helperAccountSettings")
                 NavigationLink("Choose a clip for 24 FPS smoothing") { SmoothingLibraryView(support: support) }
                     .disabled(!support.enabled || model.working || support.busy).accessibilityIdentifier("chooseSmoothingClip")
-                Text("Preview and approve every clip before upload. No automatic uploads, account tokens, payments or retries. Free shared quota may be unavailable; other durations and crops are not yet supported.").font(.caption).foregroundStyle(.secondary)
+                Text("Preview and approve every clip before upload. No automatic uploads, payments or retries. Connect a free Hugging Face account to use its included quota; anonymous access shares a smaller allowance. Other durations and crops are not yet supported.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Model updates") {
                 LabeledContent("Configuration", value: support.catalogLabel).accessibilityIdentifier("supportCatalogSource")
@@ -68,6 +70,41 @@ struct OnlineSupportView: View {
             .confirmationDialog("Restore the previous verified model? The current model will be replaced; your videos remain unchanged.", isPresented: $confirmRollback, titleVisibility: .visible) {
                 Button("Restore previous model") { Task { await model.restoreModelRollback() } }
             }
+    }
+}
+
+struct HelperAccountView: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject var account: HFAccountModel
+    @ObservedObject var support: OnlineSupport
+    var body: some View {
+        Form { Section("Free helper account · optional") {
+            if let name = account.name {
+                LabeledContent("Connected", value: name).accessibilityIdentifier("helperAccountConnected")
+                Text("Free-account status and available GPU quota are verified before every approved upload. A connected account does not guarantee capacity.").font(.caption)
+                Button("Disconnect Hugging Face") { model.closeSmoothingReview(); account.disconnect() }
+                    .disabled(model.working || account.busy).accessibilityIdentifier("disconnectHelperAccount")
+            } else {
+                Text("Connect on Hugging Face’s own website. The permission covers your public profile, billing status and usage, and organization memberships. Local Frames reads only eligibility and GPU quota to verify free-only use. No repository, payment, paid-inference or account-management permissions are requested. Signing in never uploads a video.").font(.caption)
+                Text("An expiring connection is stored in this device’s Keychain. Paid accounts, billing-enabled accounts and organization memberships are blocked in this beta. Tokens are sent only to Hugging Face and the selected helper, never to Vercel or diagnostics.").font(.caption)
+                if let challenge = account.challenge {
+                    LabeledContent("Enter this code", value: challenge.userCode).font(.body.monospaced()).textSelection(.enabled)
+                        .accessibilityIdentifier("helperDeviceCode")
+                    Link("Open Hugging Face to approve", destination: challenge.verificationURL)
+                    Text("Expires \(challenge.expiresAt.formatted(date: .omitted, time: .shortened)). After approval, return here and tap Finish connecting.").font(.caption)
+                    Button("Finish connecting") { account.finish() }.disabled(!support.enabled || account.busy || model.working)
+                        .accessibilityIdentifier("finishHelperConnection")
+                    Button("Cancel connection", role: .cancel) { account.cancel() }
+                } else {
+                    Button("Connect free Hugging Face account") { account.begin() }
+                        .disabled(!support.enabled || account.busy || model.working).accessibilityIdentifier("connectHelperAccount")
+                }
+            }
+            if account.busy { ProgressView("Checking helper connection") }
+            if let message = account.message { Text(message).font(.footnote).accessibilityIdentifier("helperAccountMessage") }
+        } }.navigationTitle("Helper account").navigationBarTitleDisplayMode(.inline)
+            .task { await account.restore() }
+            .onDisappear { account.cancel() }
     }
 }
 

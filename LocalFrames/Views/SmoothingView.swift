@@ -52,7 +52,7 @@ struct SmoothingReviewView: View {
                     LabeledContent("Upload size", value: ByteCountFormatter.string(fromByteCount: Int64(prepared.bytes), countStyle: .file))
                     Text("Destination: Hugging Face’s community Space 1inkusFace/RIFE. This sends the full video shown above directly to that third party, plus network metadata such as your IP address. Your prompt, seed, library metadata and other files are not attached.").font(.caption)
                     Text("The Space’s operator and hosting provider process the clip. Its retention period is not guaranteed, and Local Frames cannot confirm deletion. Cancelling may not stop remote processing. Only upload a clip you are comfortable sharing with this service.").font(.caption)
-                    Text("Free anonymous access only. No account credentials or credits are used. Shared quotas and queues may prevent completion. No paid fallback or automatic retries. Keep this screen open on Wi-Fi.").font(.caption)
+                    Text("Uses anonymous free access, or your connected free Hugging Face account after checking its status and included quota. Signed-in requests link this clip to that account at the provider. No credits, paid accounts, paid fallback or automatic retries. Quotas and queues may prevent completion. Keep this screen open on Wi-Fi.").font(.caption)
                     Link("View the helper", destination: RIFEClient.spaceURL)
                     Link("Hugging Face privacy policy", destination: URL(string: "https://huggingface.co/privacy")!)
                     Toggle("I agree to upload this clip", isOn: $consent).accessibilityIdentifier("smoothingConsent")

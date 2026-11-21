@@ -4,11 +4,13 @@ Local Frames is an experimental native MOVD / Open-Sora video diffusion app. Gen
 
 ## Optional 24 FPS smoothing beta
 
-Available in **0.1.0 (31)**, released to Personal Device Testing on 21 November 2026. The source passed 56/56 Xcode Cloud tests; a successful smoothing upload from the physical iPhone remains to be verified.
+The original beta shipped in **0.1.0 (31)**. The connection update adds optional free-account sign-in and verified queue handling. Its live native Simulator test completed a real 24 FPS copy; physical-iPhone acceptance remains pending. See the [current connection test report](SMOOTHING_CONNECTION_TEST.md) for measured results and the release record.
 
 Enable **Setup → Online support and model updates → Enable online support**, then choose a compatible 2-second square 12 FPS clip. Preview it and approve that exact upload to Hugging Face’s community `1inkusFace/RIFE` helper. An action is also available in compatible video previews while support is enabled. No clip is uploaded by enabling the switch or finishing generation. Every retry requires another review and approval.
 
-Keep the app foregrounded on Wi-Fi. Anonymous shared free quota may be exhausted; no credentials, credits or paid fallback are used. Cancellation/backgrounding stops local work without automatically retrying, but cannot guarantee that a clip already sent is deleted from the helper. Its retention period is unspecified. The original video is preserved, and a successful result is separately saved as 48 frames at 24 FPS for exactly two seconds. This is optional frame interpolation, not faster diffusion or higher-resolution generation.
+For the updated connection, open **Helper account and free quota**, connect your free personal Hugging Face account, approve on Hugging Face’s website, return to the app, and tap **Finish connecting**. The optional 8-hour connection is stored in device Keychain. Its permissions cover profile, billing status/usage and memberships; the app reads only eligibility and quota. Paid, billing-enabled, organization-linked or unverifiable accounts are blocked before upload. Each clip still requires its own consent.
+
+Keep the app foregrounded on Wi-Fi. Anonymous shared free quota remains available but may be exhausted; connected free accounts use their included allowance. No credits are purchased and no paid fallback is used. Cancellation/backgrounding stops local work without automatically retrying, but cannot guarantee that a clip already sent is deleted from the helper. Its retention period is unspecified. The original video is preserved, and a successful result is separately saved as 48 frames at 24 FPS for exactly two seconds. This is optional frame interpolation, not faster diffusion or higher-resolution generation.
 
 For the device acceptance pass, compare both saved clips, replay and export each, then turn support off and verify library/export and offline generation in Airplane Mode. Do not delete the working original or installed model. See [the integration report](ONLINE_SMOOTHING.md).
 

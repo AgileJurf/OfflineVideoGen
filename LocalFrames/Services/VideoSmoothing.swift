@@ -10,7 +10,7 @@ enum SmoothingError: Error, LocalizedError {
         case .disabled: return "Enable online support before choosing 24 FPS smoothing."
         case .unsupported: return "This beta supports original 2-second, 256 × 256, 12 FPS clips only."
         case .changedClip: return "The selected clip changed. Choose it again and review the new preview."
-        case .quota: return "The free helper’s quota is unavailable. Your original is safe. Try again later; there is no paid fallback."
+        case .quota: return "The helper rejected this job because its free GPU quota is insufficient. Connect a free Hugging Face account in Online support, or wait for its allowance to reset. Your original is safe; no paid fallback or automatic retry is used."
         case .unavailable: return "The free helper could not finish. Check Wi-Fi or try again later. Your original is safe; nothing will retry automatically."
         case .invalidResponse: return "The helper returned an incompatible result. No copy was saved; your original is unchanged."
         case .tooLarge: return "This clip or helper response exceeds the beta’s size limit. Your original is unchanged."

@@ -4,7 +4,7 @@
 
 ## Current release boundary
 
-Build 25's support service and Enable online support setting deliver verified catalogs and explicitly consented structured diagnostics. They do not accelerate inference. A subsequent [24 FPS smoothing beta](ONLINE_SMOOTHING.md) adds a separate, direct, per-clip-consented helper integration. The production Vercel service still does not accept media or prompt data. No optimized model or replacement sampler is enabled; the new native interpolation workflow still needs physical-iPhone acceptance.
+Build 25's support service and Enable online support setting deliver verified catalogs and explicitly consented structured diagnostics. They do not accelerate inference. A subsequent [24 FPS smoothing beta](ONLINE_SMOOTHING.md) adds a separate, direct, per-clip-consented helper integration. The connection update completed a live authenticated iOS Simulator app test in 9.51 seconds, with all 23 intermediate motion frames verified; see the [connection test report](SMOOTHING_CONNECTION_TEST.md). The production Vercel service still does not accept media or prompt data. No optimized model or replacement sampler is enabled; the new native interpolation workflow still needs physical-iPhone acceptance.
 
 ## Useful hybrid boundaries
 
@@ -65,7 +65,7 @@ The Space source observed at revision `6ddbfae` declares Practical-RIFE weights 
 
 The fixture translates an orange rectangle eight pixels per source frame. All 23 intervening output frames place it between its neighboring positions, with distinct decoded pixels. The raw result passes this narrow motion check, but **fails exact duration/frame-count acceptance**: it produces `2N − 1` frames. The standalone Swift probe creates a separate copy with one held terminal frame (1/24 second), producing 48 frames at exact 1/24-second timestamps. Its 23 interpolated frames are preserved through local re-encoding. That terminal hold is explicitly not an additional AI-generated frame. Both originals remain unchanged.
 
-This establishes a functioning remote interpolation path for a fabricated translation case. It does not measure natural-scene quality, deformation, flicker, occlusion handling, iPhone memory/thermal behavior, app authentication, or MOVD inference speed. Interpolation cannot repair missing scene motion or poor prompt adherence by itself. The normalizer currently runs in the Mac probe, not the iOS app.
+This establishes a functioning remote interpolation path for a fabricated translation case. It does not measure natural-scene quality, deformation, flicker, occlusion handling, iPhone memory/thermal behavior, app authentication, or MOVD inference speed. Interpolation cannot repair missing scene motion or poor prompt adherence by itself. At the time of that browser experiment, normalization ran in the Mac probe. The subsequent app integration now performs and validates it locally in iOS.
 
 The compact synthetic videos are retained for independent inspection: [12 FPS input](benchmarks/rife-synthetic-2026-11-21/source-12fps.mp4), [raw RIFE result](benchmarks/rife-synthetic-2026-11-21/rife-24fps-raw.mp4), and [duration-corrected result](benchmarks/rife-synthetic-2026-11-21/rife-24fps-duration-corrected.mp4). These contain no personal content.
 
@@ -104,6 +104,6 @@ Free custom ZeroGPU hosting has the eligibility requirements above; an existing 
 ## Next acceptance work
 
 1. Resolve a controlled helper's upload retention/deletion behavior and ordinary account authentication. The tested community Space cleans its intermediate working copies, but the reviewed source does not establish a deletion deadline for Gradio upload cache or final outputs. A Chrome login is not an iOS API credential.
-2. Add an explicitly consented, per-clip **Create 24 FPS copy** workflow only after that service contract is established. Preserve the original, record provider/model provenance, validate returned duration/dimensions/frame count, and stop cleanly on quota exhaustion or network loss. The online-support toggle alone must never upload a clip.
+2. The explicitly consented, per-clip **Create 24 FPS copy** workflow is implemented and its authenticated native path passed the live synthetic Simulator test. Its retention disclosure remains necessary. Preserve the original, record provider/model provenance, validate returned duration/dimensions/frame count, and stop cleanly on quota exhaustion or network loss. The online-support toggle alone must never upload a clip.
 3. Test a selected MOVD output with consent, then actual iPhone playback/export and offline fallback. Include natural motion/occlusion cases before calling the result a quality improvement.
 4. For faster generation, implement the compatible velocity helper and prove numerical parity before changing the iPhone denoising path. Report end-to-end time including queues/transfers; do not infer speed gains from this RIFE test.

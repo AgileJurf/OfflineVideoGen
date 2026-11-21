@@ -20,6 +20,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var smoothingResult: VideoRecord?
     @Published private(set) var smoothingMessage: String?
     private let smoothingClient: RIFEClient
+    let helperAccount: HFAccountModel
     @Published var videos: [VideoRecord] = []
     @Published var selectedVideo: VideoRecord?
     @Published var installed = false
@@ -88,8 +89,10 @@ final class AppModel: ObservableObject {
     }
     var isGenerating: Bool { generationControl != nil }
 
-    init(root: URL? = nil, smoothingClient: RIFEClient = RIFEClient()) {
-        self.smoothingClient = smoothingClient
+    init(root: URL? = nil, smoothingClient: RIFEClient? = nil) {
+        let account = HFAccountModel()
+        helperAccount = account
+        self.smoothingClient = smoothingClient ?? RIFEClient(credentials: account.client)
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
         library = VideoLibrary(root: support.appendingPathComponent("Library", isDirectory: true))
         let modelRoot = support.appendingPathComponent("Models", isDirectory: true)
@@ -107,7 +110,7 @@ final class AppModel: ObservableObject {
             recordCreationDiagnostics = preferences.recordDiagnostics ?? false
         }
         preferencesLoaded = true
-        self.support.onDisable = { [weak self] in self?.closeSmoothingReview() }
+        self.support.onDisable = { [weak self] in self?.closeSmoothingReview(); self?.helperAccount.cancel() }
     }
 
     private func saveCreationPreferences() {
@@ -393,7 +396,7 @@ final class AppModel: ObservableObject {
             } catch {
                 if Task.isCancelled {
                     smoothingMessage = "Smoothing stopped. Your original is safe. The helper may already have received the clip. Nothing will retry automatically."
-                } else { smoothingMessage = (error as? SmoothingError)?.localizedDescription ?? SmoothingError.unavailable.localizedDescription }
+                } else { smoothingMessage = (error as? HFAccountError)?.localizedDescription ?? (error as? SmoothingError)?.localizedDescription ?? SmoothingError.unavailable.localizedDescription }
             }
         }
     }

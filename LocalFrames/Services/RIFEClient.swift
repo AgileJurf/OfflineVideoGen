@@ -5,7 +5,7 @@ protocol RIFETransport: Sendable {
     func request(_ request: URLRequest, kind: RIFEResponseKind, maximumBytes: Int) async throws -> Data
 }
 
-/// Direct, anonymous, free-only access. No Vercel proxy, account token, cookies, credentials or paid fallback.
+/// Direct free-only access. Optional narrowly scoped OAuth; no cookies, redirects, Vercel media proxy or paid fallback.
 final class RIFEHTTPTransport: NSObject, RIFETransport, URLSessionTaskDelegate, @unchecked Sendable {
     private let sessionConfiguration: URLSessionConfiguration
     init(configuration: URLSessionConfiguration = RIFEHTTPTransport.configuration()) {
@@ -25,8 +25,11 @@ final class RIFEHTTPTransport: NSObject, RIFETransport, URLSessionTaskDelegate, 
                     newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) { completionHandler(nil) }
 
     func request(_ request: URLRequest, kind: RIFEResponseKind, maximumBytes: Int) async throws -> Data {
-        guard let url = request.url, RIFEClient.isHelperURL(url),
-              request.value(forHTTPHeaderField: "Authorization") == nil, request.value(forHTTPHeaderField: "Cookie") == nil else { throw SmoothingError.invalidResponse }
+        guard let url = request.url, RIFEClient.isHelperURL(url), request.value(forHTTPHeaderField: "Cookie") == nil else { throw SmoothingError.invalidResponse }
+        if let authorization = request.value(forHTTPHeaderField: "Authorization") {
+            guard authorization.hasPrefix("Bearer "), HFAccountClient.validToken(String(authorization.dropFirst(7))),
+                  !url.path.hasPrefix("/gradio_api/file="), url.path != "/config" else { throw SmoothingError.invalidResponse }
+        }
         let session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
         defer { session.invalidateAndCancel() }
         let (bytes, response) = try await session.bytes(for: request)
@@ -50,7 +53,7 @@ final class RIFEHTTPTransport: NSObject, RIFETransport, URLSessionTaskDelegate, 
                 event.append(byte)
                 if event.suffix(2) == Data([10, 10]) || event.suffix(4) == Data([13, 10, 13, 10]) {
                     let name = RIFEClient.eventName(event)
-                    if name == "complete" || name == "error" { return event }
+                    if name == "complete" || name == "error" || RIFEClient.isTerminalQueueEvent(event) { return event }
                     event.removeAll(keepingCapacity: true)
                 }
             }
@@ -64,12 +67,22 @@ actor RIFEClient {
     static let spaceURL = URL(string: "https://huggingface.co/spaces/1inkusFace/RIFE")!
     static let provider = "Hugging Face · 1inkusFace/RIFE"
     private let transport: any RIFETransport
+    private let credentials: any RIFECredentials
     private var consumedPreviews: Set<UUID> = []
-    init(transport: any RIFETransport = RIFEHTTPTransport()) { self.transport = transport }
+    init(transport: any RIFETransport = RIFEHTTPTransport(), credentials: any RIFECredentials = AnonymousRIFECredentials()) {
+        self.transport = transport; self.credentials = credentials
+    }
 
     static func isHelperURL(_ url: URL) -> Bool {
-        url.scheme == "https" && url.host == origin.host && url.user == nil && url.password == nil && url.port == nil
-            && url.query == nil && url.fragment == nil && url.path.hasPrefix("/gradio_api/")
+        guard url.scheme == "https", url.host == origin.host, url.user == nil, url.password == nil, url.port == nil,
+              url.fragment == nil else { return false }
+        if url.path == "/gradio_api/queue/data" {
+            guard let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+                  query.count == 1, query[0].name == "session_hash", let hash = query[0].value else { return false }
+            return hash.range(of: #"^[a-f0-9]{32}$"#, options: .regularExpression) != nil
+        }
+        return url.query == nil && (url.path == "/config" || url.path == "/gradio_api/upload"
+            || url.path == "/gradio_api/queue/join" || url.path.hasPrefix("/gradio_api/file="))
     }
     static func validFilePath(_ path: String) -> Bool {
         path.count <= 512 && path.hasPrefix("/tmp/gradio/") && path.hasSuffix(".mp4")
@@ -101,6 +114,62 @@ actor RIFEClient {
         }
         throw SmoothingError.unavailable
     }
+    struct QueueEvent: Decodable {
+        let msg: String
+        let event_id: String?
+        let success: Bool?
+        let output: Output?
+        struct Output: Decodable { let data: [Result]?; let error: String? }
+        struct Result: Decodable { let video: File }
+        struct File: Decodable { let url: String?; let path: String? }
+    }
+    static func queueEvents(_ data: Data) -> [QueueEvent] {
+        String(decoding: data, as: UTF8.self).replacingOccurrences(of: "\r\n", with: "\n")
+            .components(separatedBy: "\n\n").compactMap { block in
+                let payload = block.components(separatedBy: "\n").filter { $0.hasPrefix("data:") }
+                    .map { String($0.dropFirst(5)).trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
+                return try? JSONDecoder().decode(QueueEvent.self, from: Data(payload.utf8))
+            }
+    }
+    static func isTerminalQueueEvent(_ data: Data) -> Bool {
+        queueEvents(data).contains { ["process_completed", "close_stream", "queue_full", "unexpected_error"].contains($0.msg) }
+    }
+    static func completedQueueURL(_ data: Data, eventID: String) throws -> URL {
+        for event in queueEvents(data) where event.msg == "process_completed" && event.event_id == eventID {
+            guard event.success == true else {
+                // Classify only. Never render, persist or upload a remote error body.
+                if event.output?.error?.lowercased().contains("quota") == true { throw SmoothingError.quota }
+                throw SmoothingError.unavailable
+            }
+            guard let results = event.output?.data, results.count == 1 else { throw SmoothingError.invalidResponse }
+            if let url = results[0].video.url { return try resultURL(url) }
+            guard let path = results[0].video.path, validFilePath(path) else { throw SmoothingError.invalidResponse }
+            return try resultURL(origin.absoluteString + "/gradio_api/file=" + path)
+        }
+        throw SmoothingError.unavailable
+    }
+    static func functionIndex(_ data: Data) throws -> Int {
+        struct Config: Decodable {
+            let api_prefix: String; let protocolVersion: String; let dependencies: [Dependency]
+            enum CodingKeys: String, CodingKey { case api_prefix, dependencies; case protocolVersion = "protocol" }
+        }
+        struct Dependency: Decodable {
+            let id: Int; let api_name: String?; let inputs: [Int]; let outputs: [Int]; let backend_fn: Bool; let queue: Bool?
+            enum CodingKeys: String, CodingKey { case id, api_name, inputs, outputs, backend_fn, queue }
+            init(from decoder: any Decoder) throws {
+                let values = try decoder.container(keyedBy: CodingKeys.self)
+                id = try values.decode(Int.self, forKey: .id)
+                api_name = try? values.decode(String.self, forKey: .api_name) // false hides non-API dependencies.
+                inputs = try values.decode([Int].self, forKey: .inputs); outputs = try values.decode([Int].self, forKey: .outputs)
+                backend_fn = try values.decode(Bool.self, forKey: .backend_fn); queue = try values.decodeIfPresent(Bool.self, forKey: .queue)
+            }
+        }
+        guard let config = try? JSONDecoder().decode(Config.self, from: data), config.api_prefix == "/gradio_api", config.protocolVersion == "sse_v3" else { throw SmoothingError.invalidResponse }
+        let matches = config.dependencies.filter { $0.api_name == "interpolate_video" }
+        guard matches.count == 1, let function = matches.first, function.id >= 0, function.id < 10000,
+              function.inputs.count == 5, function.outputs.count == 1, function.backend_fn, function.queue == true else { throw SmoothingError.invalidResponse }
+        return function.id
+    }
     static func uploadBody(_ clip: Data, boundary: String) -> Data {
         var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"files\"; filename=\"clip.mp4\"\r\nContent-Type: video/mp4\r\n\r\n".utf8)
         body.append(clip); body.append(Data("\r\n--\(boundary)--\r\n".utf8)); return body
@@ -116,26 +185,38 @@ actor RIFEClient {
         guard hash.hash == prepared.sha256, hash.bytes == prepared.bytes else { throw SmoothingError.changedClip }
         guard SmoothingMedia.supports(prepared.original) else { throw SmoothingError.unsupported }
         let started = ProcessInfo.processInfo.systemUptime
+        progress("Checking free helper access and quota")
+        let token = try await credentials.authorizedToken()
+        let config = try await transport.request(URLRequest(url: Self.origin.appendingPathComponent("config")), kind: .json, maximumBytes: 512 * 1024)
+        let function = try Self.functionIndex(config)
+        try Task.checkCancellation()
         let boundary = "LocalFrames-" + UUID().uuidString
         var upload = URLRequest(url: Self.origin.appendingPathComponent("gradio_api/upload"))
         upload.httpMethod = "POST"; upload.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         upload.httpBody = Self.uploadBody(try Data(contentsOf: prepared.clipURL), boundary: boundary)
+        if let token { upload.setValue("Bearer " + token, forHTTPHeaderField: "Authorization") }
         progress("Uploading this clip over Wi-Fi")
         let response = try await transport.request(upload, kind: .json, maximumBytes: 4096)
         guard let paths = try? JSONDecoder().decode([String].self, from: response), paths.count == 1, Self.validFilePath(paths[0]) else { throw SmoothingError.invalidResponse }
         try Task.checkCancellation()
-        var submit = URLRequest(url: Self.origin.appendingPathComponent("gradio_api/call/interpolate_video"))
+        let sessionHash = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        var submit = URLRequest(url: Self.origin.appendingPathComponent("gradio_api/queue/join"))
         submit.httpMethod = "POST"; submit.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token { submit.setValue("Bearer " + token, forHTTPHeaderField: "Authorization") }
         submit.httpBody = try JSONSerialization.data(withJSONObject: ["data": [
             ["video": ["path": paths[0], "orig_name": "clip.mp4", "meta": ["_type": "gradio.FileData"]], "subtitles": NSNull()],
-            "2", false, "native", "mp4"]])
+            "2", false, "native", "mp4"], "fn_index": function, "session_hash": sessionHash])
         progress("Waiting for the free GPU helper · queue time varies")
         struct Job: Decodable { let event_id: String }
         let jobData = try await transport.request(submit, kind: .json, maximumBytes: 4096)
         guard let job = try? JSONDecoder().decode(Job.self, from: jobData), job.event_id.range(of: #"^[a-f0-9]{32}$"#, options: .regularExpression) != nil else { throw SmoothingError.invalidResponse }
         try Task.checkCancellation()
-        let result = try await transport.request(URLRequest(url: Self.origin.appendingPathComponent("gradio_api/call/interpolate_video/" + job.event_id)), kind: .events, maximumBytes: 128 * 1024)
-        let download = try Self.completedURL(result)
+        var eventsURL = URLComponents(url: Self.origin.appendingPathComponent("gradio_api/queue/data"), resolvingAgainstBaseURL: false)!
+        eventsURL.queryItems = [URLQueryItem(name: "session_hash", value: sessionHash)]
+        var eventsRequest = URLRequest(url: eventsURL.url!)
+        if let token { eventsRequest.setValue("Bearer " + token, forHTTPHeaderField: "Authorization") }
+        let result = try await transport.request(eventsRequest, kind: .events, maximumBytes: 128 * 1024)
+        let download = try Self.completedQueueURL(result, eventID: job.event_id)
         try Task.checkCancellation()
         progress("Downloading and checking the 24 FPS result")
         let video = try await transport.request(URLRequest(url: download), kind: .video, maximumBytes: SmoothingMedia.maximumBytes)

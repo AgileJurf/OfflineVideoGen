@@ -21,8 +21,8 @@ final class SmoothingTests: XCTestCase {
         try await SmoothingMedia.prepare(record(), source: fixture("source-12fps"), temporaryRoot: root)
     }
     private func responses() throws -> [Data] {
-        [Data(#"["/tmp/gradio/abc/clip.mp4"]"#.utf8), Data(#"{"event_id":"0123456789abcdef0123456789abcdef"}"#.utf8),
-         Data("event: heartbeat\ndata: null\n\nevent: complete\ndata: [{\"video\":{\"url\":\"https://1inkusface-rife.hf.space/gradio_api/file=/tmp/gradio/abc/final_interp_123.mp4\"},\"subtitles\":null}]\n\n".utf8),
+        [Data(#"{"api_prefix":"/gradio_api","protocol":"sse_v3","dependencies":[{"id":7,"api_name":"interpolate_video","inputs":[1,2,3,4,5],"outputs":[6],"backend_fn":true,"queue":true},{"id":8,"api_name":false,"inputs":[],"outputs":[],"backend_fn":true,"queue":true}]}"#.utf8), Data(#"["/tmp/gradio/abc/clip.mp4"]"#.utf8), Data(#"{"event_id":"0123456789abcdef0123456789abcdef"}"#.utf8),
+         Data(#"data: {"msg":"process_completed","event_id":"0123456789abcdef0123456789abcdef","success":true,"output":{"data":[{"video":{"url":"https://1inkusface-rife.hf.space/gradio_api/file=/tmp/gradio/abc/final_interp_123.mp4"},"subtitles":null}]}}"#.utf8),
          try Data(contentsOf: fixture("rife-24fps-raw"))]
     }
 
@@ -73,20 +73,94 @@ final class SmoothingTests: XCTestCase {
         var saved = try await library.list(); XCTAssertEqual(saved.count, 2)
         XCTAssertEqual(saved.first { $0.id == copy.id }?.smoothing, result.provenance)
         let requests = await transport.requests
-        XCTAssertEqual(requests.count, 4)
-        XCTAssertEqual(requests.map { $0.httpMethod ?? "GET" }, ["POST", "POST", "GET", "GET"])
+        XCTAssertEqual(requests.count, 5)
+        XCTAssertEqual(requests.map { $0.httpMethod ?? "GET" }, ["GET", "POST", "POST", "GET", "GET"])
         XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == nil && $0.value(forHTTPHeaderField: "Cookie") == nil })
-        let upload = String(decoding: requests[0].httpBody!, as: UTF8.self)
+        let upload = String(decoding: requests[1].httpBody!, as: UTF8.self)
         XCTAssertTrue(upload.contains("filename=\"clip.mp4\"")); XCTAssertFalse(upload.contains(original.id.uuidString))
-        XCTAssertTrue(requests[0].httpBody!.range(of: try Data(contentsOf: fixture("source-12fps"))) != nil)
-        let submit = String(decoding: requests[1].httpBody!, as: UTF8.self)
+        XCTAssertTrue(requests[1].httpBody!.range(of: try Data(contentsOf: fixture("source-12fps"))) != nil)
+        let submit = String(decoding: requests[2].httpBody!, as: UTF8.self)
         XCTAssertFalse(submit.contains("PRIVATE_PROMPT")); XCTAssertFalse(submit.contains("123456"))
-        let object = try JSONSerialization.jsonObject(with: requests[1].httpBody!) as! [String: Any]
+        let object = try JSONSerialization.jsonObject(with: requests[2].httpBody!) as! [String: Any]
         let settings = object["data"] as! [Any]
         XCTAssertEqual(settings[1] as? String, "2"); XCTAssertEqual(settings[2] as? Bool, false)
         XCTAssertEqual(settings[3] as? String, "native"); XCTAssertEqual(settings[4] as? String, "mp4")
+        XCTAssertEqual(object["fn_index"] as? Int, 7, "Resolve the named function instead of hard-coding its index")
+        XCTAssertEqual(URLComponents(url: requests[3].url!, resolvingAgainstBaseURL: false)?.queryItems?.first?.value,
+                       object["session_hash"] as? String)
         try await library.delete(copy); saved = try await library.list(); XCTAssertEqual(saved.map(\.id), [original.id])
         XCTAssertEqual(try SmoothingMedia.fingerprint(library.videoURL(original.id)).hash, originalHash)
+    }
+
+    func testConnectedAccountAuthenticatesOnlyUploadAndJobAndStopsBeforeUploadOnQuotaFailure() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let preview = try await prepare(root), token = "hf_oauth_SYNTHETIC_TEST_CREDENTIAL"
+        let transport = FakeRIFETransport(try responses())
+        _ = try await RIFEClient(transport: transport, credentials: FakeRIFECredentials(token: token))
+            .smooth(preview, consentID: preview.id, enabled: true)
+        let requests = await transport.requests
+        XCTAssertEqual(requests.map { $0.value(forHTTPHeaderField: "Authorization") },
+                       [nil, "Bearer " + token, "Bearer " + token, "Bearer " + token, nil])
+        let blocked = FakeRIFETransport([]), again = try await prepare(root)
+        do {
+            _ = try await RIFEClient(transport: blocked, credentials: FakeRIFECredentials(token: nil))
+                .smooth(again, consentID: again.id, enabled: true)
+            XCTFail()
+        } catch HFAccountError.quota { }
+        let count = await blocked.count; XCTAssertEqual(count, 0, "Free quota must be checked before any media request")
+    }
+
+    func testQueueErrorsAreClassifiedWithoutExposingRemoteBodyAndSessionURLsAreBounded() throws {
+        let id = "0123456789abcdef0123456789abcdef"
+        let event = Data((#"data: {"msg":"process_completed","event_id":""# + id + #"","success":false,"output":{"error":"PRIVATE_REMOTE_TEXT: You have exceeded your ZeroGPU quota (90s requested vs. 61s left)"}}"# + "\n\n").utf8)
+        XCTAssertTrue(RIFEClient.isTerminalQueueEvent(event))
+        do { _ = try RIFEClient.completedQueueURL(event, eventID: id); XCTFail() }
+        catch { XCTAssertEqual(String(describing: error), "quota"); XCTAssertFalse(error.localizedDescription.contains("PRIVATE_REMOTE_TEXT")) }
+        XCTAssertThrowsError(try RIFEClient.completedQueueURL(try responses()[3], eventID: String(repeating: "a", count: 32)))
+        XCTAssertTrue(RIFEClient.isHelperURL(URL(string: "https://1inkusface-rife.hf.space/gradio_api/queue/data?session_hash=" + id)!))
+        for suffix in ["", "?session_hash=bad", "?session_hash=" + id + "&token=secret", "?session_hash=" + id + "&session_hash=" + id] {
+            XCTAssertFalse(RIFEClient.isHelperURL(URL(string: "https://1inkusface-rife.hf.space/gradio_api/queue/data" + suffix)!))
+        }
+        let changed = Data(#"{"api_prefix":"/gradio_api","protocol":"sse_v3","dependencies":[{"id":7,"api_name":"interpolate_video","inputs":[1,2,3],"outputs":[6],"backend_fn":true,"queue":true}]}"#.utf8)
+        XCTAssertThrowsError(try RIFEClient.functionIndex(changed))
+    }
+
+    /// Explicit opt-in integration gate. Skipped by local regression and Cloud CI; never uploads a personal clip.
+    @MainActor func testLiveHelperSavesSynthetic24FPSCopyInAppLibrary() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["LOCALFRAMES_LIVE_SYNTHETIC_SMOOTHING"] == "1",
+                          "Live synthetic GPU upload requires an explicit local test invocation")
+        let account = HFAccountClient()
+        let name = try await account.connectedName()
+        XCTAssertNotNil(name, "Connect an approved free helper account in this Simulator first")
+        guard name != nil else { return }
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let app = AppModel(root: root, smoothingClient: RIFEClient(credentials: account))
+        await app.load(); app.support.enabled = true
+        let source = root.appendingPathComponent("source.mp4")
+        try FileManager.default.copyItem(at: fixture("source-12fps"), to: source)
+        let original = try await app.library.add(temporaryURL: source, request: GenerationRequest(prompt: "Synthetic moving-shapes connection test", duration: 2, seed: 1), metrics: record().metrics)
+        let hash = try SmoothingMedia.fingerprint(app.library.videoURL(original.id)).hash
+        XCTAssertEqual(hash, "828ede0ee022eb194f80c4039ef90d96e715d5c23f4717047508cfa0fc5dd78b")
+        let deadline = Date().addingTimeInterval(600)
+        app.prepareSmoothing(original)
+        while app.working && Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
+        let preview = try XCTUnwrap(app.smoothingPreview, app.smoothingMessage ?? "Preview missing")
+        app.startSmoothing(previewID: preview.id, consent: true)
+        while app.working && Date() < deadline { try await Task.sleep(for: .milliseconds(100)) }
+        if app.working { app.cancel(); XCTFail("Live helper deadline exceeded"); return }
+        let result = try XCTUnwrap(app.smoothingResult, app.smoothingMessage ?? "No saved result")
+        let frames = try await SmoothingMedia.inspect(app.library.videoURL(result.id), fps: 24, acceptedCounts: [48])
+        XCTAssertEqual(frames, 48); XCTAssertEqual(result.parentVideoID, original.id)
+        XCTAssertEqual(try SmoothingMedia.fingerprint(app.library.videoURL(original.id)).hash, hash)
+        let saved = try await app.library.list(); XCTAssertEqual(saved.count, 2)
+        let movie = XCTAttachment(data: try Data(contentsOf: app.library.videoURL(result.id)), uniformTypeIdentifier: "public.mpeg-4")
+        movie.name = "Live native helper synthetic 24 FPS result"; movie.lifetime = .keepAlways; add(movie)
+        let report: [String: Any] = ["execution":"iOS Simulator app-hosted integration test", "syntheticOnly":true,
+            "sourceSHA256":hash,"decodedFrames":frames,"fps":24,"duration":2,"width":256,"height":256,
+            "originalPreserved":true,"savedLibraryItems":saved.count,"elapsedSeconds":result.smoothing!.elapsedSeconds,
+            "returnedFrames":result.smoothing!.returnedFrames,"terminalHoldFrames":result.smoothing!.terminalHoldFrames]
+        let json = XCTAttachment(data: try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]), uniformTypeIdentifier: "public.json")
+        json.name = "Live native helper validation"; json.lifetime = .keepAlways; add(json)
     }
 
     func testMediaRejectsWrongFrameRateAndNormalizesAlready48WithoutAnotherHold() async throws {
@@ -112,7 +186,7 @@ final class SmoothingTests: XCTestCase {
         for event in ["event: error\ndata: null\n\n", "event: complete\ndata: []\n\n", "event: heartbeat\ndata: null\n\n"] {
             XCTAssertThrowsError(try RIFEClient.completedURL(Data(event.utf8)))
         }
-        XCTAssertNoThrow(try RIFEClient.completedURL(responses()[2]))
+        XCTAssertNoThrow(try RIFEClient.completedQueueURL(responses()[3], eventID: "0123456789abcdef0123456789abcdef"))
         let config = RIFEHTTPTransport.configuration()
         XCTAssertFalse(config.allowsCellularAccess); XCTAssertFalse(config.allowsExpensiveNetworkAccess)
         XCTAssertFalse(config.httpShouldSetCookies); XCTAssertNil(config.httpCookieStorage)
@@ -214,5 +288,13 @@ private actor FakeRIFETransport: RIFETransport {
         let data = responses.removeFirst()
         guard data.count <= maximumBytes else { throw SmoothingError.tooLarge }
         return data
+    }
+}
+
+private struct FakeRIFECredentials: RIFECredentials {
+    let token: String?
+    func authorizedToken() async throws -> String? {
+        guard let token else { throw HFAccountError.quota }
+        return token
     }
 }
