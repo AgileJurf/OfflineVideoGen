@@ -14,21 +14,9 @@ struct GenerationOptionsView: View {
                 ScrollView(.horizontal) {
                     HStack(alignment: .top, spacing: 10) {
                         ForEach(VisualStyle.allCases) { style in
-                            Button { model.visualStyle = style } label: {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    StyleSwatch(style: style).frame(width: 126, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
-                                    HStack {
-                                        Text(style.name).font(.caption.weight(.semibold))
-                                        Spacer(minLength: 2)
-                                        if model.visualStyle == style { Image(systemName: "checkmark.circle.fill").foregroundStyle(.mint) }
-                                    }
-                                }.padding(9).frame(width: 144)
-                                    .background(model.visualStyle == style ? .mint.opacity(0.14) : .white.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(model.visualStyle == style ? Color.mint : .clear, lineWidth: 1))
-                            }.buttonStyle(.plain)
-                                .accessibilityLabel(style.name + ". " + style.detail)
-                                .accessibilityAddTraits(model.visualStyle == style ? .isSelected : [])
-                                .accessibilityIdentifier("style-" + style.rawValue)
+                            StyleSelectionCard(style: style, selected: model.visualStyle == style) {
+                                model.visualStyle = style
+                            }
                         }
                     }
                 }.scrollIndicators(.hidden)
@@ -87,6 +75,32 @@ struct GenerationOptionsView: View {
             } catch is CancellationError { }
             catch { tokenError = "Prompt tokens could not be checked: " + error.localizedDescription }
         }
+    }
+}
+
+private struct StyleSelectionCard: View {
+    let style: VisualStyle
+    let selected: Bool
+    let action: () -> Void
+    private var backgroundColor: Color { selected ? Color.mint.opacity(0.14) : Color.white.opacity(0.04) }
+    private var borderColor: Color { selected ? Color.mint : Color.clear }
+    private var traits: AccessibilityTraits { selected ? .isSelected : [] }
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                StyleSwatch(style: style).frame(width: 126, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
+                HStack {
+                    Text(style.name).font(.caption.weight(.semibold))
+                    Spacer(minLength: 2)
+                    if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.mint) }
+                }
+            }.padding(9).frame(width: 144)
+                .background(backgroundColor, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderColor, lineWidth: 1))
+        }.buttonStyle(.plain)
+            .accessibilityLabel(style.name + ". " + style.detail)
+            .accessibilityAddTraits(traits)
+            .accessibilityIdentifier("style-" + style.rawValue)
     }
 }
 

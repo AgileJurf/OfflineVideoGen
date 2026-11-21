@@ -30,7 +30,7 @@ Local artifacts are retained in ignored `build/LocalFrames-ExpansionFinal.xcresu
 
 ## Cloud validation history
 
-Cloud Build 19 tested the preceding measurement/export-fallback commit `e8876c6`, not the expansion. Its iOS analysis passed, but the newer Swift compiler could not type-check a synthetic pixel-array expression in the test target. The expression now has explicit element-count and Float32 types. This is a test compilation fix; no inference arithmetic changed. The next Cloud run will test the combined candidate before TestFlight distribution.
+Cloud Build 19 tested the preceding measurement/export-fallback commit `e8876c6`, not the expansion. Its iOS analysis passed, but the newer Swift compiler could not type-check a synthetic pixel-array expression in the test target. The expression now has explicit element-count and Float32 types. Build 20 reached another type-check timeout in the expansion's style-card view; that view is now a separate component with explicit style types. These are compiler compatibility fixes; no inference arithmetic changed. The next Cloud run will test the combined candidate before TestFlight distribution.
 
 ## Device acceptance still required
 
