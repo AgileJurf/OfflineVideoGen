@@ -9,6 +9,8 @@ final class ModelRunner {
     var predictionCompleted: ((String, Double) -> Void)?
     var peakMemory: UInt64 = 0
     var thermalStates = Set<String>()
+    var modelLoadSeconds = 0.0
+    var modelPredictionSeconds = 0.0
 
     init(directory: URL, benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl()) {
         self.directory = directory; self.benchmark = benchmark; self.control = control
@@ -53,13 +55,21 @@ final class ModelRunner {
             let modelURL = directory.appendingPathComponent(name + ".mlmodelc")
             let unitLabel = config.computeUnits == .cpuOnly ? "cpuOnly" : "cpuAndGPU"
             let model: MLModel
+            let load = { () throws -> MLModel in
+                let begin = ProcessInfo.processInfo.systemUptime
+                defer { self.modelLoadSeconds += ProcessInfo.processInfo.systemUptime - begin }
+                return try MLModel(contentsOf: modelURL, configuration: config)
+            }
             if let benchmark {
-                model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel]) {
-                    try MLModel(contentsOf: modelURL, configuration: config)
-                }
-            } else { model = try MLModel(contentsOf: modelURL, configuration: config) }
+                model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel], load)
+            } else { model = try load() }
             let provider = try MLDictionaryFeatureProvider(dictionary: inputs)
             let result: MLFeatureProvider
+            let predict = { () throws -> MLFeatureProvider in
+                let begin = ProcessInfo.processInfo.systemUptime
+                defer { self.modelPredictionSeconds += ProcessInfo.processInfo.systemUptime - begin }
+                return try model.prediction(from: provider)
+            }
             if let benchmark {
                 let shapes = inputs.keys.sorted().map { key in
                     "\(key):\(inputs[key]?.multiArrayValue?.shape.map(\.intValue) ?? [])"
@@ -68,10 +78,8 @@ final class ModelRunner {
                     guard let array = inputs[key]?.multiArrayValue else { return nil }
                     return "\(key):type=\(array.dataType.rawValue),strides=\(array.strides.map(\.intValue))"
                 }.joined(separator: ";")
-                result = try benchmark.measure(name, phase: "predict", fields: ["requestedComputeUnits": unitLabel, "inputShapes": shapes, "inputLayouts": layouts]) {
-                    try model.prediction(from: provider)
-                }
-            } else { result = try model.prediction(from: provider) }
+                result = try benchmark.measure(name, phase: "predict", fields: ["requestedComputeUnits": unitLabel, "inputShapes": shapes, "inputLayouts": layouts], predict)
+            } else { result = try predict() }
             try Task.checkCancellation()
             return Dictionary(uniqueKeysWithValues: result.featureNames.compactMap { key in
                 result.featureValue(for: key).map { (key, $0) }

@@ -56,6 +56,19 @@ public struct GenerationMetrics: Codable, Sendable {
     public var pausedSeconds: Double? = nil
     public var resumedFromStep: Int? = nil
     public var decoderExecutionPolicy: String? = nil
+    public var modelLoadSeconds: Double? = nil
+    public var modelPredictionSeconds: Double? = nil
+    public var diffusionEvaluations: Int? = nil
+    public var profileID: String? = nil
+    public var precision: String? = nil
+}
+
+/// Public presets are promoted only after matched physical-device comparisons.
+public enum GenerationProfile {
+    public static let baselineID = "movd-fp32-rflow21-spatial-cpu-v2"
+    public static let precision = "STDiT/VAE Float32; original T5 INT8 weights"
+    public static let evaluationCount = 21
+    public static let pendingPresets = ["Fast", "Balanced", "Quality"]
 }
 
 public enum GenerationError: LocalizedError {

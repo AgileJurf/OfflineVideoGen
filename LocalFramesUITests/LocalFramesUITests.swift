@@ -2,6 +2,26 @@ import XCTest
 
 final class LocalFramesUITests: XCTestCase {
     @MainActor
+    func testDeveloperBenchmarksAreLocalAndPresetsStayUnvalidated() throws {
+        let app = XCUIApplication()
+        app.launch()
+        app.tabBars.buttons["Setup"].tap()
+        let link = app.buttons["openBenchmarks"]
+        for _ in 0..<4 where !link.isHittable { app.swipeUp() }
+        XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
+        let preset = app.descendants(matching: .any).matching(identifier: "benchmarkBaselinePreset").firstMatch
+        XCTAssertTrue(preset.waitForExistence(timeout: 5))
+        XCTAssertTrue(preset.label.contains("Baseline"))
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Benchmark reference configuration"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.swipeUp()
+        XCTAssertTrue(app.staticTexts["Fast"].exists)
+        XCTAssertFalse(app.buttons["Fast"].exists, "Unvalidated preset must not become selectable")
+    }
+
+    @MainActor
     func testLaunchPromptAndModelGate() throws {
         let app = XCUIApplication()
         app.launch()

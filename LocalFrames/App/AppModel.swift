@@ -166,6 +166,7 @@ final class AppModel: ObservableObject {
                 "width": String(request.width), "height": String(request.height), "fps": String(request.framesPerSecond),
                 "configuration": "baseline-fp32-stdit-vae-t5-int8-spatial-cpu",
                 "decoderExecutionPolicy": MOVDModel.decoderExecutionPolicy,
+                "profileID": GenerationProfile.baselineID, "precision": GenerationProfile.precision,
                 "schedule": "30 points; leap index 20; 21 predictions; TDTM first 10; CFG 7; latent frames 20",
                 "cacheCondition": "uncontrolled OS cache; record first/repeat run separately; process is not restarted automatically",
                 "baselineJobID": job?.id.uuidString ?? "", "resumedFromJournal": resuming?.previousJournal ?? "",

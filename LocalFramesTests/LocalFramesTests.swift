@@ -5,6 +5,80 @@ import XCTest
 @testable import VideoEngine
 
 final class LocalFramesTests: XCTestCase {
+    func testFallbackPixelBuffersProducePlayableVideoWhenAdaptorPoolIsMissing() async throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let url = root.appendingPathComponent("fallback.mp4")
+        let encoder = try VideoEncoder(output: url, width: 32, height: 32, fps: 12, poolProvider: { _ in nil })
+        let values = (0..<(3 * 24 * 32 * 32)).map { Float32($0 % 256) / 127.5 - 1 }
+        try await encoder.append(MLShapedArray(scalars: values, shape: [1, 3, 24, 32, 32]), limit: 24)
+        try await encoder.finish(expectedFrames: 24)
+        let asset = AVURLAsset(url: url)
+        let duration = try await asset.load(.duration).seconds
+        XCTAssertEqual(duration, 2, accuracy: 0.01)
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        let track = try XCTUnwrap(tracks.first)
+        let reader = try AVAssetReader(asset: asset)
+        let output = AVAssetReaderTrackOutput(track: track, outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+        reader.add(output); XCTAssertTrue(reader.startReading())
+        var frames = 0
+        while output.copyNextSampleBuffer() != nil { frames += 1 }
+        XCTAssertEqual(reader.status, .completed)
+        XCTAssertEqual(frames, 24, "Decode actual frames instead of relying on MP4 metadata alone")
+    }
+
+    func testBenchmarkReaderSeparatesResumeTimeAndPreservesFailures() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let url = root.appendingPathComponent("synthetic.jsonl")
+        let log = try BenchmarkLog(url: url, kind: "generation", metadata: ["appBuild": "18", "configuration": "synthetic"], sampleInterval: 100)
+        log.record("checkpoint_restored", fields: ["completedSteps": "21"])
+        log.record("begin", partition: "vae_spatial_part3_1", phase: "load")
+        log.record("end", partition: "vae_spatial_part3_1", phase: "load", duration: 2)
+        log.record("begin", partition: "vae_spatial_part3_1", phase: "predict")
+        log.record("failure", partition: "vae_spatial_part3_1", phase: "predict", duration: 3, fields: ["error": "synthetic fixture failure"])
+        try log.finish(status: "failed", fields: ["error": "synthetic fixture failure"])
+        let summary = try BenchmarkSummary.read(url)
+        XCTAssertEqual(summary.status, "failed")
+        XCTAssertEqual(summary.sessionLabel, "Resumed session")
+        XCTAssertEqual(summary.restoredSteps, 21)
+        XCTAssertEqual(summary.totalLoadSeconds, 2)
+        XCTAssertEqual(summary.totalPredictionSeconds, 3)
+        XCTAssertEqual(summary.partitions.first?.failures, 1)
+        XCTAssertNotNil(summary.failure)
+        XCTAssertFalse(summary.hasIncompleteLines)
+        XCTAssertGreaterThanOrEqual(log.peakSampledMemoryBytes, 1)
+    }
+
+    func testInterruptedJournalDoesNotBecomeSuccess() throws {
+        let root = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("synthetic.jsonl")
+        do {
+            let log = try BenchmarkLog(url: url, kind: "generation", sampleInterval: 100)
+            log.record("begin", partition: "vae_spatial_part4", phase: "predict")
+        }
+        let handle = try FileHandle(forWritingTo: url)
+        try handle.seekToEnd(); try handle.write(contentsOf: Data("{\"partial\":".utf8)); try handle.close()
+        let summary = try BenchmarkSummary.read(url)
+        XCTAssertEqual(summary.status, "interrupted")
+        XCTAssertEqual(summary.lastOperation, "vae_spatial_part4 / predict")
+        XCTAssertTrue(summary.hasIncompleteLines)
+    }
+
+    func testEarlierVideoMetricsRemainReadableAfterBenchmarkFieldsAreAdded() throws {
+        let json = """
+        {"elapsedSeconds":12.5,"peakSampledMemoryBytes":1048576,"thermalStates":["nominal"],"environment":"synthetic-fixture","modelRevision":"original","resumedFromStep":21}
+        """
+        let metrics = try JSONDecoder().decode(GenerationMetrics.self, from: Data(json.utf8))
+        XCTAssertEqual(metrics.elapsedSeconds, 12.5)
+        XCTAssertEqual(metrics.resumedFromStep, 21)
+        XCTAssertNil(metrics.profileID)
+        XCTAssertNil(metrics.modelLoadSeconds)
+    }
+
     func testDecoderStatisticsIgnoreStridedPaddingAndPreserveValues() throws {
         let values: [Float32] = [0, .nan, -2, 3, .nan, 4]
         let bytes = values.withUnsafeBytes { Data($0) }

@@ -4,7 +4,7 @@ import Hub
 import Tokenizers
 
 /// Native temporal diffusion based on EAI Lab's MIT-licensed MOVD implementation.
-/// This port has not yet passed real-model parity or physical-iPhone validation.
+/// Reference parity and broad device validation remain in progress.
 public actor MOVDEngine {
     public init() {}
 
@@ -55,11 +55,15 @@ public actor MOVDEngine {
             "pausedSeconds": String(control.totalPausedSeconds), "resumedFromStep": String(saved?.completedSteps ?? 0),
             "semantics": "This session only; checkpoint I/O and cooling are included. Resumed sessions are not full baseline timing."])
         return GenerationMetrics(elapsedSeconds: ProcessInfo.processInfo.systemUptime - started,
-                                 peakSampledMemoryBytes: runner.peakMemory,
+                                 peakSampledMemoryBytes: max(runner.peakMemory, benchmark?.peakSampledMemoryBytes ?? 0),
                                  thermalStates: runner.thermalStates.sorted(), environment: environment,
                                  modelRevision: MOVDModel.revision,
                                  pausedSeconds: control.totalPausedSeconds, resumedFromStep: saved?.completedSteps,
-                                 decoderExecutionPolicy: MOVDModel.decoderExecutionPolicy)
+                                 decoderExecutionPolicy: MOVDModel.decoderExecutionPolicy,
+                                 modelLoadSeconds: runner.modelLoadSeconds,
+                                 modelPredictionSeconds: runner.modelPredictionSeconds,
+                                 diffusionEvaluations: GenerationProfile.evaluationCount - (saved?.completedSteps ?? 0),
+                                 profileID: GenerationProfile.baselineID, precision: GenerationProfile.precision)
     }
 
     private struct Encoding {

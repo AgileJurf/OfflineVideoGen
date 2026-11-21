@@ -36,6 +36,10 @@ public final class BenchmarkLog: @unchecked Sendable {
     private var activePartition: String?
     private var activePhase: String?
     private var timer: DispatchSourceTimer?
+    private var sampledPeak: UInt64 = 0
+    public var peakSampledMemoryBytes: UInt64 {
+        lock.lock(); defer { lock.unlock() }; return sampledPeak
+    }
     private let signpostLog = OSLog(subsystem: "com.agilejurf.localframes", category: .pointsOfInterest)
 
     public init(url: URL, kind: String, metadata: [String: String] = [:], sampleInterval: Double = 0.25) throws {
@@ -79,10 +83,12 @@ public final class BenchmarkLog: @unchecked Sendable {
         defer { lock.unlock() }
         guard !closed else { return }
         if event == "begin" { activePartition = partition; activePhase = phase }
+        let snapshot = Self.snapshot()
+        sampledPeak = max(sampledPeak, snapshot.footprintBytes ?? 0)
         let entry = Event(schemaVersion: 1, sequence: sequence,
                           elapsedSeconds: ProcessInfo.processInfo.systemUptime - started,
                           event: event, partition: partition ?? activePartition, phase: phase ?? activePhase,
-                          durationSeconds: duration, snapshot: Self.snapshot(), fields: fields)
+                          durationSeconds: duration, snapshot: snapshot, fields: fields)
         sequence += 1
         do {
             var data = try encoder.encode(entry)

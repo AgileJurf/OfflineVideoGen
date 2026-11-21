@@ -30,7 +30,7 @@ struct CreateView: View {
                     Spacer()
                     Image(systemName: "film.stack.fill").font(.largeTitle).foregroundStyle(.mint)
                 }
-                Label("Experimental build · device validation pending", systemImage: "flask")
+                Label("Experimental build · performance testing", systemImage: "flask")
                     .font(.caption).foregroundStyle(.orange)
                 VStack(alignment: .leading, spacing: 12) {
                     Text("YOUR SCENE").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
@@ -122,7 +122,7 @@ struct SetupView: View {
             Section {
                 Label(model.installed ? "Model installed" : "Install MOVD", systemImage: model.installed ? "checkmark.seal.fill" : "cpu")
                     .font(.headline).foregroundStyle(model.installed ? .mint : .primary)
-                Text("A genuine video diffusion model with temporal attention and a video decoder. This experimental port still needs inference validation.")
+                Text("A genuine video diffusion model with temporal attention and a video decoder. Generation runs locally; this experimental port is undergoing performance and quality testing.")
                 Text("Download: approximately 14.1 GB. Allow 50 GB free during installation. Wi-Fi required.")
                     .font(.footnote).foregroundStyle(.secondary)
                 if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
@@ -137,6 +137,8 @@ struct SetupView: View {
                 }
             } header: { Text("Offline video model") }
             Section("Device benchmark") {
+                NavigationLink("Benchmark results and comparisons") { BenchmarkView() }
+                    .accessibilityIdentifier("openBenchmarks")
                 Text("Run the unchanged 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Picker("Prompt", selection: $model.benchmarkPromptIndex) {
@@ -180,7 +182,7 @@ struct SetupView: View {
                 LabeledContent("Engine", value: "MOVD / Open-Sora")
                 LabeledContent("Output", value: "256 × 256 · 12 FPS")
                 LabeledContent("Duration", value: "2–5 seconds")
-                Text("Xcode Cloud tests check the app and supporting code. Successful video generation, speed, memory usage, and thermal stability on iPhone are not yet verified.")
+                Text("Xcode Cloud tests check the app and supporting code. Device benchmarks record generation time, sampled memory and thermal behavior. Model and sampler changes need on-device quality comparisons.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Link("Source and model documentation", destination: URL(string: "https://github.com/AgileJurf/OfflineVideoGen")!)
             }

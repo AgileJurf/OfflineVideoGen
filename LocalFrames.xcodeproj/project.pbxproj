@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11000000000000000000001 /* BenchmarkSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000003 /* BenchmarkSummary.swift */; };
+		A11000000000000000000002 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000004 /* BenchmarkView.swift */; };
 		70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */; };
 		70DD95CE5C1A4A1EB33E1003 /* build-revision.txt in Resources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */; };
 		70DD95CE5C1A4A1EB33E1001 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */; };
@@ -44,6 +46,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A11000000000000000000003 /* BenchmarkSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BenchmarkSummary.swift; sourceTree = "<group>"; };
+		A11000000000000000000004 /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/BenchmarkView.swift; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BackgroundGeneration.swift; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1008 /* BackgroundTasks.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = LocalFrames/BackgroundTasks.plist; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1005 /* LocalFrames.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LocalFrames/LocalFrames.entitlements; sourceTree = "<group>"; };
@@ -96,6 +100,8 @@
 		B28B7AF69320201D1CF206EB = {
 			isa = PBXGroup;
 			children = (
+				A11000000000000000000003 /* BenchmarkSummary.swift */,
+				A11000000000000000000004 /* BenchmarkView.swift */,
 				B1550ED80F46BEA14D5A9DBA /* LocalFrames/App/LocalFramesApp.swift */,
 				EFC275C2380C38304077287A /* LocalFrames/App/AppModel.swift */,
 				70DD95CE5C1A4A1EB33E1005 /* LocalFrames.entitlements */,
@@ -278,6 +284,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A11000000000000000000001 /* BenchmarkSummary.swift in Sources */,
+				A11000000000000000000002 /* BenchmarkView.swift in Sources */,
 				70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */,
 				40813344D6593CC4A9A72956 /* LocalFrames/App/LocalFramesApp.swift in Sources */,
 				6D959CB7EC6CE15802AA6849 /* LocalFrames/App/AppModel.swift in Sources */,

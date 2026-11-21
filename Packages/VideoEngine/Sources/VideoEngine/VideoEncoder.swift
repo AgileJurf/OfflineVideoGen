@@ -11,13 +11,17 @@ final class VideoEncoder {
     private let width: Int
     private let height: Int
     private let fps: Int
+    private var fallbackPool: CVPixelBufferPool?
+    private let poolProvider: (AVAssetWriterInputPixelBufferAdaptor) -> CVPixelBufferPool?
     private(set) var frameCount = 0
 
-    init(output: URL, width: Int, height: Int, fps: Int) throws {
+    init(output: URL, width: Int, height: Int, fps: Int,
+         poolProvider: @escaping (AVAssetWriterInputPixelBufferAdaptor) -> CVPixelBufferPool? = { $0.pixelBufferPool }) throws {
         self.output = output
         self.width = width
         self.height = height
         self.fps = fps
+        self.poolProvider = poolProvider
         writer = try AVAssetWriter(outputURL: output, fileType: .mp4)
         input = AVAssetWriterInput(mediaType: .video, outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: width, AVVideoHeightKey: height])
@@ -41,6 +45,9 @@ final class VideoEncoder {
         let values = array.scalars
         for frame in 0..<frames where frameCount < limit {
             try Task.checkCancellation()
+            guard writer.status == .writing else {
+                throw GenerationError.encodingFailed(writer.error?.localizedDescription ?? "Encoder is not writing")
+            }
             let deadline = ProcessInfo.processInfo.systemUptime + 30
             while !input.isReadyForMoreMediaData {
                 guard writer.status == .writing, ProcessInfo.processInfo.systemUptime < deadline else {
@@ -48,7 +55,9 @@ final class VideoEncoder {
                 }
                 try await Task.sleep(nanoseconds: 10_000_000)
             }
-            guard let pool = adaptor.pixelBufferPool else { throw GenerationError.encodingFailed("Pixel buffer pool unavailable") }
+            // A writer can be ready while its optional adaptor pool is unavailable.
+            // Supply compatible buffers from our own bounded pool in that case.
+            let pool = try poolProvider(adaptor) ?? makeFallbackPool()
             var buffer: CVPixelBuffer?
             guard CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer) == kCVReturnSuccess, let buffer else {
                 throw GenerationError.memoryPressure
@@ -77,6 +86,20 @@ final class VideoEncoder {
             }
             frameCount += 1
         }
+    }
+
+    private func makeFallbackPool() throws -> CVPixelBufferPool {
+        if let fallbackPool { return fallbackPool }
+        let attributes: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: width, kCVPixelBufferHeightKey as String: height,
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+        ]
+        var pool: CVPixelBufferPool?
+        guard CVPixelBufferPoolCreate(nil, nil, attributes as CFDictionary, &pool) == kCVReturnSuccess,
+              let pool else { throw GenerationError.memoryPressure }
+        fallbackPool = pool
+        return pool
     }
 
     func finish(expectedFrames: Int) async throws {
