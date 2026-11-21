@@ -12,9 +12,10 @@
 | Xcode Cloud workflow | Build 2 passed both required actions: Test — iOS and Analyze — iOS; 0 reported errors, warnings, test failures, or analysis issues |
 | Distribution packaging checks | Opaque 1024 × 1024 icon; exempt-encryption metadata; bundled dependency license notices |
 | Internal TestFlight | Build 5 archived and delivered successfully; 0.1.0 (5) shown as Testing; tester confirmed installation and model download started |
+| Replacement internal TestFlight | Build 8 archived and delivered successfully from `fd113f2`; 0.1.0 (8) shown as Testing in Personal Device Testing. Includes checksum-memory fix and diagnostic capture; phone retry pending |
 | Benchmark instrumentation tests | 9 unit + 2 UI tests passed locally on iOS 18.4 simulator; 3 report-parser tests passed. These validate measurement code, not model performance |
 | Installation checksum regression | Reproduced on Intel Mac in 3 fresh-process pairs; identical SHA-256 with bounded buffer lifetimes. Fixed probe verified the complete 8.9 GB STDiT archive against its pinned digest. See [benchmark record](BENCHMARK_REPORT.md#reproduced-installation-blocker) |
-| Memory-fix simulator suite | 11 unit + 2 UI tests passed, 0 failures, including bounded-memory checksum and stage-aware memory-warning handling. Physical-device retry pending |
+| Memory-fix simulator suite | 11 unit + 2 UI tests passed locally and in Xcode Cloud Build 7; Cloud static analysis also passed with no reported issues. Physical-device retry pending |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 
@@ -25,6 +26,8 @@ Cloud Build 2 tested source revision `3326475bf9e31adeedc0fe094a0cf3d39f238e95` 
 Build 1 exposed an invalid resource-bundle layout during signing. The tokenizer resources now use SwiftPM processing rather than copying a top-level `Resources` directory. The failure was reproduced locally with codesign, then the corrected bundle passed locally with ad hoc signing and in Cloud. A regression test loads the bundled tokenizer and encodes a real prompt without model downloads.
 
 Cloud Build 3 automatically started on the `main` push of `f76a027e56e5df7d2aa2afd8cd43d882a8e6b415`; its Test and Analyze checks both passed. This confirms push triggering for code/packaging changes.
+
+Cloud Build 6 passed Test and Analyze for benchmark instrumentation source `7b2b82d7a8f64efd6603235b11aad6421f039fb6`. Cloud Build 7 passed all 13 tests and Analyze for checksum-memory fix `fd113f2c1cbbd724247406c587fe1826fac90a68`, with no reported issues. These are simulator and static checks; physical installation and generation still require device evidence.
 
 ## Automated suite
 

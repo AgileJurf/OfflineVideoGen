@@ -6,7 +6,7 @@ Status: **baseline device execution pending; no iPhone generation performance im
 
 | Requested check | Current evidence |
 | --- | --- |
-| Installable physical-device beta | Xcode Cloud Build 5 archived and distributed successfully; TestFlight 0.1.0 (5) is Testing in the internal group |
+| Installable physical-device beta | Replacement TestFlight 0.1.0 (8), source `fd113f2`, is Testing in the internal group. Cloud Build 7 passed 13 tests and static analysis; Build 8 archived and delivered successfully. Original build 5 remains available |
 | Physical iPhone identification | Paired wired iPhone 17 Pro Max, hardware family iPhone18,2, iOS 27.3 beta; Developer Mode enabled |
 | Model installation on the phone | Build 5 stopped with a memory warning while showing “Verifying STDiT-TDTM.zip.” That archive had downloaded; the old label also persisted during extraction. Full installation and compilation remain unverified |
 | Genuine 2-second generation | No completed physical-device MP4 or measurement log received yet |
@@ -47,7 +47,7 @@ done
 
 The app fix also separates verification, extraction, and named-partition compilation in progress messages, throttles download UI updates, records memory warnings in the diagnostic journal, and replaces the blanket generation alert with stage-aware handling. Bounded download/checksum work continues after a warning; extraction, compilation, and generation retain cancellation protection. Completed downloaded archives remain available for verification on retry. Compilation itself restarts on a retry. No weights, partition boundaries, model precision, or diffusion steps were changed. The simulator regression test hashes a 64 MiB file inside an outer autorelease pool and checks both the expected digest and bounded footprint growth; all 11 unit and 2 UI tests passed locally.
 
-The phone screenshot and Mac reproduction support this as a concrete installation bug; they do not prove that it is the only remaining device constraint. The next device check is installing the replacement beta over the existing app and retrying setup with the retained archive.
+The phone screenshot and Mac reproduction support this as a concrete installation bug; they do not prove that it is the only remaining device constraint. The fix and diagnostic capture are available in TestFlight 0.1.0 (8). The next device check is installing that beta over the existing app and retrying setup with the retained archive.
 
 ## Measurement implementation
 
