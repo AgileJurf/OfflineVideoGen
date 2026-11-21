@@ -16,3 +16,7 @@ xcuserdata/
 *.mobileprovision
 *.p12
 __pycache__/
+node_modules/
+.vercel/
+.env
+.env.*

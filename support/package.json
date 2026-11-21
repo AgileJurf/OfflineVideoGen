@@ -1,0 +1,9 @@
+{
+  "name": "localframes-support",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": "22.x" },
+  "scripts": { "test": "node --test test/*.test.js", "build": "node --test test/diagnostics.test.js && node scripts/build.mjs" },
+  "dependencies": { "@vercel/blob": "2.9.0" }
+}
