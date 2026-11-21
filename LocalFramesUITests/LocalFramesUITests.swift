@@ -2,6 +2,27 @@ import XCTest
 
 final class LocalFramesUITests: XCTestCase {
     @MainActor
+    func testOnlineSupportDefaultsOffAndNeverDownloadsFromItsToggle() throws {
+        let app = XCUIApplication(); app.launch()
+        app.tabBars.buttons["Setup"].tap()
+        let link = app.buttons["openOnlineSupport"]
+        for _ in 0..<5 where !link.isHittable { app.swipeUp() }
+        XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
+        let toggle = app.switches["enableOnlineSupport"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertTrue(app.buttons["checkSupportUpdates"].isEnabled)
+        XCTAssertFalse(app.buttons["Cancel support request"].exists, "Enabling support must not initiate network work")
+        XCTAssertFalse(app.buttons["Send this report"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Optional online support with manual checks"; screenshot.lifetime = .keepAlways; add(screenshot)
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertFalse(app.buttons["checkSupportUpdates"].isEnabled)
+    }
+    @MainActor
     func testStylesFramingPersistAndUnsupportedModesStayUnavailable() throws {
         let app = XCUIApplication()
         app.launch()

@@ -52,6 +52,8 @@ public final class BenchmarkLog: @unchecked Sendable {
         values["startedAt"] = ISO8601DateFormatter().string(from: Date())
         values["hardware"] = Self.hardwareIdentifier()
         values["os"] = ProcessInfo.processInfo.operatingSystemVersionString
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        values["osVersion"] = "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
         values["physicalMemoryBytes"] = String(ProcessInfo.processInfo.physicalMemory)
         values["logicalProcessorCount"] = String(ProcessInfo.processInfo.activeProcessorCount)
         values["sampleIntervalSeconds"] = String(sampleInterval)
@@ -107,7 +109,10 @@ public final class BenchmarkLog: @unchecked Sendable {
                     fields: [String: String] = [:]) {
         let duration = ProcessInfo.processInfo.systemUptime - started
         var values = fields
-        if let error { values["error"] = String(describing: error) }
+        if let error {
+            values["error"] = String(describing: error)
+            values.merge(Self.diagnosticErrorFields(error, phase: phase)) { _, new in new }
+        }
         record(error == nil ? "end" : "failure", partition: partition, phase: phase, duration: duration, fields: values)
     }
 
@@ -138,6 +143,31 @@ public final class BenchmarkLog: @unchecked Sendable {
         try handle.synchronize()
         try handle.close()
         if let writeFailure { throw NSError(domain: "LocalFrames.BenchmarkLog", code: 1, userInfo: [NSLocalizedDescriptionKey: writeFailure]) }
+    }
+
+    public static func diagnosticErrorFields(_ error: Error, phase: String? = nil) -> [String: String] {
+        let ns = error as NSError
+        let domain: String
+        switch ns.domain {
+        case "com.apple.CoreML": domain = "CoreML"
+        case NSCocoaErrorDomain: domain = "Foundation"
+        case NSPOSIXErrorDomain: domain = "POSIX"
+        case "AVFoundationErrorDomain": domain = "AVFoundation"
+        case "VideoEngine.GenerationError": domain = "LocalFrames"
+        default: domain = "other"
+        }
+        var category = phase == "load" ? "model-load" : phase == "predict" ? "inference" : phase == "compile" ? "installation" : "other"
+        if let error = error as? GenerationError {
+            switch error {
+            case .memoryPressure: category = "memory-pressure"
+            case .invalidTensor: category = "invalid-tensor"
+            case .encodingFailed: category = "encoding"
+            case .modelMissing, .incompatibleModel: category = "model-load"
+            case .interrupted: category = "interrupted"
+            default: break
+            }
+        }
+        return ["errorCategory": category, "errorDomain": domain, "errorCode": String(ns.code)]
     }
 
     public static func snapshot() -> Snapshot {

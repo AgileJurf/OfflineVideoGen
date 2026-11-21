@@ -17,6 +17,9 @@ struct ModelManifest: Codable, Sendable {
     let revision: String
     let minimumFreeBytes: Int64
     let archives: [ArchiveFile]
+    var modelVersion: String? = nil
+    var manifestVersion: Int? = nil
+    var minimumAppVersion: String? = nil
 
     static func bundled() throws -> ModelManifest {
         guard let url = Bundle.main.url(forResource: "model-manifest", withExtension: "json") else {
@@ -67,6 +70,8 @@ actor ModelInstaller {
     func install(_ manifest: ModelManifest, benchmark: BenchmarkLog? = nil,
                  stage: @escaping @Sendable (ModelInstallationStage) -> Void = { _ in },
                  progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
+        // Remote catalogs can relocate approved bytes, never introduce an arbitrary Core ML graph.
+        if manifest.modelVersion != nil { try manifest.validateRemote(appVersion: SupportCompatibility.appVersion) }
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         var resources = URLResourceValues()
@@ -102,6 +107,10 @@ actor ModelInstaller {
             } else { benchmark?.record("archive_reused", partition: archive.name) }
             stage(.verifying)
             progress(.init((Double(offset) + 0.6 * Double(archive.bytes)) / Double(totalBytes), "Verifying \(archive.name)"))
+            guard let fileBytes = try zip.resourceValues(forKeys: [.fileSizeKey]).fileSize, Int64(fileBytes) == archive.bytes else {
+                try? fm.removeItem(at: zip); try? fm.removeItem(at: resume)
+                throw ModelInstallError.incomplete
+            }
             let checksum: String
             if let benchmark {
                 checksum = try benchmark.measure(archive.name, phase: "checksum") { try Self.sha256(zip) }
@@ -164,14 +173,11 @@ actor ModelInstaller {
         try Task.checkCancellation()
         try MOVDModel.validateInstallation(at: staging)
         try JSONEncoder().encode(manifest.revision).write(to: staging.appendingPathComponent("installation.json"), options: .atomic)
-        if fm.fileExists(atPath: installed.path) {
-            _ = try fm.replaceItemAt(installed, withItemAt: staging)
-        } else {
-            try fm.moveItem(at: staging, to: installed)
-        }
+        try ModelActivation.activate(staging: staging, installed: installed)
         for archive in manifest.archives {
             try? fm.removeItem(at: root.appendingPathComponent(archive.name))
             try? fm.removeItem(at: root.appendingPathComponent(archive.name + ".resume"))
+            try? fm.removeItem(at: root.appendingPathComponent(archive.name + ".resume.source"))
         }
         stage(.complete)
         progress(.init(1, "Model installed"))
@@ -194,9 +200,37 @@ actor ModelInstaller {
         }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
+
+    func hasRollback() -> Bool { FileManager.default.fileExists(atPath: ModelActivation.rollbackURL(installed).path) }
+    func restoreRollback() throws {
+        let rollback = ModelActivation.rollbackURL(installed)
+        guard let data = try? Data(contentsOf: rollback.appendingPathComponent("installation.json")),
+              (try? JSONDecoder().decode(String.self, from: data)) == MOVDModel.revision else { throw SupportError.incompatibleModel }
+        try MOVDModel.validateInstallation(at: rollback)
+        try ModelActivation.restore(installed: installed)
+    }
 }
 
-/// Network access exists only in model setup. Inference does not instantiate this type.
+enum ModelActivation {
+    static func rollbackURL(_ installed: URL) -> URL { installed.deletingLastPathComponent().appendingPathComponent("RollbackInstalled", isDirectory: true) }
+    static func activate(staging: URL, installed: URL) throws {
+        let fm = FileManager.default
+        guard !fm.fileExists(atPath: rollbackURL(installed).path) else {
+            throw GenerationError.incompatibleModel("A rollback copy already exists; restore it before another model replacement.")
+        }
+        if fm.fileExists(atPath: installed.path) {
+            _ = try fm.replaceItemAt(installed, withItemAt: staging, backupItemName: "RollbackInstalled", options: .withoutDeletingBackupItem)
+        } else { try fm.moveItem(at: staging, to: installed) }
+    }
+    static func restore(installed: URL) throws {
+        let fm = FileManager.default, backup = rollbackURL(installed)
+        guard fm.fileExists(atPath: backup.path) else { throw SupportError.incompatibleModel }
+        if fm.fileExists(atPath: installed.path) { _ = try fm.replaceItemAt(installed, withItemAt: backup) }
+        else { try fm.moveItem(at: backup, to: installed) }
+    }
+}
+
+/// Model downloads are separate from optional support requests and offline inference.
 final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     private let lock = NSLock()
     private let destination: URL
@@ -208,6 +242,9 @@ final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Se
     private var downloadError: Error?
     private var cancelled = false
     private var lastProgressTime: TimeInterval = 0
+    private var sourceURL: URL?
+    private var usedResumeData = false
+    private var retriedWithoutResume = false
 
     init(destination: URL, resumeFile: URL) { self.destination = destination; self.resumeFile = resumeFile }
 
@@ -218,12 +255,18 @@ final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Se
                 if cancelled { lock.unlock(); continuation.resume(throwing: CancellationError()); return }
                 self.continuation = continuation
                 self.progress = progress
+                self.sourceURL = url
                 let config = URLSessionConfiguration.default
                 config.allowsCellularAccess = false
                 config.waitsForConnectivity = true
                 let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
                 self.session = session
-                if let data = try? Data(contentsOf: resumeFile) { task = session.downloadTask(withResumeData: data) }
+                let identity = resumeFile.appendingPathExtension("source")
+                if (try? String(contentsOf: identity, encoding: .utf8)) != url.absoluteString {
+                    try? FileManager.default.removeItem(at: resumeFile)
+                }
+                try? url.absoluteString.write(to: identity, atomically: true, encoding: .utf8)
+                if let data = try? Data(contentsOf: resumeFile) { usedResumeData = true; task = session.downloadTask(withResumeData: data) }
                 else { task = session.downloadTask(with: url) }
                 task?.resume()
                 lock.unlock()
@@ -257,6 +300,18 @@ final class ModelDownloader: NSObject, URLSessionDownloadDelegate, @unchecked Se
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        // A host may invalidate a saved range/redirect. Retry once from the approved URL;
+        // the complete length and SHA-256 must still pass before extraction.
+        let rejectedRange = [403, 416].contains((task.response as? HTTPURLResponse)?.statusCode ?? 0)
+        lock.lock()
+        let shouldRetry = !cancelled && usedResumeData && !retriedWithoutResume && rejectedRange
+        if shouldRetry, let sourceURL {
+            retriedWithoutResume = true; downloadError = nil
+            try? FileManager.default.removeItem(at: resumeFile)
+            let retry = session.downloadTask(with: sourceURL); self.task = retry
+            lock.unlock(); retry.resume(); return
+        }
+        lock.unlock()
         if let data = (error as NSError?)?.userInfo[NSURLSessionDownloadTaskResumeData] as? Data {
             try? data.write(to: resumeFile, options: .atomic)
         }

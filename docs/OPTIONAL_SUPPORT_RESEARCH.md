@@ -1,6 +1,6 @@
 # Optional support backend: investigation and implementation gate
 
-Reviewed 21 November 2026. This is a research/design record, not a deployed backend. Backend implementation is gated on a complete physical-device two-second generation and a documented diagnosis of any local failure. Simulator tests and Cloud archives cannot satisfy that gate. All inference, checkpoints, prompts, and videos remain local.
+Reviewed 21 November 2026. This is the original research/design record. The physical-generation prerequisite has since been met, and implementation is documented in [the support service README](../support/README.md). Deployment and acceptance status belong in [the support test report](SUPPORT_TEST_REPORT.md). The proposed limits below are historical; the implementation uses 32 KiB reports, one global two-hour storage slot and private Blob expiration. All inference, checkpoints, prompts, and videos remain local.
 
 ## Existing installation path
 

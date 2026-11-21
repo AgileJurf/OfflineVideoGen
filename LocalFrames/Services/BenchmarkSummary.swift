@@ -17,6 +17,11 @@ struct BenchmarkSummary: Identifiable, Sendable {
     var status = "interrupted"
     var kind = "unknown"
     var appBuild = "unknown"
+    var appVersion = "0.0.0"
+    var osVersion = "0.0.0"
+    var errorCategory = "none"
+    var errorDomain = "none"
+    var errorCode: Int?
     var modelRevision = "unknown"
     var configuration = "unknown"
     var prompt = ""
@@ -72,6 +77,8 @@ struct BenchmarkSummary: Identifiable, Sendable {
             if e.event == "started" {
                 result.kind = e.fields["kind"] ?? "unknown"
                 result.appBuild = e.fields["appBuild"] ?? "unknown"
+                result.appVersion = e.fields["appVersion"] ?? "0.0.0"
+                result.osVersion = e.fields["osVersion"] ?? "0.0.0"
                 result.modelRevision = e.fields["modelRevision"] ?? "unknown"
                 result.configuration = e.fields["configuration"] ?? "unknown"
                 result.prompt = e.fields["prompt"] ?? ""
@@ -86,6 +93,15 @@ struct BenchmarkSummary: Identifiable, Sendable {
             if e.event == "checkpoint_restored" { result.restoredSteps = Int(e.fields["completedSteps"] ?? "") ?? 0 }
             if e.event == "checkpoint_saved" || e.event == "diffusion_step_completed" {
                 result.completedSteps = max(result.completedSteps, Int(e.fields["completedSteps"] ?? "") ?? 0)
+            }
+            if e.event == "failure" || e.event == "finished" {
+                // A final wrapper error must not erase the failing partition's more specific diagnosis.
+                if let category = e.fields["errorCategory"],
+                   category != "other" || result.errorCategory == "none" || result.errorCategory == "other" {
+                    result.errorCategory = category
+                    result.errorDomain = e.fields["errorDomain"] ?? "none"
+                    result.errorCode = e.fields["errorCode"].flatMap(Int.init)
+                }
             }
             if e.event == "finished" { result.status = e.fields["status"] ?? "unknown"; result.failure = e.fields["error"] }
             if let name = e.partition, MOVDModel.requiredNames.contains(name), let phase = e.phase {
@@ -117,6 +133,8 @@ struct BenchmarkSummary: Identifiable, Sendable {
         }
         if !pending.isEmpty { result.hasIncompleteLines = true }
         result.completedSteps = max(result.completedSteps, result.restoredSteps)
+        if result.status == "interrupted" { result.errorCategory = "interrupted" }
+        else if result.status == "failed", result.errorCategory == "none" { result.errorCategory = "other" }
         result.partitions = timings.values.sorted { $0.loadSeconds + $0.predictionSeconds > $1.loadSeconds + $1.predictionSeconds }
         return result
     }

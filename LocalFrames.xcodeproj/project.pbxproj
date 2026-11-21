@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A13000000000000000000021 /* SupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000020 /* SupportTests.swift */; };
+		A1300000000000000000000A /* support-config.json in Resources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000009 /* support-config.json */; };
+		A13000000000000000000008 /* OnlineSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000007 /* OnlineSupportView.swift */; };
+		A13000000000000000000006 /* DiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000005 /* DiagnosticReport.swift */; };
+		A13000000000000000000004 /* OnlineSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000003 /* OnlineSupport.swift */; };
+		A13000000000000000000002 /* SupportCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000001 /* SupportCatalog.swift */; };
 		A12000000000000000000003 /* GenerationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* GenerationOptionsView.swift */; };
 		A12000000000000000000001 /* VideoCropExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* VideoCropExporter.swift */; };
 		A11000000000000000000001 /* BenchmarkSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000003 /* BenchmarkSummary.swift */; };
@@ -48,6 +54,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A13000000000000000000020 /* SupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesTests/SupportTests.swift; sourceTree = "<group>"; };
+		A13000000000000000000009 /* support-config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/support-config.json"; sourceTree = "<group>"; };
+		A13000000000000000000007 /* OnlineSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Views/OnlineSupportView.swift"; sourceTree = "<group>"; };
+		A13000000000000000000005 /* DiagnosticReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/DiagnosticReport.swift"; sourceTree = "<group>"; };
+		A13000000000000000000003 /* OnlineSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/OnlineSupport.swift"; sourceTree = "<group>"; };
+		A13000000000000000000001 /* SupportCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/SupportCatalog.swift"; sourceTree = "<group>"; };
 		A12000000000000000000004 /* GenerationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationOptionsView.swift; sourceTree = "<group>"; };
 		A12000000000000000000002 /* VideoCropExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/VideoCropExporter.swift; sourceTree = "<group>"; };
 		A11000000000000000000003 /* BenchmarkSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BenchmarkSummary.swift; sourceTree = "<group>"; };
@@ -106,6 +118,11 @@
 			children = (
 				A12000000000000000000002 /* VideoCropExporter.swift */,
 				A12000000000000000000004 /* GenerationOptionsView.swift */,
+				A13000000000000000000001 /* SupportCatalog.swift */,
+				A13000000000000000000003 /* OnlineSupport.swift */,
+				A13000000000000000000005 /* DiagnosticReport.swift */,
+				A13000000000000000000007 /* OnlineSupportView.swift */,
+				A13000000000000000000009 /* support-config.json */,
 				A11000000000000000000003 /* BenchmarkSummary.swift */,
 				A11000000000000000000004 /* BenchmarkView.swift */,
 				B1550ED80F46BEA14D5A9DBA /* LocalFrames/App/LocalFramesApp.swift */,
@@ -121,6 +138,7 @@
 				DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */,
 				70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */,
 				70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */,
+				A13000000000000000000020 /* SupportTests.swift */,
 				7E66C14A7DCC17C6A58C6578 /* LocalFramesTests/LocalFramesTests.swift */,
 				241EB42AFE25A1EF142275AC /* LocalFramesUITests/LocalFramesUITests.swift */,
 				3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */,
@@ -260,6 +278,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1300000000000000000000A /* support-config.json in Resources */,
 				9BAB60B45E80E8A7ADFBF6AA /* LocalFrames/Resources/model-manifest.json in Resources */,
 				2463BF9F68A03EAAA7001AC5 /* LocalFrames/Resources/PrivacyInfo.xcprivacy in Resources */,
 				F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */,
@@ -282,6 +301,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A13000000000000000000021 /* SupportTests.swift in Sources */,
 				09DAF5CEF579DFFB8EE764A1 /* LocalFramesTests/LocalFramesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -292,6 +312,10 @@
 			files = (
 				A12000000000000000000001 /* VideoCropExporter.swift in Sources */,
 				A12000000000000000000003 /* GenerationOptionsView.swift in Sources */,
+				A13000000000000000000002 /* SupportCatalog.swift in Sources */,
+				A13000000000000000000004 /* OnlineSupport.swift in Sources */,
+				A13000000000000000000006 /* DiagnosticReport.swift in Sources */,
+				A13000000000000000000008 /* OnlineSupportView.swift in Sources */,
 				A11000000000000000000001 /* BenchmarkSummary.swift in Sources */,
 				A11000000000000000000002 /* BenchmarkView.swift in Sources */,
 				70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */,

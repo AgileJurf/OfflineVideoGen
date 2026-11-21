@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { BlobError } from '@vercel/blob';
 import { acceptReport, validateReport, slotAt, MAX_BYTES } from '../lib/diagnostics.js';
 import handler from '../api/v1/diagnostics.js';
 
@@ -48,8 +49,8 @@ test('stores privately with provider TTL and verifies expiry through head', asyn
 });
 test('one create-only slot wins concurrent reports; overflow is recoverable', async () => {
   let used = false;
-  const store = async () => { if (used) throw Object.assign(new Error(), { name: 'BlobAlreadyExistsError' }); used = true; return { url: 'private' }; };
-  const args = { body: JSON.stringify(fixture()), consent: 'report-v1', store, now, inspect: async () => ({ expiresAt: new Date(now.getTime() + 31 * 86400000) }) };
+  const store = async () => { if (used) throw new BlobError('Existing blob'); used = true; return { url: 'private' }; };
+  const args = { body: JSON.stringify(fixture()), consent: 'report-v1', store, now, inspect: async () => ({ pathname: slotAt(now), expiresAt: new Date(now.getTime() + 31 * 86400000) }) };
   const results = await Promise.all([acceptReport(args), acceptReport(args)]);
   assert.deepEqual(results.map(r => r.status).sort(), [201, 429]);
   assert.equal(slotAt(new Date('2026-11-21T11:59:59Z')), slotAt(now));

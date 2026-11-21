@@ -37,15 +37,25 @@ export async function acceptReport({ body, consent, store, inspect, now = new Da
   if (!validateReport(report)) return { status: 400, body: { error: 'invalid-report' } };
   // One global slot per two hours: <=372 reports / 31 days. Create-only storage is
   // the concurrency boundary. There are no per-device identifiers or client secrets.
+  const path = slotAt(now);
+  let saved;
   try {
-    const saved = await store(slotAt(now), JSON.stringify(report), { access: 'private', addRandomSuffix: false, allowOverwrite: false, contentType: 'application/json', ttlDays: 30 });
+    saved = await store(path, JSON.stringify(report), { access: 'private', addRandomSuffix: false, allowOverwrite: false, contentType: 'application/json', ttlDays: 30 });
+  } catch {
+    // The SDK reports existing files as a generic BlobError. Check metadata rather
+    // than matching provider error text or assuming a nonexistent error class.
+    try {
+      if ((await inspect(path)).pathname === path) return { status: 429, body: { error: 'report-slot-used', retryAfterSeconds: 7200 } };
+    } catch { /* Missing slot or unavailable storage; fail closed below. */ }
+    return { status: 503, body: { error: 'diagnostics-unavailable' } };
+  }
+  try {
     // put() does not return expiresAt. Confirm the provider's TTL using head().
     const metadata = await inspect(saved.url);
     const expiry = new Date(metadata.expiresAt).getTime();
     if (!Number.isFinite(expiry) || expiry <= now.getTime() || expiry > now.getTime() + 32 * 86400000) return { status: 503, body: { error: 'retention-not-confirmed' } };
     return { status: 201, body: { status: 'stored', retentionDays: 30 } };
-  } catch (error) {
-    if (error?.name === 'BlobAlreadyExistsError') return { status: 429, body: { error: 'report-slot-used', retryAfterSeconds: 7200 } };
+  } catch {
     return { status: 503, body: { error: 'diagnostics-unavailable' } };
   }
 }

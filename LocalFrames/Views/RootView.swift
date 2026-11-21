@@ -153,6 +153,12 @@ struct SetupView: View {
                     Button("Install model") { model.install() }.accessibilityIdentifier("installModelButton")
                 }
             } header: { Text("Offline video model") }
+            Section("Optional support") {
+                NavigationLink("Online support and model updates") { OnlineSupportView(support: model.support) }
+                    .disabled(model.working).accessibilityIdentifier("openOnlineSupport")
+                Text("Optional Wi-Fi catalog checks and consent-based reports. Generation stays offline.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Device benchmark") {
                 Toggle("Record local diagnostics for Create jobs", isOn: $model.recordCreationDiagnostics).disabled(model.working)
                 Text("Optional logs include prompts, seeds, partition timings, sampled memory and thermal state. They stay on this iPhone unless you export them. Baseline tests always record logs.")

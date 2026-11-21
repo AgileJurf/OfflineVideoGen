@@ -39,6 +39,8 @@ final class AppModel: ObservableObject {
     ]
     let library: VideoLibrary
     let installer: ModelInstaller
+    let support: OnlineSupport
+    @Published var hasModelRollback = false
     let modelDirectory: URL
     let temporaryDirectory: URL
     let benchmarkDirectory: URL
@@ -87,6 +89,7 @@ final class AppModel: ObservableObject {
         let modelRoot = support.appendingPathComponent("Models", isDirectory: true)
         modelDirectory = modelRoot.appendingPathComponent("Installed", isDirectory: true)
         installer = ModelInstaller(root: modelRoot)
+        self.support = OnlineSupport(directory: support.appendingPathComponent("OnlineSupport", isDirectory: true))
         temporaryDirectory = support.appendingPathComponent("Temporary", isDirectory: true)
         benchmarkDirectory = support.appendingPathComponent("Benchmarks", isDirectory: true)
         resumeDirectory = support.appendingPathComponent("ResumableBaseline", isDirectory: true)
@@ -130,6 +133,7 @@ final class AppModel: ObservableObject {
             try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
             videos = try await library.list()
             installed = await installer.isInstalled()
+            hasModelRollback = await installer.hasRollback()
             refreshBenchmarkFiles()
             refreshSavedBaseline()
         } catch { errorMessage = error.localizedDescription }
@@ -193,6 +197,7 @@ final class AppModel: ObservableObject {
     }
 
     private func beginGeneration(benchmarking: Bool, resuming: BaselineJob? = nil) {
+        support.cancel()
         guard installed, !working else { return }
         guard !benchmarking || pendingBaseline == nil || resuming != nil else { return }
         do {
@@ -299,7 +304,9 @@ final class AppModel: ObservableObject {
                     try? log?.finish(status: "cancelled", fields: ["checkpointRetained": String(checkpoint != nil)])
                     self.notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
                 } catch {
-                    try? log?.finish(status: "failed", fields: ["error": String(describing: error)])
+                    var fields = BenchmarkLog.diagnosticErrorFields(error)
+                    fields["error"] = String(describing: error)
+                    try? log?.finish(status: "failed", fields: fields)
                     self.errorMessage = error.localizedDescription
                 }
               }
@@ -335,8 +342,9 @@ final class AppModel: ObservableObject {
 
     func install() {
         guard !working else { return }
+        support.cancel()
         do {
-            let manifest = try ModelManifest.bundled()
+            let manifest = try support.installationManifest ?? ModelManifest.bundled()
             let log = try makeBenchmarkLog(kind: "installation", fields: ["expectedDownloadBytes": String(manifest.archives.reduce(Int64(0)) { $0 + $1.bytes })])
             working = true
             installing = true
@@ -354,6 +362,7 @@ final class AppModel: ObservableObject {
                         Task { @MainActor in self.progress = progress }
                     }
                     installed = await installer.isInstalled()
+                    hasModelRollback = await installer.hasRollback()
                     try log.finish(status: installed ? "succeeded" : "failed")
                 } catch is CancellationError {
                     try? log.finish(status: "cancelled")
@@ -361,7 +370,9 @@ final class AppModel: ObservableObject {
                         ? "Model preparation paused after iOS reported memory pressure. Completed downloads are kept. Tap Install to retry preparation."
                         : "Installation paused. Tap Install to resume available downloads."
                 } catch {
-                    try? log.finish(status: "failed", fields: ["error": String(describing: error)])
+                    var fields = BenchmarkLog.diagnosticErrorFields(error, phase: "compile")
+                    fields["error"] = String(describing: error)
+                    try? log.finish(status: "failed", fields: fields)
                     errorMessage = error.localizedDescription
                 }
             }
@@ -370,8 +381,19 @@ final class AppModel: ObservableObject {
 
     func removeModel() async {
         guard !working else { return }
-        do { try await installer.remove(); installed = false }
+        do { try await installer.remove(); installed = false; hasModelRollback = false }
         catch { errorMessage = error.localizedDescription }
+    }
+
+    func restoreModelRollback() async {
+        guard !working else { return }
+        support.cancel(); working = true
+        defer { working = false }
+        do {
+            try await installer.restoreRollback()
+            installed = await installer.isInstalled(); hasModelRollback = await installer.hasRollback()
+            notice = "The previous verified model was restored. Your videos are unchanged."
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func cancel() {
@@ -385,6 +407,7 @@ final class AppModel: ObservableObject {
     func sceneChanged(_ phase: ScenePhase) {
         guard phase != .inactive else { return }
         inForeground = phase == .active
+        if !inForeground { support.cancel() }
         generationControl?.setForeground(inForeground)
         activeBenchmarkLog?.record("scene_changed", fields: ["state": inForeground ? "foreground" : "background"])
         if !inForeground, working, generationControl == nil {
