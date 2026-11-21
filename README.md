@@ -21,6 +21,8 @@ Use **Product → Test** with an available iPhone simulator to run the unit and 
 
 For device builds, choose your Apple Developer team under Signing & Capabilities for all three targets. See [Xcode Cloud setup](docs/XCODE_CLOUD.md) for the cloud-first test workflow.
 
+The [internal TestFlight guide](docs/TESTFLIGHT.md) covers installation, model setup, and the first offline test on an iPhone.
+
 ## Model installation and generation
 
 In **Setup**, install the MOVD model over Wi-Fi. The three upstream archives total **14,133,836,614 bytes**. The app requires 50 GB free during extraction and compilation; that is a conservative setup allowance, not a measured installed size. SHA-256 checks occur before extraction. Downloads can resume when the server supplies valid resume data; interrupted model compilation starts again.

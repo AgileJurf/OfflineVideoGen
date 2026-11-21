@@ -10,6 +10,7 @@
 | Local simulator test execution | Passed: 7 unit + 2 UI tests, 0 failures; iPhone 16 Pro Max simulator, iOS 18.4, ad hoc signing |
 | Model specification inspection | Parsed all 103 package specifications; corrected the int32-to-float32 temporal-count boundary |
 | Xcode Cloud workflow | Build 2 passed both required actions: Test — iOS and Analyze — iOS; 0 reported errors, warnings, test failures, or analysis issues |
+| Distribution packaging checks | Opaque 1024 × 1024 icon; exempt-encryption metadata; bundled dependency license notices |
 | Real-model end-to-end inference | Not run |
 | Physical iPhone generation | Not run |
 
@@ -18,6 +19,8 @@ Build success and synthetic encoder fixtures are not diffusion validation. No sa
 Cloud Build 2 tested source revision `3326475bf9e31adeedc0fe094a0cf3d39f238e95` using Xcode 27.2 (27B52), an iPhone 17 Pro Max simulator on iOS 27.2, and macOS Golden Gate 27.2.1. It finished on 20 November 2026 (Pacific time), with a reported four-minute duration and five minutes of compute usage. [View the successful run](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/5cd136c7-903f-4c25-b634-4a19c24eee78/summary).
 
 Build 1 exposed an invalid resource-bundle layout during signing. The tokenizer resources now use SwiftPM processing rather than copying a top-level `Resources` directory. The failure was reproduced locally with codesign, then the corrected bundle passed locally with ad hoc signing and in Cloud. A regression test loads the bundled tokenizer and encodes a real prompt without model downloads.
+
+Cloud Build 3 automatically started on the `main` push of `f76a027e56e5df7d2aa2afd8cd43d882a8e6b415`; its Test and Analyze checks both passed. This confirms push triggering for code/packaging changes.
 
 ## Automated suite
 

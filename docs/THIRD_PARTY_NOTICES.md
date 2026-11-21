@@ -18,4 +18,4 @@ The MOVD `Modded_Open_Sora/LICENSE` includes Apache-2.0 terms and credits depend
 - [ZIPFoundation 0.9.19](https://github.com/weichsel/ZIPFoundation/tree/0.9.19): MIT; used for archive extraction and CRC checks.
 - [Apple swift-argument-parser](https://github.com/apple/swift-argument-parser): transitive dependency, Apache-2.0 with Swift Runtime Library Exception. The exact resolved revision is recorded in the Xcode package lockfile.
 
-The packages retain their own license files in Swift Package Manager checkouts. Before distributing a binary, include the applicable notices and complete the model-license provenance review above.
+The app bundles the MOVD, swift-transformers, ZIPFoundation, and swift-argument-parser license texts in `ThirdPartyNotices.txt`. Model weights are downloaded separately; the model-license provenance review above remains necessary before making redistribution or commercial-use assurances for the exported model bundle.

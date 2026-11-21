@@ -8,7 +8,9 @@ The public source repository is [AgileJurf/OfflineVideoGen](https://github.com/A
 
 [View builds in App Store Connect](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/groups) (developer-account access required).
 
-**Initial validation completed:** Build 2 passed Test — iOS and Analyze — iOS on source revision `3326475`. Both runs were started manually; the `main` push condition and Markdown exclusion are configured, but automatic triggering has not yet been demonstrated. See the [validation record](VALIDATION.md) for the exact tested revision and remaining real-model gates.
+**Validation completed:** Build 2 passed Test — iOS and Analyze — iOS on source revision `3326475`. Build 3 started automatically after the packaging commit `f76a027` was pushed to `main`, and both actions passed. The Markdown exclusion remains configured. See the [validation record](VALIDATION.md) for tested revisions and remaining real-model gates.
+
+**TestFlight Beta** is a separate workflow with a **Manual Start** condition restricted to `main`, a clean **Archive — iOS** action for LocalFrames, and **TestFlight (Internal Testing Only)** distribution preparation. Its internal TestFlight post-action targets **Personal Device Testing**. Review the corresponding Build and Test run before starting a beta archive. See the [device testing guide](TESTFLIGHT.md).
 
 ## First workflow
 
@@ -23,7 +25,7 @@ Apple's [first-workflow instructions](https://developer.apple.com/documentation/
 
 The `ci_post_clone.sh` hook verifies required project resources. Ordinary cloud builds do not download 14.1 GB of weights or attempt full diffusion. Test fixtures are bundled or generated at runtime, since Xcode Cloud's test phase is separate from its source checkout.
 
-No TestFlight distribution or App Store submission is configured by this document. A distribution workflow can follow once signing, app behavior, licensing, and real-device inference are validated.
+The internal beta is for real-device inference validation. No external TestFlight group or App Store submission is configured.
 
 ## What cloud tests establish
 
