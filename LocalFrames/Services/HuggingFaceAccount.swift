@@ -95,6 +95,39 @@ struct HFDeviceChallenge: Sendable {
 protocol RIFECredentials: Sendable { func authorizedToken() async throws -> String? }
 struct AnonymousRIFECredentials: RIFECredentials { func authorizedToken() async throws -> String? { nil } }
 
+/// A dated provider reading, never a locally estimated balance or an upload authorization.
+struct HFQuotaSnapshot: Equatable, Sendable {
+    static let helperRequiredSeconds: Double = 90
+    let total: Double
+    let remaining: Double
+    let resetsAt: Date?
+    let remainingRuns: Double?
+    let checkedAt: Date
+    var canSubmit: Bool { remaining >= Self.helperRequiredSeconds && (remainingRuns.map { $0 >= 1 } ?? true) }
+
+    static func parse(_ data: Data, checkedAt: Date) throws -> Self {
+        struct Reply: Decodable {
+            let base: Double; let current: Double; let overquotaUsed: Double?
+            let resetsAt: String?; let runs: Runs?
+        }
+        struct Runs: Decodable { let remaining: Double }
+        guard let value = try? JSONDecoder().decode(Reply.self, from: data),
+              value.base.isFinite, value.current.isFinite, value.base > 0, value.base <= 300,
+              value.current >= 0, value.current <= value.base, (value.overquotaUsed ?? 0) == 0,
+              value.runs.map({ $0.remaining.isFinite && $0.remaining >= 0 }) ?? true else { throw HFAccountError.notFree }
+        var reset: Date?
+        if let text = value.resetsAt {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            reset = formatter.date(from: text)
+            if reset == nil { formatter.formatOptions = [.withInternetDateTime]; reset = formatter.date(from: text) }
+            guard reset != nil else { throw HFAccountError.unavailable }
+        }
+        return Self(total: value.base, remaining: value.current, resetsAt: reset,
+                    remainingRuns: value.runs?.remaining, checkedAt: checkedAt)
+    }
+}
+
 actor HFAccountClient: RIFECredentials {
     // Registered public client: no client secret, repository access or paid inference scopes.
     static let clientID = "fa5e78af-cabb-485e-9cd8-6f1238e1c52c"
@@ -114,6 +147,7 @@ actor HFAccountClient: RIFECredentials {
         return value.username
     }
     private func request(_ path: String, fields: [String: String]? = nil, token: String? = nil) async throws -> HFResponse {
+        try Task.checkCancellation()
         var request = URLRequest(url: URL(string: "https://huggingface.co" + path)!)
         if let fields {
             request.httpMethod = "POST"; request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -188,22 +222,25 @@ actor HFAccountClient: RIFECredentials {
         return try Self.requireFree(response.data)
     }
     static func requireQuota(_ data: Data) throws {
-        struct Quota: Decodable { let base: Double; let current: Double; let overquotaUsed: Double?; let runs: Runs? }
-        struct Runs: Decodable { let remaining: Double }
-        guard let quota = try? JSONDecoder().decode(Quota.self, from: data), quota.base.isFinite, quota.current.isFinite,
-              quota.base > 0, quota.base <= 300, (quota.overquotaUsed ?? 0) == 0 else { throw HFAccountError.notFree }
-        // The live helper reserves 90 GPU-seconds even for this short clip. Never submit beyond included quota.
-        guard quota.current >= 90, quota.current <= quota.base, quota.runs.map({ $0.remaining >= 1 }) ?? true else { throw HFAccountError.quota }
+        guard try HFQuotaSnapshot.parse(data, checkedAt: Date()).canSubmit else { throw HFAccountError.quota }
     }
-    func authorizedToken() async throws -> String? {
+    private func verifiedQuota() async throws -> (HFCredential, HFQuotaSnapshot)? {
         guard let value = try store.read() else { return nil }
         guard value.expiresAt > now().addingTimeInterval(180), Self.validToken(value.accessToken) else { throw HFAccountError.expired }
         let current = revision, profile = try await freeProfile(value.accessToken)
         guard profile.sub == value.subject else { throw HFAccountError.expired }
         let response = try await request("/api/spaces/zero-gpu/quota", token: value.accessToken)
+        if response.status == 401 || response.status == 403 { throw HFAccountError.expired }
         guard response.status == 200 else { throw HFAccountError.unavailable }
-        try Self.requireQuota(response.data); try Task.checkCancellation()
+        let quota = try HFQuotaSnapshot.parse(response.data, checkedAt: now())
+        try Task.checkCancellation()
         guard revision == current else { throw CancellationError() }
+        return (value, quota)
+    }
+    func quota() async throws -> HFQuotaSnapshot? { try await verifiedQuota()?.1 }
+    func authorizedToken() async throws -> String? {
+        guard let (value, quota) = try await verifiedQuota() else { return nil }
+        guard quota.canSubmit else { throw HFAccountError.quota }
         return value.accessToken
     }
     func cancelSignIn() { revision += 1; challenge = nil }
@@ -215,16 +252,53 @@ actor HFAccountClient: RIFECredentials {
     @Published private(set) var challenge: HFDeviceChallenge?
     @Published private(set) var message: String?
     @Published private(set) var busy = false
+    @Published private(set) var quota: HFQuotaSnapshot?
+    @Published private(set) var quotaMessage: String?
+    @Published private(set) var quotaBusy = false
     let client: HFAccountClient
     private var operation: Task<Void, Never>?
+    private var quotaOperation: Task<Void, Never>?
     private var revision = 0
+    private var quotaRevision = 0
     init(client: HFAccountClient = HFAccountClient()) { self.client = client }
     func restore() async { name = try? await client.connectedName() }
     func begin() { perform { self.challenge = try await self.client.begin(); self.message = "Open Hugging Face and enter this code, approve the connection, then return here." } }
     func finish() { perform { self.name = try await self.client.finish(); self.challenge = nil; self.message = "Connected. Free-account status and quota are checked again before each approved clip upload." } }
-    func disconnect() { perform { try await self.client.disconnect(); self.name = nil; self.challenge = nil; self.message = "Disconnected on this device. You can also revoke Local Frames in Hugging Face’s application settings." } }
+    func disconnect() {
+        cancelQuotaRefresh(); quota = nil; quotaMessage = nil
+        perform { try await self.client.disconnect(); self.name = nil; self.challenge = nil; self.message = "Disconnected on this device. You can also revoke Local Frames in Hugging Face’s application settings." }
+    }
+    func refreshQuota(enabled: Bool) {
+        guard enabled, !quotaBusy, !busy else { return }
+        quotaBusy = true; quotaMessage = nil; let current = quotaRevision
+        quotaOperation = Task {
+            defer { if current == quotaRevision { quotaBusy = false; quotaOperation = nil } }
+            do {
+                let reading = try await client.quota()
+                try Task.checkCancellation()
+                guard current == quotaRevision else { return }
+                quota = reading
+                if reading == nil { quotaMessage = "Connect a free account to see its balance. Anonymous access uses a shared allowance that this app cannot measure." }
+            } catch is CancellationError { }
+            catch {
+                if current == quotaRevision {
+                    let reason: String
+                    switch error as? HFAccountError {
+                    case .expired: reason = "Reconnect your free Hugging Face account."
+                    case .notFree: reason = "The provider could not verify a free personal account."
+                    default: reason = "Check your connection and try again."
+                    }
+                    quotaMessage = "Could not refresh. Any balance below is the last reading, not a current allowance. " + reason
+                }
+            }
+        }
+    }
+    func cancelQuotaRefresh() {
+        quotaRevision += 1; quotaOperation?.cancel(); quotaOperation = nil; quotaBusy = false
+    }
     func cancel() {
         revision += 1; operation?.cancel(); operation = nil; busy = false; challenge = nil
+        cancelQuotaRefresh()
         Task { await client.cancelSignIn() }
     }
     private func perform(_ body: @escaping @MainActor () async throws -> Void) {

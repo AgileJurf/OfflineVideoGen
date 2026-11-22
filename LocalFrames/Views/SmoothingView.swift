@@ -37,14 +37,23 @@ struct SmoothingReviewView: View {
     let video: VideoRecord
     @State private var consent = false
     @State private var player: AVPlayer?
+    @State private var openedResult: VideoRecord?
     init(video: VideoRecord, support: OnlineSupport) { self.video = video; self.support = support }
     var body: some View {
         Form {
             Section("Optional 24 FPS copy · beta") {
+                if model.pendingSmoothingVideo?.id == video.id {
+                    Label("Local generation complete · review this upload", systemImage: "checkmark.circle.fill").foregroundStyle(.mint)
+                }
                 if let player { VideoPlayer(player: player).aspectRatio(1, contentMode: .fit) }
                 Text(video.prompt).font(.headline)
                 Text(video.createdAt.formatted(date: .abbreviated, time: .shortened)).font(.caption)
                 Text("Adds AI-interpolated frames after offline generation. It does not speed up MOVD, extend the clip, or fix all visual artifacts. The original stays in your library.").font(.caption)
+            }
+            Section("Free helper allowance") {
+                HFQuotaPanel(account: model.helperAccount, support: support, canRefresh: !model.working)
+                NavigationLink("Helper account & quota details") { HelperAccountView(account: model.helperAccount, support: support) }
+                    .disabled(model.working)
             }
             if let prepared = model.smoothingPreview, prepared.original.id == video.id {
                 Section("Review this upload") {
@@ -74,13 +83,16 @@ struct SmoothingReviewView: View {
                 Section("Saved separately") {
                     Text("2 seconds · 48 frames · 24 FPS · 256 × 256")
                     Text("The helper creates intermediate frames. If it returns 47 frames, the last frame is held for one extra 1/24 second to preserve the original 2-second duration.").font(.caption)
-                    Button("Open saved 24 FPS copy") { model.selectedVideo = result }
+                    Button("Open saved 24 FPS copy") { openedResult = result }
                     NavigationLink("Compare saved outputs") { VideoComparisonView() }
                 }
             } else if !model.working && model.smoothingPreview == nil && support.enabled {
                 Section { Button("Review clip again") { consent = false; model.prepareSmoothing(video) } }
             }
             if !support.enabled { Text("Online support is off. No clip will be uploaded.") }
+            if model.pendingSmoothingVideo?.id == video.id && !model.working {
+                Section { Button("Keep 12 FPS only") { model.keepOriginalWithoutSmoothing() } }
+            }
         }.navigationTitle("24 FPS smoothing").navigationBarTitleDisplayMode(.inline)
             .task { consent = false; model.prepareSmoothing(video) }
             .onChange(of: model.smoothingPreview?.id) { _, _ in
@@ -89,6 +101,7 @@ struct SmoothingReviewView: View {
             }
             .onChange(of: support.enabled) { _, enabled in if !enabled { consent = false; player?.pause() } }
             .onDisappear { consent = false; player?.pause(); model.closeSmoothingReview() }
+            .sheet(item: $openedResult) { PreviewView(video: $0).environmentObject(model) }
     }
 }
 

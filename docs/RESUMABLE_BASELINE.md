@@ -26,7 +26,7 @@ Decoder policy is recorded separately in journals and completed-video metadata. 
 
 ## Background execution
 
-On iOS 26 or later, a build made with the corresponding SDK registers a continued-processing handler at app launch. A user-started generation checks `BGTaskScheduler.supportedResources` for `.gpu`, requests that resource, and uses the Background GPU Access entitlement. Work begins in the handler once the system grants execution. Requests use the immediate-or-fail strategy; a submission failure, unsupported device, or missing callback falls back to foreground execution. The app reports truthful progress in the system's task UI, including cooling pauses.
+On iOS 26 or later, a build made with the corresponding SDK registers a continued-processing handler for the exact job identifier immediately before submission. The permitted plist pattern retains its dynamic suffix. A user-started generation checks `BGTaskScheduler.supportedResources` for `.gpu`, requests that resource, and uses the Background GPU Access entitlement. Work begins in the handler once the system grants execution. Requests use the immediate-or-fail strategy; a submission failure, unsupported device, or missing callback falls back to foreground execution. The app reports truthful progress in the system's task UI, including cooling pauses.
 
 On switching apps without a grant, work waits at the next model boundary and continues on returning. iOS can still suspend or terminate the process, end a granted task, or cancel it from the system progress UI. Expiration cancels further work and retains the latest completed-step checkpoint. Force-quitting never guarantees continued execution. A grant is logged but is not by itself evidence of successful background completion.
 
@@ -45,3 +45,5 @@ The UI and system task progress display approximate minutes. Cooling and foregro
 Cache compatibility includes the model, diffusion configuration, decoder execution policy and OS version; timings from a different policy are not reused.
 
 Local validation initially passed 17 unit tests and 2 UI tests plus 5 report-parser tests. ETA tests additionally check partial-versus-full estimates, timing-cache reuse, restored-step accounting, adaptation to slower operations, and cooling labels. These checks establish control and persistence behavior with fixtures, not physical-device diffusion quality or background GPU execution. Cloud and physical follow-up results are recorded in `VALIDATION.md`.
+
+The later keyboard/workflow update adds explicit background eligibility and denial reasons in Setup and job progress. See [Unified workflow](UNIFIED_VIDEO_WORKFLOW.md). Physical background GPU execution remains unverified; older phone journals reported no GPU eligibility.

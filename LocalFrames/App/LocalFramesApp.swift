@@ -2,7 +2,6 @@ import SwiftUI
 
 @main
 struct LocalFramesApp: App {
-    @UIApplicationDelegateAdaptor(LocalFramesAppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -24,6 +23,9 @@ struct LocalFramesApp: App {
                 } message: { Text(model.errorMessage ?? "") }
                 .sheet(item: $model.selectedVideo) { video in
                     PreviewView(video: video).environmentObject(model)
+                }
+                .sheet(item: $model.workflowReview) { video in
+                    WorkflowReviewSheet(video: video).environmentObject(model)
                 }
         }
     }

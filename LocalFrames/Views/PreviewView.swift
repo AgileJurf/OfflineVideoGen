@@ -38,7 +38,7 @@ struct PreviewView: View {
                         Label("24 FPS interpolated copy", systemImage: "sparkles.tv").font(.caption).foregroundStyle(.mint)
                         Text("Created with \(smoothing.provider). The original remains a separate library item. This is postprocessing, not a new diffusion generation.").font(.caption)
                         LabeledContent("Online processing + transfer", value: String(format: "%.1f seconds", smoothing.elapsedSeconds)).font(.caption)
-                        Text("\(smoothing.returnedFrames) returned frames · \(smoothing.terminalHoldFrames) terminal hold frame(s). Reusing settings generates a new 12 FPS original; smoothing always requires fresh consent.").font(.caption).foregroundStyle(.secondary)
+                        Text("\(smoothing.returnedFrames) returned frames · \(smoothing.terminalHoldFrames) terminal hold frame(s). Reusing settings selects the 24 FPS workflow: a new local original followed by a fresh upload review.").font(.caption).foregroundStyle(.secondary)
                     }
                     SmoothingPreviewLink(support: model.support, video: video)
                     if video.isCrop {

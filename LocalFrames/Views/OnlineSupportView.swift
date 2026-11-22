@@ -9,13 +9,17 @@ struct OnlineSupportView: View {
     var body: some View {
         Form {
             Section("Optional connection") {
-                Toggle("Enable online support", isOn: $support.enabled).accessibilityIdentifier("enableOnlineSupport")
-                Text("Off by default. Choose update checks, diagnostic reports or a 24 FPS copy over Wi-Fi. Each video upload requires separate consent. Video generation stays on your iPhone.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Text(OnlineSupport.origin.absoluteString).font(.caption).textSelection(.enabled)
+                Toggle(isOn: $support.enabled) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Enable online support")
+                        Text("Allows requested checks and approved uploads over Wi-Fi. Generation stays on your iPhone; enabling this never uploads a clip.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }.accessibilityIdentifier("enableOnlineSupport")
             }
             Section("24 FPS smoothing · beta") {
                 Text("Create a smoother copy of a saved 2-second, 256 × 256, 12 FPS video using the free Hugging Face RIFE helper. Your original stays local. This is optional postprocessing, not faster diffusion.").font(.caption)
+                Text("For a new video, select 24 FPS in Create to follow generation and smoothing in one workflow.").font(.caption).foregroundStyle(.mint)
                 NavigationLink("Helper account and free quota") { HelperAccountView(account: model.helperAccount, support: support) }
                     .disabled(!support.enabled || model.working).accessibilityIdentifier("helperAccountSettings")
                 NavigationLink("Choose a clip for 24 FPS smoothing") { SmoothingLibraryView(support: support) }
@@ -102,7 +106,13 @@ struct HelperAccountView: View {
             }
             if account.busy { ProgressView("Checking helper connection") }
             if let message = account.message { Text(message).font(.footnote).accessibilityIdentifier("helperAccountMessage") }
-        } }.navigationTitle("Helper account").navigationBarTitleDisplayMode(.inline)
+        }
+            Section("Free GPU quota") {
+                HFQuotaPanel(account: account, support: support, canRefresh: !model.working)
+                Text("Free accounts currently include 5 minutes of GPU time. The allowance resets 24 hours after first use. The provider reading above is authoritative; it is not a count of videos.").font(.caption).foregroundStyle(.secondary)
+                Link("Hugging Face quota rules", destination: URL(string: "https://huggingface.co/docs/hub/spaces-zerogpu")!)
+            }
+        }.navigationTitle("Helper account").navigationBarTitleDisplayMode(.inline)
             .task { await account.restore() }
             .onDisappear { account.cancel() }
     }

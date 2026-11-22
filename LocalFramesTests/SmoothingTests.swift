@@ -4,6 +4,66 @@ import XCTest
 @testable import VideoEngine
 
 final class SmoothingTests: XCTestCase {
+    @MainActor func testUnifiedJobRestoresReviewAndRequiresNewConsentBeforeSaving24FPSCopy() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let transport = FakeRIFETransport(try responses())
+        let account = HFAccountModel(client: HFAccountClient(store: EmptyWorkflowCredentialStore()))
+        var app = AppModel(root: root, smoothingClient: RIFEClient(transport: transport), helperAccount: account)
+        await app.load(); app.support.enabled = true; app.smoothAfterGeneration = true
+        let source = root.appendingPathComponent("source.mp4")
+        try FileManager.default.copyItem(at: fixture("source-12fps"), to: source)
+        let original = try await app.library.add(temporaryURL: source, request: GenerationRequest(prompt: "Synthetic workflow fixture", duration: 2, seed: 1), metrics: record().metrics)
+        let originalHash = try SmoothingMedia.fingerprint(app.library.videoURL(original.id)).hash
+        // This fixture represents the saved output boundary, not a claimed device diffusion run.
+        try app.offerSmoothingForGeneratedVideo(original)
+        XCTAssertEqual(app.workflowReview?.id, original.id)
+        var count = await transport.count; XCTAssertEqual(count, 0)
+        app = AppModel(root: root, smoothingClient: RIFEClient(transport: transport), helperAccount: account)
+        await app.load()
+        XCTAssertTrue(app.smoothAfterGeneration)
+        XCTAssertEqual(app.pendingSmoothingVideo?.id, original.id)
+        XCTAssertNil(app.workflowReview); XCTAssertNil(app.smoothingPreview)
+        app.prepareSmoothing(original)
+        while app.working { try await Task.sleep(for: .milliseconds(10)) }
+        let firstPreview = try XCTUnwrap(app.smoothingPreview)
+        app.startSmoothing(previewID: firstPreview.id, consent: false)
+        count = await transport.count; XCTAssertEqual(count, 0)
+        app.closeSmoothingReview(); app.prepareSmoothing(original)
+        while app.working { try await Task.sleep(for: .milliseconds(10)) }
+        app.startSmoothing(previewID: firstPreview.id, consent: true)
+        count = await transport.count; XCTAssertEqual(count, 0, "Reopening a review invalidates earlier approval")
+        let approved = try XCTUnwrap(app.smoothingPreview)
+        app.startSmoothing(previewID: approved.id, consent: true)
+        while app.working { try await Task.sleep(for: .milliseconds(10)) }
+        let copy = try XCTUnwrap(app.smoothingResult, app.smoothingMessage ?? "Missing result")
+        let frames = try await SmoothingMedia.inspect(app.library.videoURL(copy.id), fps: 24, acceptedCounts: [48])
+        XCTAssertEqual(frames, 48); XCTAssertEqual(copy.parentVideoID, original.id)
+        XCTAssertNil(app.pendingSmoothingVideo)
+        XCTAssertEqual(try SmoothingMedia.fingerprint(app.library.videoURL(original.id)).hash, originalHash)
+        let restored = AppModel(root: root, helperAccount: account); await restored.load()
+        XCTAssertNil(restored.pendingSmoothingVideo); XCTAssertEqual(restored.videos.count, 2)
+    }
+
+    @MainActor func testUnifiedJobBlocksUnsupportedSettingsAndKeepingOriginalNeverUploads() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let transport = FakeRIFETransport([])
+        let app = AppModel(root: root, smoothingClient: RIFEClient(transport: transport),
+                           helperAccount: HFAccountModel(client: HFAccountClient(store: EmptyWorkflowCredentialStore())))
+        await app.load(); app.smoothAfterGeneration = true
+        XCTAssertNotNil(app.smoothingSelectionIssue)
+        app.support.enabled = true; app.duration = 5; XCTAssertNotNil(app.smoothingSelectionIssue)
+        app.duration = 2; app.outputFraming = .portrait; XCTAssertNotNil(app.smoothingSelectionIssue)
+        app.outputFraming = .square; XCTAssertNil(app.smoothingSelectionIssue)
+        let source = root.appendingPathComponent("source.mp4")
+        try FileManager.default.copyItem(at: fixture("source-12fps"), to: source)
+        let original = try await app.library.add(temporaryURL: source, request: GenerationRequest(prompt: "fixture", duration: 2, seed: 1), metrics: record().metrics)
+        try app.offerSmoothingForGeneratedVideo(original)
+        app.support.enabled = false; app.keepOriginalWithoutSmoothing()
+        XCTAssertNil(app.pendingSmoothingVideo)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: app.library.videoURL(original.id).path))
+        let count = await transport.count; XCTAssertEqual(count, 0)
+    }
+
     private func root() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("SmoothingTests-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -255,6 +315,12 @@ final class SmoothingTests: XCTestCase {
         count = await transport.count; XCTAssertEqual(count, 0, "Old consent must not survive toggling or a new preview")
         XCTAssertTrue(FileManager.default.fileExists(atPath: app.library.videoURL(original.id).path))
     }
+}
+
+private struct EmptyWorkflowCredentialStore: HFCredentialStore {
+    func read() throws -> HFCredential? { nil }
+    func write(_ value: HFCredential) throws { }
+    func remove() throws { }
 }
 
 private final class FixtureRIFEURLProtocol: URLProtocol, @unchecked Sendable {

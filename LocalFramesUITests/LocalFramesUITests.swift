@@ -2,6 +2,63 @@ import XCTest
 
 final class LocalFramesUITests: XCTestCase {
     @MainActor
+    func testKeyboardDismissesForPromptAndNumericSeedsWithoutLosingText() throws {
+        let app = XCUIApplication(); app.launch()
+        let prompt = app.textFields["promptInput"]
+        XCTAssertTrue(prompt.waitForExistence(timeout: 10)); prompt.tap()
+        prompt.typeText("A sailboat on a quiet lake.")
+        let done = app.buttons["dismissKeyboard"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
+        XCTAssertTrue((prompt.value as? String)?.contains("quiet lake") == true)
+        let fixed = app.switches["fixedSeedToggle"]
+        for _ in 0..<8 where !fixed.isHittable { app.swipeUp() }
+        XCTAssertTrue(fixed.isHittable)
+        if fixed.value as? String == "0" { fixed.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
+        let seed = app.textFields["generationSeed"]
+        for _ in 0..<4 where !seed.isHittable { app.swipeUp() }
+        seed.tap(); seed.typeText("7")
+        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
+        app.tabBars.buttons["Setup"].tap()
+        let tools = app.buttons["openBenchmarkTools"]
+        for _ in 0..<6 where !tools.isHittable { app.swipeUp() }
+        tools.tap()
+        let benchmarkSeed = app.textFields["benchmarkSeed"]
+        for _ in 0..<5 where !benchmarkSeed.isHittable { app.swipeUp() }
+        benchmarkSeed.tap(); benchmarkSeed.typeText("8")
+        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
+        app.tabBars.buttons["Library"].tap()
+        XCTAssertTrue(app.staticTexts["emptyLibrary"].waitForExistence(timeout: 5))
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Keyboard dismissed and tabs reachable"
+        screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
+    @MainActor
+    func test24FPSJobExplainsReviewAndRequiresSupportedSettings() throws {
+        let app = XCUIApplication(); app.launch()
+        let rate = app.segmentedControls["finalFrameRate"]
+        for _ in 0..<9 where !rate.isHittable { app.swipeUp() }
+        XCTAssertTrue(rate.isHittable); rate.buttons["24 FPS · online finish"].tap()
+        XCTAssertTrue(app.staticTexts["One job, four stages"].waitForExistence(timeout: 5))
+        let issue = app.descendants(matching: .any).matching(identifier: "smoothingSelectionIssue").firstMatch
+        for _ in 0..<4 where !issue.isHittable { app.swipeUp() }
+        XCTAssertTrue(issue.exists)
+        let generate = app.buttons["generateButton"]
+        for _ in 0..<5 where !generate.isHittable { app.swipeUp() }
+        XCTAssertFalse(generate.isEnabled)
+        XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists, "Choosing 24 FPS cannot approve a future upload")
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "One job with explicit upload review"
+        screenshot.lifetime = .keepAlways; add(screenshot)
+        for _ in 0..<5 where !rate.isHittable { app.swipeDown() }
+        rate.buttons["12 FPS · offline"].tap()
+    }
+
+    @MainActor
     func testOnlineSupportDefaultsOffAndNeverDownloadsFromItsToggle() throws {
         let app = XCUIApplication(); app.launch()
         app.tabBars.buttons["Setup"].tap()
@@ -102,6 +159,7 @@ final class LocalFramesUITests: XCTestCase {
         let input = app.textFields["promptInput"]
         input.tap()
         input.typeText("A small sailboat glides across a calm lake.")
+        app.buttons["dismissKeyboard"].tap()
         for _ in 0..<6 where !app.buttons["generateButton"].isHittable { app.swipeUp() }
         XCTAssertFalse(app.buttons["generateButton"].isEnabled)
         app.buttons["openSetup"].tap()

@@ -3,6 +3,73 @@ import XCTest
 @testable import LocalFrames
 
 final class HuggingFaceAccountTests: XCTestCase {
+    func testQuotaReadingsIncludeZeroBalanceAndProviderResetDate() throws {
+        let now = Date(timeIntervalSince1970: 1000)
+        let zero = try HFQuotaSnapshot.parse(Data(#"{"base":300,"current":0,"resetsAt":"2026-11-22T20:30:00.123Z","overquotaUsed":0}"#.utf8), checkedAt: now)
+        XCTAssertEqual(zero.remaining, 0); XCTAssertEqual(zero.checkedAt, now)
+        XCTAssertNotNil(zero.resetsAt); XCTAssertFalse(zero.canSubmit)
+        let unused = try HFQuotaSnapshot.parse(Data(#"{"base":300,"current":300,"resetsAt":null}"#.utf8), checkedAt: now)
+        XCTAssertNil(unused.resetsAt); XCTAssertTrue(unused.canSubmit)
+        for invalid in [#"{"base":300,"current":-1}"#, #"{"base":300,"current":301}"#,
+                        #"{"base":300,"current":90,"runs":{"remaining":-1}}"#,
+                        #"{"base":300,"current":90,"resetsAt":"tomorrow"}"#] {
+            XCTAssertThrowsError(try HFQuotaSnapshot.parse(Data(invalid.utf8), checkedAt: now))
+        }
+    }
+
+    func testQuotaReadCanShowExhaustionWithoutAuthorizingUpload() async throws {
+        let store = MemoryHFStore(); try store.write(credential())
+        let zero = Data(#"{"base":300,"current":0,"resetsAt":"2026-11-22T20:30:00Z"}"#.utf8)
+        let transport = FakeHFTransport([.init(status: 200, data: try profile()), .init(status: 200, data: zero),
+                                         .init(status: 200, data: try profile()), .init(status: 200, data: zero)])
+        let client = HFAccountClient(transport: transport, store: store)
+        let quota = try await client.quota()
+        XCTAssertEqual(quota?.remaining, 0)
+        do { _ = try await client.authorizedToken(); XCTFail() } catch HFAccountError.quota { }
+        let count = await transport.count; XCTAssertEqual(count, 4)
+    }
+
+    @MainActor func testQuotaRefreshDoesNothingWhenSupportIsOffAndKeepsLastReadingOnFailure() async throws {
+        let store = MemoryHFStore(); try store.write(credential())
+        let transport = FakeHFTransport([.init(status: 200, data: try profile()), .init(status: 200, data: quota),
+                                         .init(status: 503, data: Data())])
+        let model = HFAccountModel(client: HFAccountClient(transport: transport, store: store))
+        await model.restore(); model.refreshQuota(enabled: false)
+        var count = await transport.count; XCTAssertEqual(count, 0)
+        model.refreshQuota(enabled: true)
+        while model.quotaBusy { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(model.quota?.remaining, 120)
+        let date = model.quota?.checkedAt
+        model.refreshQuota(enabled: true)
+        while model.quotaBusy { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(model.quota?.checkedAt, date)
+        XCTAssertTrue(model.quotaMessage?.contains("last reading") == true)
+        model.disconnect()
+        while model.busy { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNil(model.quota)
+        count = await transport.count; XCTAssertEqual(count, 3)
+    }
+
+    @MainActor func testOpeningProviderToApproveDoesNotDiscardDeviceChallenge() async throws {
+        let clock = HFTestClock(), store = MemoryHFStore()
+        let transport = FakeHFTransport([.init(status: 200, data: challenge),
+                                        .init(status: 200, data: try tokenReply()), .init(status: 200, data: try profile())])
+        let account = HFAccountModel(client: HFAccountClient(transport: transport, store: store, now: { clock.now }))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let app = AppModel(root: root, helperAccount: account)
+        await app.load(); app.support.enabled = true
+        account.begin()
+        while account.busy { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(account.challenge)
+        app.sceneChanged(.background)
+        XCTAssertNotNil(account.challenge, "Leaving to approve on Hugging Face must retain the device code")
+        clock.advance(6); app.sceneChanged(.active); account.finish()
+        while account.busy { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(account.name, "test-user")
+        XCTAssertNotNil(try store.read())
+    }
+
     private let token = "hf_oauth_FAKE_TEST_TOKEN_ONLY"
     private func profile(_ changes: [String: Any] = [:]) throws -> Data {
         var value: [String: Any] = ["sub": "synthetic-user", "preferred_username": "test-user", "isPro": false,

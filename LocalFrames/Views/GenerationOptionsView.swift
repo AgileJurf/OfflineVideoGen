@@ -4,13 +4,13 @@ import VideoEngine
 struct GenerationOptionsView: View {
     @EnvironmentObject private var model: AppModel
     @Binding var tokenCount: Int?
+    var focusedField: FocusState<CreationField?>.Binding
     @State private var tokenError: String?
     private var promptKey: String { model.visualStyle.rawValue + "\n" + model.prompt }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("VISUAL STYLE").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            CreationSection("Visual style", icon: "paintpalette", detail: "Prompt styling for your scene") {
                 ScrollView(.horizontal) {
                     HStack(alignment: .top, spacing: 10) {
                         ForEach(VisualStyle.allCases) { style in
@@ -21,8 +21,6 @@ struct GenerationOptionsView: View {
                     }
                 }.scrollIndicators(.hidden)
                 Text(model.visualStyle.detail).font(.subheadline)
-                Text("Illustrated swatches. Styles add prompt instructions; results vary. No trained style adapter is used.")
-                    .font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Text(tokenCount.map { "\($0)/63 model tokens · scene + style" } ?? "Checking prompt tokens…")
                         .foregroundStyle((tokenCount ?? 0) > 63 ? .orange : .secondary)
@@ -34,10 +32,14 @@ struct GenerationOptionsView: View {
                 if let tokenError { Text(tokenError).font(.caption).foregroundStyle(.orange) }
                 DisclosureGroup("Text sent to the model") {
                     Text(model.visualStyle.applying(to: model.prompt)).font(.caption).textSelection(.enabled).padding(.top, 4)
+                    Text("Illustrated swatches, not example results. These styles use prompt instructions, not trained adapters.").font(.caption).foregroundStyle(.secondary)
                 }.font(.caption)
             }
-            VStack(alignment: .leading, spacing: 12) {
-                Text("OUTPUT FRAMING").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            CreationSection("Video settings", icon: "film", detail: "Length and framing of your saved video") {
+                Picker("Duration", selection: $model.duration) {
+                    ForEach(2...5, id: \.self) { Text("\($0) sec").tag($0) }
+                }.pickerStyle(.segmented).accessibilityIdentifier("durationPicker")
+                Text("Output framing").font(.subheadline.weight(.medium))
                 Picker("Output framing", selection: $model.outputFraming) {
                     Text("Square").tag(OutputFraming.square)
                     Text("Portrait crop").tag(OutputFraming.portrait)
@@ -48,15 +50,21 @@ struct GenerationOptionsView: View {
                     Text(model.outputFraming.detail).font(.caption).foregroundStyle(.secondary)
                 }
             }
-            VStack(alignment: .leading, spacing: 10) {
+            CreationSection("Repeatable settings", icon: "slider.horizontal.3", detail: "Use the same seed to compare results") {
                 LabeledContent("Generation preset", value: "Baseline · 21 evaluations").font(.subheadline)
-                Text("Fast, Balanced and Quality presets are awaiting measured device comparisons.").font(.caption).foregroundStyle(.secondary)
-                Toggle("Use a fixed seed", isOn: $model.useFixedSeed).accessibilityIdentifier("fixedSeedToggle")
+                Toggle(isOn: $model.useFixedSeed) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Use a fixed seed")
+                        Text("Off chooses a new seed for each video.").font(.caption).foregroundStyle(.secondary)
+                    }
+                }.accessibilityIdentifier("fixedSeedToggle")
                 if model.useFixedSeed {
                     TextField("Seed", text: $model.generationSeed).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        .focused(focusedField, equals: .seed)
                         .accessibilityIdentifier("generationSeed")
                     Text("Repeat the same prompt, style and seed to compare settings.").font(.caption).foregroundStyle(.secondary)
                 }
+                Text("Faster presets are awaiting device measurements.").font(.caption).foregroundStyle(.secondary)
             }
         }
         .disabled(model.working)

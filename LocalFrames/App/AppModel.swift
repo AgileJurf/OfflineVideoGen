@@ -8,6 +8,10 @@ import AVFoundation
 final class AppModel: ObservableObject {
     @Published var prompt = ""
     @Published var duration = 2
+    @Published var smoothAfterGeneration = false { didSet { saveCreationPreferences() } }
+    @Published private(set) var pendingSmoothingVideo: VideoRecord?
+    @Published var workflowReview: VideoRecord?
+    @Published private(set) var generationWillSmooth = false
     @Published var visualStyle: VisualStyle = .default { didSet { saveCreationPreferences() } }
     @Published var outputFraming: OutputFraming = .square { didSet { saveCreationPreferences() } }
     @Published var useFixedSeed = false { didSet { saveCreationPreferences() } }
@@ -36,7 +40,7 @@ final class AppModel: ObservableObject {
     @Published var benchmarkPromptIndex = 0
     @Published var benchmarkSeed = "42"
     @Published var pauseReason: GenerationControl.PauseReason?
-    @Published var backgroundStatus = "Background support is checked when generation starts."
+    @Published var backgroundStatus = BackgroundGeneration.shared.availabilityMessage
     @Published var savedBaselineDescription: String?
     static let benchmarkPrompts = [
         "A small sailboat glides across a calm lake at sunrise.",
@@ -52,6 +56,7 @@ final class AppModel: ObservableObject {
     let benchmarkDirectory: URL
     let resumeDirectory: URL
     private let preferencesURL: URL
+    private var pendingSmoothingURL: URL { preferencesURL.deletingLastPathComponent().appendingPathComponent("pending-smoothing.json") }
     private var preferencesLoaded = false
     private struct CreationPreferences: Codable {
         let style: VisualStyle
@@ -59,6 +64,7 @@ final class AppModel: ObservableObject {
         let useFixedSeed: Bool
         let seed: String
         var recordDiagnostics: Bool? = nil
+        var smoothAfterGeneration: Bool? = nil
     }
     private let engine = MOVDEngine()
     private var operation: Task<Void, Never>?
@@ -88,10 +94,15 @@ final class AppModel: ObservableObject {
         return progress.estimate?.displayText ?? "Estimating finish time from this device’s model timings…"
     }
     var isGenerating: Bool { generationControl != nil }
+    var smoothingSelectionIssue: String? {
+        if !support.enabled { return "Enable online support in Setup to add the free smoothing stage." }
+        if duration != 2 || outputFraming != .square { return "24 FPS smoothing currently supports 2-second square videos. Choose those settings, or use 12 FPS offline." }
+        return nil
+    }
 
-    init(root: URL? = nil, smoothingClient: RIFEClient? = nil) {
-        let account = HFAccountModel()
-        helperAccount = account
+    init(root: URL? = nil, smoothingClient: RIFEClient? = nil, helperAccount: HFAccountModel? = nil) {
+        let account = helperAccount ?? HFAccountModel()
+        self.helperAccount = account
         self.smoothingClient = smoothingClient ?? RIFEClient(credentials: account.client)
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LocalFrames", isDirectory: true)
         library = VideoLibrary(root: support.appendingPathComponent("Library", isDirectory: true))
@@ -108,6 +119,7 @@ final class AppModel: ObservableObject {
             visualStyle = preferences.style; outputFraming = preferences.framing
             useFixedSeed = preferences.useFixedSeed; generationSeed = preferences.seed
             recordCreationDiagnostics = preferences.recordDiagnostics ?? false
+            smoothAfterGeneration = preferences.smoothAfterGeneration ?? false
         }
         preferencesLoaded = true
         self.support.onDisable = { [weak self] in self?.closeSmoothingReview(); self?.helperAccount.cancel() }
@@ -117,7 +129,8 @@ final class AppModel: ObservableObject {
         guard preferencesLoaded else { return }
         let preferences = CreationPreferences(style: visualStyle, framing: outputFraming,
                                               useFixedSeed: useFixedSeed, seed: generationSeed,
-                                              recordDiagnostics: recordCreationDiagnostics)
+                                              recordDiagnostics: recordCreationDiagnostics,
+                                              smoothAfterGeneration: smoothAfterGeneration)
         do {
             try FileManager.default.createDirectory(at: preferencesURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(preferences).write(to: preferencesURL, options: .atomic)
@@ -127,6 +140,7 @@ final class AppModel: ObservableObject {
     func reuseSettings(_ video: VideoRecord) {
         guard !working, video.canReuseSettings else { return }
         prompt = video.prompt; duration = video.duration; visualStyle = video.style
+        smoothAfterGeneration = video.smoothing != nil
         outputFraming = video.isCrop ? video.framing : (video.requestedFraming ?? .square)
         useFixedSeed = true; generationSeed = String(video.seed)
         selectedVideo = nil
@@ -142,6 +156,13 @@ final class AppModel: ObservableObject {
             if FileManager.default.fileExists(atPath: temporaryDirectory.path) { try FileManager.default.removeItem(at: temporaryDirectory) }
             try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
             videos = try await library.list()
+            if let data = try? Data(contentsOf: pendingSmoothingURL),
+               let id = try? JSONDecoder().decode(UUID.self, from: data) {
+                if !videos.contains(where: { $0.parentVideoID == id && $0.smoothing != nil }) {
+                    pendingSmoothingVideo = videos.first { $0.id == id && SmoothingMedia.supports($0) }
+                }
+            }
+            await helperAccount.restore()
             installed = await installer.isInstalled()
             hasModelRollback = await installer.hasRollback()
             refreshBenchmarkFiles()
@@ -149,7 +170,26 @@ final class AppModel: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    func generate() { beginGeneration(benchmarking: false) }
+    func generate() {
+        if smoothAfterGeneration, let issue = smoothingSelectionIssue { errorMessage = issue; return }
+        if pendingSmoothingVideo != nil { errorMessage = "Finish the pending 24 FPS job or choose Keep 12 FPS before starting another job."; return }
+        beginGeneration(benchmarking: false)
+    }
+
+    /// Called only after the genuine local generation has been saved. No upload or consent is persisted.
+    func offerSmoothingForGeneratedVideo(_ video: VideoRecord) throws {
+        guard SmoothingMedia.supports(video) else { throw SmoothingError.unsupported }
+        try JSONEncoder().encode(video.id).write(to: pendingSmoothingURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        pendingSmoothingVideo = video
+        if !working && inForeground && support.enabled { workflowReview = video }
+    }
+
+    func keepOriginalWithoutSmoothing() {
+        guard !working else { return }
+        try? FileManager.default.removeItem(at: pendingSmoothingURL)
+        pendingSmoothingVideo = nil; workflowReview = nil
+        notice = "Your 12 FPS original is saved in Library. You can request smoothing later."
+    }
 
     func runBaselineBenchmark() {
         guard installed, !working else { return }
@@ -222,6 +262,7 @@ final class AppModel: ObservableObject {
             let request = try resuming?.request ?? GenerationRequest(prompt: prompt, duration: duration, seed: seed,
                                                                       style: benchmarking ? .default : visualStyle)
             let framing: OutputFraming = benchmarking ? .square : outputFraming
+            let wantsSmoothing = !benchmarking && smoothAfterGeneration
             var job: BaselineJob? = benchmarking ? (resuming ?? BaselineJob(id: UUID(), request: request)) : nil
             let log = (benchmarking || recordCreationDiagnostics) ? try makeBenchmarkLog(kind: "generation", fields: [
                 "prompt": request.prompt, "seed": String(request.seed), "durationSeconds": String(request.duration),
@@ -242,6 +283,7 @@ final class AppModel: ObservableObject {
                 job = updated
             }
             working = true
+            generationWillSmooth = wantsSmoothing
             installing = false
             activeBenchmarkLog = log
             pausedForMemory = false
@@ -309,7 +351,10 @@ final class AppModel: ObservableObject {
                         do { preview = try await self.makeCrop(item, framing: framing) }
                         catch { self.notice = "The square video was saved. The crop did not finish; you can retry it from the video preview." }
                     }
-                    self.selectedVideo = preview
+                    if wantsSmoothing {
+                        do { try self.offerSmoothingForGeneratedVideo(item) }
+                        catch { self.notice = "Your original was saved. Open it in Library to request a 24 FPS copy."; self.selectedVideo = item }
+                    } else { self.selectedVideo = preview }
                 } catch is CancellationError {
                     try? log?.finish(status: "cancelled", fields: ["checkpointRetained": String(checkpoint != nil)])
                     self.notice = benchmarking ? "Baseline paused. Use Resume saved baseline to continue from the last saved motion step." : "Generation cancelled."
@@ -390,6 +435,10 @@ final class AppModel: ObservableObject {
                 guard support.enabled else { throw CancellationError() }
                 let saved = try await library.addSmoothed(result, original: prepared.original)
                 videos = try await library.list(); smoothingResult = saved
+                if pendingSmoothingVideo?.id == prepared.original.id {
+                    try? FileManager.default.removeItem(at: pendingSmoothingURL)
+                    pendingSmoothingVideo = nil
+                }
                 smoothingMessage = "24 FPS copy saved. Your original 12 FPS video is unchanged."
             } catch is CancellationError {
                 smoothingMessage = "Smoothing cancelled. Your original is safe. The helper may already have received or processed the clip; cancellation does not delete its remote copy."
@@ -398,6 +447,7 @@ final class AppModel: ObservableObject {
                     smoothingMessage = "Smoothing stopped. Your original is safe. The helper may already have received the clip. Nothing will retry automatically."
                 } else { smoothingMessage = (error as? HFAccountError)?.localizedDescription ?? (error as? SmoothingError)?.localizedDescription ?? SmoothingError.unavailable.localizedDescription }
             }
+            if support.enabled && inForeground && !Task.isCancelled { helperAccount.refreshQuota(enabled: true) }
         }
     }
 
@@ -474,7 +524,7 @@ final class AppModel: ObservableObject {
     func sceneChanged(_ phase: ScenePhase) {
         guard phase != .inactive else { return }
         inForeground = phase == .active
-        if !inForeground { support.cancel() }
+        if !inForeground { support.cancel(); helperAccount.cancelQuotaRefresh() }
         generationControl?.setForeground(inForeground)
         activeBenchmarkLog?.record("scene_changed", fields: ["state": inForeground ? "foreground" : "background"])
         if !inForeground, working, generationControl == nil {
@@ -484,9 +534,12 @@ final class AppModel: ObservableObject {
     }
 
     private func finish(success: Bool = false) {
+        let reviewAfterGeneration = generationWillSmooth && success
         BackgroundGeneration.shared.finish(success: success)
         working = false; installing = false; exportingCrop = false; smoothingActive = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        generationWillSmooth = false
         refreshBenchmarkFiles(); refreshSavedBaseline()
+        if reviewAfterGeneration && inForeground && support.enabled { workflowReview = pendingSmoothingVideo }
     }
 
     func handleMemoryWarning() {
@@ -557,6 +610,10 @@ final class AppModel: ObservableObject {
             try await library.delete(video)
             videos = try await library.list()
             if selectedVideo?.id == video.id { selectedVideo = nil }
+            if pendingSmoothingVideo?.id == video.id {
+                try? FileManager.default.removeItem(at: pendingSmoothingURL)
+                pendingSmoothingVideo = nil; workflowReview = nil
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 
