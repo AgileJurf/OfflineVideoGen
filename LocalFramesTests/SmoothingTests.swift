@@ -23,6 +23,7 @@ final class SmoothingTests: XCTestCase {
         XCTAssertTrue(app.smoothAfterGeneration)
         XCTAssertEqual(app.pendingSmoothingVideo?.id, original.id)
         XCTAssertNil(app.workflowReview); XCTAssertNil(app.smoothingPreview)
+        app.workflowReview = original
         app.prepareSmoothing(original)
         while app.working { try await Task.sleep(for: .milliseconds(10)) }
         let firstPreview = try XCTUnwrap(app.smoothingPreview)
@@ -40,6 +41,9 @@ final class SmoothingTests: XCTestCase {
         XCTAssertEqual(frames, 48); XCTAssertEqual(copy.parentVideoID, original.id)
         XCTAssertNil(app.pendingSmoothingVideo)
         XCTAssertEqual(try SmoothingMedia.fingerprint(app.library.videoURL(original.id)).hash, originalHash)
+        app.reuseSettings(copy)
+        XCTAssertNil(app.workflowReview, "Reusing a finished job must reveal Create, not leave its review sheet open")
+        XCTAssertTrue(app.smoothAfterGeneration)
         let restored = AppModel(root: root, helperAccount: account); await restored.load()
         XCTAssertNil(restored.pendingSmoothingVideo); XCTAssertEqual(restored.videos.count, 2)
     }

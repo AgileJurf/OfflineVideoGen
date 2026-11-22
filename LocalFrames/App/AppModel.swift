@@ -144,6 +144,7 @@ final class AppModel: ObservableObject {
         outputFraming = video.isCrop ? video.framing : (video.requestedFraming ?? .square)
         useFixedSeed = true; generationSeed = String(video.seed)
         selectedVideo = nil
+        workflowReview = nil
         creationRequestID = UUID()
         notice = "Saved prompt, style, framing and seed restored. Review them before generating."
     }
