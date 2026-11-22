@@ -2,9 +2,13 @@
 
 Local Frames is an experimental native MOVD / Open-Sora video diffusion app. Genuine offline 2-second generation has completed on the physical iPhone 17 Pro Max. New model settings and optional postprocessing still require their own device validation.
 
+## Current release
+
+**0.1.0 (38)** is available in **Personal Device Testing**, released on 21 November 2026. It adds a combined 24 FPS workflow with explicit per-clip upload review, keyboard dismissal, a dated Hugging Face quota display, grouped Create/Setup screens, and improved background task registration/status. Xcode Cloud Build 37 passed 72 tests and Analyze; one live-upload test was intentionally skipped. Physical-device acceptance of the new workflow and background GPU execution remains pending. See [the workflow report](UNIFIED_VIDEO_WORKFLOW.md). This release does not include Neodragon or trained style adapters.
+
 ## Optional 24 FPS smoothing beta
 
-**0.1.0 (35)** is available in **Personal Device Testing**, released on 21 November 2026. It fixes the earlier Build 31 connection with optional free-account sign-in and verified queue handling. Its live native Simulator test completed a real 24 FPS copy; physical-iPhone acceptance remains pending. See the [current connection test report](SMOOTHING_CONNECTION_TEST.md) for measured results and the release record.
+**0.1.0 (35)** was released on 21 November 2026 and remains a rollback option. It fixes the earlier Build 31 connection with optional free-account sign-in and verified queue handling. Its live native Simulator test completed a real 24 FPS copy; physical-iPhone acceptance remains pending. See the [current connection test report](SMOOTHING_CONNECTION_TEST.md) for measured results and the release record.
 
 Enable **Setup → Online support and model updates → Enable online support**, then choose a compatible 2-second square 12 FPS clip. Preview it and approve that exact upload to Hugging Face’s community `1inkusFace/RIFE` helper. An action is also available in compatible video previews while support is enabled. No clip is uploaded by enabling the switch or finishing generation. Every retry requires another review and approval.
 
@@ -39,7 +43,7 @@ The upstream model weights are unchanged. Absence of app-level filtering does no
 
 ## Distribution
 
-The **TestFlight Beta** Xcode Cloud workflow uses a manual start condition on `main`. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Build 35, version 0.1.0, reached Testing with one internal tester and saved testing notes. The released app source is `1d7adfc7bd522e993387e21d08202bcebec726e7`, preserved at `baseline/testflight-build-35`; Build 31 is retained for rollback. Public source availability does not make the TestFlight beta publicly installable.
+The **TestFlight Beta** Xcode Cloud workflow uses a manual start condition on `main`. It archives the LocalFrames scheme with **TestFlight (Internal Testing Only)** preparation and delivers successful archives to **Personal Device Testing**. Build 38, version 0.1.0, reached Testing with one internal tester and saved testing notes. The released app source is `d9537b4c0a9c1654fd985701904ea4fcbca4a95a`, preserved at `baseline/testflight-build-38`; Build 35 is retained at `baseline/testflight-build-35` for rollback. Public source availability does not make the TestFlight beta publicly installable.
 
 For instrumented device testing, follow the [benchmark record and procedure](BENCHMARK_REPORT.md). The benchmark controls are added after Build 5; use the newer instrumented beta when available. Complete active setup before updating.
 
