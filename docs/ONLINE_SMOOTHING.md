@@ -1,6 +1,6 @@
 # Optional online 24 FPS smoothing
 
-Implementation dated 21 November 2026. Genuine MOVD generation remains entirely on the iPhone. This beta adds an optional remote interpolation stage after a video has been generated and saved. It makes no claim of faster diffusion or universally improved visual quality.
+**Current release: TestFlight 0.1.0 (35), 21 November 2026.** Genuine MOVD generation remains entirely on the iPhone. This beta adds an optional remote interpolation stage after a video has been generated and saved. It makes no claim of faster diffusion or universally improved visual quality.
 
 ## Supported workflow
 
@@ -24,7 +24,7 @@ Hugging Face currently documents two minutes of anonymous shared ZeroGPU time an
 
 ## Reproducible validation
 
-The authenticated connection fix passed a real app-hosted iOS Simulator test at 23:38:59 UTC on 21 November 2026. It saved 48 frames at 24 FPS for exactly two seconds, with the original SHA unchanged; all 23 intermediate motion frames passed independent decoding. The measured operation took 9.509 seconds in this single run, including network/queue/normalization. This is not an iPhone or diffusion-speed result. See [the detailed current test report and reproduction procedure](SMOOTHING_CONNECTION_TEST.md). Earlier Build 31 results below are retained as release history.
+The authenticated connection fix passed a real app-hosted iOS Simulator test at 23:38:59 UTC on 21 November 2026. It saved 48 frames at 24 FPS for exactly two seconds, with the original SHA unchanged; all 23 intermediate motion frames passed independent decoding. The measured operation took 9.509 seconds in this single run, including network/queue/normalization. This is not an iPhone or diffusion-speed result. See [the detailed current test report and reproduction procedure](SMOOTHING_CONNECTION_TEST.md). Cloud Build 34 passed 64 regressions with the live-upload test intentionally skipped. Build 35 archived that exact source and reached Testing in Personal Device Testing; notes were saved. Its source is `1d7adfc7bd522e993387e21d08202bcebec726e7`, tagged `baseline/testflight-build-35`. Earlier Build 31 results below are retained as release history.
 
 Synthetic media fixtures are bundled **only in the test target**, not the shipped application. They originate from the [recorded GPU experiment](benchmarks/rife-synthetic-2026-11-21/experiment.json). Regression and Cloud tests do not call the real helper. A separately gated local integration test uploads only the committed synthetic fixture when explicitly invoked after account connection. It never uploads a personal clip.
 

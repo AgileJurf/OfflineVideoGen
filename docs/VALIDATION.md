@@ -69,3 +69,7 @@ The app's `peakSampledMemoryBytes` is a checkpoint sample, not a continuous peak
 ## Public evidence hygiene
 
 Publish source, sanitized test summaries, and intentional generation examples only. Model archives, local caches, signing material, device identifiers, private account details, and raw machine-specific build logs are excluded from this repository.
+
+## Free helper connection update: Build 35
+
+The native authenticated smoothing flow passed a real app-hosted Simulator test using only a fabricated moving-shapes clip: a separate 48-frame, 24 FPS, two-second library copy, unchanged original hash, and 23/23 interpolated-motion checks. The measured operation took 9.509 seconds in this one Simulator run; no diffusion speedup or physical-iPhone result is inferred. Local regression: 64 passed, one separately gated live-upload test skipped; that live test passed in its explicit invocation. Backend: 10/10. Xcode Cloud Build 34 passed the same 64 regressions on iPhone 17 Pro Max / iOS 27.2 with the live test skipped and Analyze succeeded. [Build 35](https://appstoreconnect.apple.com/teams/74071065-09b9-4ec3-892d-f3f4fd3eb8ab/xcode-cloud/products/0520A902-29E3-4557-8FD7-6AA8988BCCD7/builds/7da51392-7044-4686-b6e0-31d60fd2c0df/summary) archived `1d7adfc7bd522e993387e21d08202bcebec726e7` and delivered 0.1.0 (35) to Personal Device Testing with saved notes. See [the detailed connection test and evidence](SMOOTHING_CONNECTION_TEST.md).
