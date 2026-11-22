@@ -22,6 +22,19 @@ import Foundation
         let fps = try await track.load(.nominalFrameRate)
         let duration = try await asset.load(.duration).seconds
         guard fps.isFinite, fps > 0, duration.isFinite, duration > 0 else { throw inspectionError("Invalid video timing") }
+        let compressedReader = try AVAssetReader(asset: asset)
+        let compressed = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+        compressedReader.add(compressed)
+        guard compressedReader.startReading() else { throw inspectionError("Cannot read compressed samples") }
+        var compressedBuffers = 0, compressedSamples = 0, emptyCompressedBuffers = 0, maximumSamplesPerBuffer = 0
+        while let sample = compressed.copyNextSampleBuffer() {
+            let count = CMSampleBufferGetNumSamples(sample)
+            compressedBuffers += 1
+            compressedSamples += count
+            if count == 0 { emptyCompressedBuffers += 1 }
+            maximumSamplesPerBuffer = max(maximumSamplesPerBuffer, count)
+        }
+        guard compressedReader.status == .completed else { throw inspectionError("Incomplete compressed samples") }
         let reader = try AVAssetReader(asset: asset)
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
         reader.add(output)
@@ -60,6 +73,8 @@ import Foundation
         let report: [String: Any] = ["scope": "Local export integrity and pixel variation; not a device benchmark or perceptual quality score",
             "file": input.lastPathComponent, "durationSeconds": duration, "framesPerSecond": fps,
             "width": size.width, "height": size.height, "decodedFrames": hashes.count,
+            "compressedSampleBuffers": compressedBuffers, "compressedSamples": compressedSamples,
+            "emptyCompressedBuffers": emptyCompressedBuffers, "maximumCompressedSamplesPerBuffer": maximumSamplesPerBuffer,
             "uniqueDecodedFrames": Set(hashes).count, "decodedFrameSHA256": hashes,
             "adjacentRGBMeanAbsoluteDifference0To255": differences, "inspectionImages": thumbnails]
         let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])

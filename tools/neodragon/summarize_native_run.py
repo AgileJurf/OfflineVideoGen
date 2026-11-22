@@ -38,7 +38,17 @@ def main():
     seconds = int(metadata["durationSeconds"])
     video = args.run / "sailboat-seed42.mp4"
     assert events[0]["event"] == "started" and events[-1]["event"] == "finished"
-    assert events[-1]["fields"]["status"] == "completed"
+    harness_status = events[-1]["fields"]["status"]
+    revalidation = None
+    if harness_status != "completed":
+        # Preserve the original failed test record. A corrected export check may
+        # validate the same MP4 after the engine itself completed successfully.
+        assert harness_status == "failed" and events[-1]["fields"].get("error") == "invalidTensor"
+        assert len([e for e in events if e["event"] == "neodragon_generation_completed"]) == 1
+        revalidation = json.loads((args.run / "export-revalidation.json").read_text())
+        assert revalidation["status"] == "passed-decoded-export-check"
+        assert revalidation["videoSHA256"] == sha256(video)
+        assert revalidation["decodedFrames"] == seconds * 24
     assert metrics["environment"] == "macos-cpu"
     assert metadata["hardware"] == "x86_64"
     assert metrics["modelRevision"] == manifest["weightsRevision"]
@@ -79,13 +89,17 @@ def main():
     processors = int(metadata["logicalProcessorCount"])
     report = {
         "scope": "Complete native macOS CPU Release functional test; concurrent development work; not an iPhone benchmark or a controlled speed comparison",
-        "status": "passed-native-macos-generation-and-export",
+        "status": "passed-native-macos-generation-and-export" if revalidation is None else "passed-native-macos-generation-with-export-revalidation",
         "deviceValidated": False,
-        "nineSecondVideoValidated": False,
+        "nineSecondVideoValidatedOnThisHost": seconds == 9,
+        "generationDurationSeconds": seconds,
         "environment": metrics["environment"],
         "hardware": metadata["hardware"], "osVersion": metadata["osVersion"],
         "rawJournalEnvironment": metadata["executionEnvironment"],
-        "journalEnvironmentNote": "This executable predates the macOS journal-label fix. Its explicit test scope, hardware, OS and final metrics identify macOS CPU execution; the raw physical-device field is incorrect.",
+        "journalEnvironmentNote": "This executable predates the macOS journal-label fix. Its explicit test scope, hardware, OS and final metrics identify macOS CPU execution; the raw physical-device field is incorrect." if metadata["executionEnvironment"] == "physical-device" else "macOS host; not a physical iPhone",
+        "originalHarnessStatus": harness_status,
+        "exportRevalidation": revalidation,
+        "exportValidationNote": "The original compressed-buffer counter saw 52 buffers containing 48 samples, including four empty marker buffers. Both independent inspection and the corrected harness decoded the same file as 48 frames. The original failed journal is retained." if revalidation is not None else "Decoded-frame check passed during the complete run",
         "modelVersion": manifest["modelVersion"], "modelRevision": manifest["weightsRevision"],
         "manifestSHA256": sha256(args.manifest), "executableSHA256": executable["executableSHA256"],
         "journalSHA256": sha256(journal), "metricsSHA256": sha256(args.run / "metrics.json"),

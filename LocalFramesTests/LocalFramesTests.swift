@@ -297,14 +297,21 @@ final class LocalFramesTests: XCTestCase {
             XCTAssertEqual(size, CGSize(width: 512, height: 320))
             XCTAssertEqual(fps, 24, accuracy: 0.01)
             let reader = try AVAssetReader(asset: asset)
-            let samples = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+            let samples = AVAssetReaderTrackOutput(track: track, outputSettings: [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
             reader.add(samples)
             XCTAssertTrue(reader.startReading())
             var frames = 0
-            while samples.copyNextSampleBuffer() != nil { frames += 1 }
+            while let sample = samples.copyNextSampleBuffer() {
+                XCTAssertNotNil(CMSampleBufferGetImageBuffer(sample))
+                frames += 1
+            }
             XCTAssertEqual(reader.status, .completed)
             XCTAssertEqual(frames, seconds * 24)
             XCTAssertEqual(metrics.modelRevision, NeodragonModel.weightsRevision)
+            guard reader.status == .completed, frames == seconds * 24,
+                  size == CGSize(width: 512, height: 320), abs(fps - 24) < 0.01,
+                  abs(duration.seconds - Double(seconds)) < 1.0 / 24.0 else { throw GenerationError.invalidTensor }
             try log.finish(status: "completed", fields: ["exportedFrames": String(frames), "output": output.lastPathComponent])
             print("NEODRAGON_NATIVE_GENERATION_COMPLETED \(seconds)s \(frames) frames")
         } catch {

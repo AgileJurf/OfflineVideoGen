@@ -1,12 +1,12 @@
 # Local Frames
 
-A standalone SwiftUI research application for offline text-to-video generation on iPhone, using the released MOVD / Open-Sora Core ML model partitions.
+A standalone SwiftUI research application for offline text-to-video generation on iPhone, with MOVD / Open-Sora and a separately downloadable experimental Neodragon engine.
 
 **Development status: experimental, with incremental device validation required.** See the [validation record](docs/VALIDATION.md) for software checks and [generation compatibility report](docs/GENERATION_EXPANSION.md) for enabled and blocked features. Build and simulator tests do not establish iPhone performance or video quality. New device journals and output evidence remain private.
 
-The initial target is 256 × 256, 12 FPS, and 2–5 seconds. Inference uses temporal video diffusion and a video VAE. Model files download once and remain in the app sandbox; generation has no network service dependency.
+MOVD supports 256 × 256, 12 FPS, and 2–5 seconds. The optional Neodragon port offers native 512 × 320, 24 FPS, and a 2–9 second selector. Both use genuine local video diffusion. Model files download once and remain in the app sandbox; generation has no network service dependency. Neodragon's physical-device acceptance is still pending.
 
-This repository is independent of other applications. It contains no model weights, developer credentials, or device identifiers.
+This repository is independent of other applications. The Git source tree contains no model weights, developer credentials, or device identifiers. Optional model weights are distributed separately as verified release assets.
 
 ## Build and test
 
@@ -37,6 +37,14 @@ Create offers twelve prompt-based visual styles with an explicit 63-token scene-
 
 Optional local diagnostics for Create jobs can be enabled in Setup. They include prompts and remain on the device unless manually exported. The benchmark screen supports side-by-side playback; precision and faster sampler presets require measured physical-device comparisons before activation.
 
+## Optional Neodragon
+
+The optional package has 168 Core ML partitions in eight SHA-256-verified archives: **7,881,071,452 bytes** to download, with **32,212,254,720 bytes** free required during installation. Setup requires a separate confirmation and stores the package independently from MOVD. Create selects the installed engine and its duration range. Removing Neodragon preserves MOVD and the local video library.
+
+Neodragon generates its first image with SSD-1B, then uses Pyramid MMDiT motion diffusion and a causal video decoder. Its native 24 FPS output requires no online smoothing or upload. Two seconds exports 48 actual frames; nine seconds requests 216. MOVD's fixed model retains its five-second limit. Nine-second attention and decoder checks do not establish full nine-second device reliability or video quality. See the [implementation and numerical evidence](docs/NEODRAGON_IMPLEMENTATION.md).
+
+All four Neodragon CLIP encoders and its distilled T5 tokenizer are checked without silent truncation. Styles remain prompt-based. Experimental Neodragon jobs always retain local diagnostics. Thermal pauses preserve an active job in memory, but saved recovery after force-quit is not yet supported for this model. Begin physical-device validation with two seconds in Airplane Mode after installation; keep the working MOVD model and earlier TestFlight rollback.
+
 ## Optional online support
 
 Build 25 adds **Setup → Online support and model updates → Enable online support**. It defaults off. When enabled, users can manually check the live model catalog over Wi-Fi and cache the validated result for offline use. Enabling the switch alone makes no request; generation does not depend on the backend. Existing installations do not need to download the model again.
@@ -55,5 +63,6 @@ Build 35 provides optional **24 FPS smoothing (beta)**, offering a separate inte
 - [Generation expansion and exact model blockers](docs/GENERATION_EXPANSION.md)
 - [Expansion test report](docs/EXPANSION_TEST_REPORT.md)
 - [Third-party code and model provenance](docs/THIRD_PARTY_NOTICES.md)
+- [Optional Neodragon conversion, native tests and limitations](docs/NEODRAGON_IMPLEMENTATION.md)
 
 The released weights have been downloaded and hashed locally, and all 103 package specifications were inspected. Regression tests cover the tokenizer, saved-baseline compatibility, video writing, crop geometry, library metadata and UI persistence. Every new inference configuration still requires fresh physical-device completion, numerical and visual checks, offline testing and repeated measurements. The original model and build-18 rollback source are preserved.

@@ -50,7 +50,7 @@ The common component gate requires matching shapes, finite output and relative L
 | T5 tokenization | Native SentencePiece implementation passed 131 slow-T5 reference cases and overflow rejection |
 | Image bridge | Five complete 1024 × 640 resize patterns and 265 rounding cases exactly matched the pinned Pillow preprocessing |
 | Native helper/regression tests | Seven tests passed, including tokenizer, tensor strides, schedulers, model isolation and duration reuse |
-| Complete native text-to-video | Intel iOS Simulator stopped in mixed-precision CLIP; native macOS retry passed all first-image stages and is running motion generation. No successful Neodragon video reported yet |
+| Complete native text-to-video | Native macOS CPU Release run executed all 168 partitions and produced a genuine two-second MP4: 48 distinct decoded frames, 512 × 320, 24 FPS. The final buffer-count check was corrected and the same file independently revalidated; see below |
 | Nine-second attention exports/full chain | All 18 individual blocks and complete chained prediction passed; full-chain relative L2 0.001275133. No nine-second video success reported |
 | Physical iPhone 17 Pro Max | Pending; no speed, memory, quality or reliability improvement claimed |
 
@@ -60,9 +60,9 @@ The first complete native candidate compiled all 168 models, then stopped at the
 
 Native follow-up isolated this first failure to model execution: embeddings matched the original exactly, while direct Core ML transfer, shaped-array transfer and original reference inputs all failed in the same group. Four precision variants were then compared on three original prompts. Float32 passed the iOS 18.4 Intel Simulator check (maximum relative L2 1.924e-7); selective FP16 linear operations and both finite-mask candidates failed with non-finite values. The complete first SSD-1B CLIP encoder was re-exported in Float32 and passed its Mac chained reference check. A simulator retry passed that encoder, then failed at the second mixed-precision encoder's first group.
 
-The exact original mixed-precision group and original inputs also passed a native **macOS** Swift Core ML check on all three prompts (maximum relative L2 0.001155660). This identifies an observed runtime-specific difference; it is not evidence that the iPhone GPU will pass or fail. The Float32 export remains a separate diagnostic alternative. A portable command-line harness now runs the complete, unchanged mixed-precision candidate through the shared Swift engine on macOS CPU. Its environment is explicitly recorded as `macos-cpu`, and its video and measurements cannot be reported as physical iPhone validation. Full-pipeline output inspection and physical-device acceptance remain required.
+The exact original mixed-precision group and original inputs also passed a native **macOS** Swift Core ML check on all three prompts (maximum relative L2 0.001155660). This identifies an observed runtime-specific difference; it is not evidence that the iPhone GPU will pass or fail. The Float32 export remains a separate diagnostic alternative. A portable command-line harness now runs the complete, unchanged mixed-precision candidate through the shared Swift engine on macOS CPU. Its environment is explicitly recorded as `macos-cpu`, and its video and measurements cannot be reported as physical iPhone validation. The complete macOS functional run and sampled-frame inspection subsequently passed; physical-device acceptance remains required.
 
-The selected nine-second-range candidate comprises **168 Core ML partitions / 9,965,959,802 bytes** before archive compression. Its eight locally prepared archives total **7,881,071,452 bytes**, with a conservative **32,212,254,720-byte (30 GiB)** installation free-space requirement. Every archive passed decompression/CRC, manifest-entry and SHA-256 checks. These are package byte counts, not measured installed storage or process memory; publication remains gated on complete-generation output inspection.
+The selected nine-second-range candidate comprises **168 Core ML partitions / 9,965,959,802 bytes** before archive compression. Its eight locally prepared archives total **7,881,071,452 bytes**, with a conservative **32,212,254,720-byte (30 GiB)** installation free-space requirement. Every archive passed decompression/CRC, manifest-entry and SHA-256 checks. These are package byte counts, not measured installed storage or process memory; complete-generation output inspection passed before publication.
 
 Packaging preserves explicit directories, including the empty weights directory referenced by the weightless VAE scale model. A file-only development copy initially failed Core ML compilation at that model; the packaging checks now reject a ZIP missing any model manifest entry. No changed model weights were needed for this fix.
 
@@ -88,6 +88,26 @@ Public model files may be distributed as bounded GitHub release assets. [GitHub'
 
 The model card specifies BSD-3-Clause-Clear plus [Qualcomm's Responsible AI License](https://www.qualcomm.com/site/responsible-ai-license). Included component notices cover Pyramid Flow, the tiny causal decoder, distilled T5, CLIP, SSD-1B/diffusers, Pillow and SentencePiece references. See `tools/neodragon/THIRD-PARTY-NOTICES.txt`; the same notices are bundled for offline viewing and included with the optional model. This is not an unrestricted-license claim or a patent grant.
 
+## Complete native Mac generation
+
+A Release build of the shared Swift engine completed all 22 diffusion evaluations and video decoding with CPU-only execution requested. All **168 partitions** recorded successful predictions. The actual export contains **48 distinct decoded frames**, **512 × 320**, **24 FPS**, exactly **2 seconds**. SHA-256: `f6afc94854b3c0a8b626d4697552ec7ef7132140f2a657d275605ea748a965a8`. Prompt: “A small sailboat glides across a calm lake at sunrise.” Seed: 42, Default style. The video remains local; it is not a release asset.
+
+The initial CLI verdict was a false failure after the engine had completed. Its compressed reader returned 52 buffers containing 48 samples; four buffers contained no video sample. The harness had counted buffers as frames. The corrected harness decodes real image buffers. It and an independent inspector both revalidated the unchanged MP4 as 48 frames. The original failed journal is retained, with a separate hash-bound revalidation record. No inference or encoding change was needed for this correction.
+
+| Mac CPU observation | Measured value |
+| --- | --- |
+| Total generation wall time | 1,950.508 seconds (32 min 30.5 sec) |
+| Summed model loading time | 596.487 seconds |
+| Summed prediction time | 1,155.793 seconds |
+| Peak sampled process footprint | 3,187,286,016 bytes |
+| Process lifetime peak | 3,233,361,920 bytes; includes the full process lifetime |
+| Thermal states sampled | Fair; zero recorded pause time |
+| GPU / Neural Engine utilization | Not measured; CPU-only execution requested |
+
+These observations are from an Intel Mac with concurrent development work, not a controlled performance comparison and not an iPhone result. The run's raw journal incorrectly labels non-simulator macOS as `physical-device`; its explicit scope, hardware, OS and final metrics identify macOS CPU execution. The logger now has a separate macOS label. Both corrections are documented in `native-macos-generation-2s-v3.json`, which includes per-partition timings, sampled memory, CPU accounting and hashes for the executable, manifest, journal and video.
+
+Inspection of sampled frames showed a recognizable sailboat, a broadly consistent subject and background, and gradual changes in its position and reflection. This is one qualitative observation, not a visual-quality score or a claim of improvement over MOVD. Frame uniqueness alone does not establish smooth or coherent motion. No full nine-second video has yet been validated.
+
 ## Release acceptance still required
 
-Complete the native two-second functional test and inspect the actual MP4. The long-duration component/full-chain checks have passed. Publish only the resulting verified optional candidate assets, verify their real download URLs, and release a clearly experimental TestFlight candidate. On the iPhone, begin with a fixed-prompt two-second Airplane Mode test, retain its video and journal, then attempt longer durations through nine seconds. Record memory, thermals, load/inference time and any failure for each. Do not promote a quality/speed preset or replace MOVD until matched physical-device runs support it.
+The native two-second functional run, export inspection and long-duration component/full-chain checks have passed. On the iPhone, begin with a fixed-prompt two-second Airplane Mode test, retain its video and journal, then attempt longer durations through nine seconds. Record memory, thermals, load/inference time and any failure for each. Do not promote a quality/speed preset or replace MOVD until matched physical-device runs support it.

@@ -1,5 +1,5 @@
 {
-  "scope": "Numerical conversion evidence from Mac CPU checks; not iPhone performance, complete video success, or perceptual quality validation",
+  "scope": "Mac CPU numerical conversion and native functional evidence, plus Simulator software checks; not iPhone performance or a controlled perceptual comparison",
   "deviceValidated": false,
   "reports": [
     {
@@ -271,6 +271,31 @@
       "file": "native-macos-debug-generation-failure-v1.json",
       "status": "failed-app-shape-validation",
       "sha256": "2c530eff0ef2c17172b170dd6f97c11de8c7ce9130585f83ecae5410ff6efdbf"
+    },
+    {
+      "file": "bundled-manifest-v1.json",
+      "status": "recorded-software-test-evidence",
+      "sha256": "dfc0b5d4e6a1084413ebc0bfc9316b0f7b82e161ffedfa786c3b6eba9279cfe1"
+    },
+    {
+      "file": "native-helpers-v2.json",
+      "status": "recorded-software-test-evidence",
+      "sha256": "cf396b0873123a16f8f6ad08a595fdc4462537e48da9b7c0bf6bebc84d3f8e3d"
+    },
+    {
+      "file": "native-macos-generation-2s-v3.json",
+      "status": "passed-native-macos-generation-with-export-revalidation",
+      "sha256": "a1c10f62296eebb3deae4e167bad08ae10dc077371e3863c580febd839e58e25"
+    },
+    {
+      "file": "regression-v1.json",
+      "status": "recorded-software-test-evidence",
+      "sha256": "4445f6b09922a7222eb157f926c451ed7394f400829d5d18f31abedf5e6a7c1e"
+    },
+    {
+      "file": "regression-v2.json",
+      "status": "recorded-software-test-evidence",
+      "sha256": "009b017fca4a44ce061af4f5306e7b48659eaaaa2075a68bf57f5da7562e39a1"
     }
   ]
 }
