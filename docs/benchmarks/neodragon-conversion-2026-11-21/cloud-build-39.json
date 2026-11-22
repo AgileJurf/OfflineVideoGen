@@ -1,0 +1,35 @@
+{
+  "scope": "Xcode Cloud app unit/UI tests and static analysis; no model inference, model download or live clip upload",
+  "build": 39,
+  "commit": "a6566acd95921289849ac0e779b9a7b9fc17b24d",
+  "xcode": "27.2 (27B52)",
+  "macOS": "27.2.1 (26B131)",
+  "status": "passed",
+  "passedTests": 81,
+  "skippedTests": 6,
+  "failedTests": 0,
+  "analysis": "passed",
+  "suites": {
+    "HuggingFaceAccountTests": {
+      "passed": 10,
+      "skipped": 0
+    },
+    "LocalFramesTests": {
+      "passed": 42,
+      "skipped": 5
+    },
+    "LocalFramesUITests": {
+      "passed": 7,
+      "skipped": 0
+    },
+    "SmoothingTests": {
+      "passed": 12,
+      "skipped": 1
+    },
+    "SupportTests": {
+      "passed": 10,
+      "skipped": 0
+    }
+  },
+  "deviceValidated": false
+}

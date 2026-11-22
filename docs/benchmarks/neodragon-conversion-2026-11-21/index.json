@@ -296,6 +296,26 @@
       "file": "regression-v2.json",
       "status": "recorded-software-test-evidence",
       "sha256": "009b017fca4a44ce061af4f5306e7b48659eaaaa2075a68bf57f5da7562e39a1"
+    },
+    {
+      "file": "cloud-build-39.json",
+      "status": "passed-cloud-app-tests-and-analysis",
+      "sha256": "c16c7c7fd005d790085f3a6d26546357928e98a45657f61183dbfe3f86c108a4"
+    },
+    {
+      "file": "cloud-build-40.json",
+      "status": "passed-cloud-app-tests-and-analysis",
+      "sha256": "d01b24a84ea2250958de08dffa28b872301bf6f7d6e14c153f8c1fb57aef3b08"
+    },
+    {
+      "file": "model-distribution-v1.json",
+      "status": "published-prerelease-and-public-downloads-verified",
+      "sha256": "a660ad52f7fc37fa60f126cf77671147c746b2b4cf505f649584d0598ba167a4"
+    },
+    {
+      "file": "testflight-build-41.json",
+      "status": "released-internal-testflight-device-validation-pending",
+      "sha256": "ea6c616a0e02375986b68170b8ac547e2711435313a5f3e35e5c2f036cbc564e"
     }
   ]
 }

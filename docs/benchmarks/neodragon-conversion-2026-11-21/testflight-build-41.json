@@ -1,0 +1,36 @@
+{
+  "scope": "Xcode Cloud archive, internal TestFlight delivery and saved testing notes; physical iPhone inference acceptance pending",
+  "observedDateLocal": "2026-11-21",
+  "timeZone": "America/Los_Angeles",
+  "version": "0.1.0",
+  "build": 41,
+  "sourceCommit": "ea23bcfad656c43d00dc494a3ae844cc2c9a26cc",
+  "cloudBuildID": "4528508f-49c9-4d40-a57c-047ac9812db1",
+  "archiveActionID": "fbe194d9-372e-41ed-9afa-f080b3b8e25c",
+  "deliveryActionID": "9dec4a93-1acc-49d7-a5fa-4111daa44fe6",
+  "testFlightBuildID": "2396b4dc-a5f8-49e3-b96b-337909f9b100",
+  "workflow": "TestFlight Beta",
+  "archiveStatus": "succeeded",
+  "deliveryStatus": "succeeded",
+  "testFlightStatus": "Testing",
+  "group": "Personal Device Testing",
+  "invites": 1,
+  "testingNotesSaved": true,
+  "testingNotesSHA256": "d43d23e410797bc822f4720a558b12fdaacc80f93845c33026bd7c1aeaaa7d6d",
+  "appChecks": {
+    "report": "cloud-build-40.json",
+    "passed": 81,
+    "skipped": 6,
+    "failed": 0,
+    "analysis": "passed"
+  },
+  "modelDistributionReport": "model-distribution-v1.json",
+  "nativeMacGenerationReport": "native-macos-generation-2s-v3.json",
+  "deviceValidated": false,
+  "completeNineSecondVideoValidated": false,
+  "rollback": {
+    "appTag": "baseline/testflight-build-38",
+    "MOVDModelPreserved": true
+  },
+  "evidenceMethod": "Observed Xcode Cloud and App Store Connect UI; release availability and saved-notes screenshots retained locally"
+}

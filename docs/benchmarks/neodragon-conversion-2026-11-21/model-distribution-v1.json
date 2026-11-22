@@ -1,0 +1,100 @@
+{
+  "status": "published-prerelease-and-public-downloads-verified",
+  "releaseURL": "https://github.com/AgileJurf/OfflineVideoGen/releases/tag/neodragon-coreml-9s-v1",
+  "tag": "neodragon-coreml-9s-v1",
+  "sourceCommit": "ea23bcfad656c43d00dc494a3ae844cc2c9a26cc",
+  "publishedAt": "2026-11-22T06:30:16Z",
+  "manifestSHA256": "09cfa2a2adbcb1fe1d796a237d05b8af54f883e239d85c66f80fa61cba133008",
+  "downloadBytes": 7881071452,
+  "archives": [
+    {
+      "name": "neodragon-01.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-01.zip",
+      "bytes": 921355738,
+      "sha256": "5361a4145b48859746315e7a78813041765514393ca1da502f48f617dc435db9",
+      "serverDigest": "sha256:5361a4145b48859746315e7a78813041765514393ca1da502f48f617dc435db9",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 921355738,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-02.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-02.zip",
+      "bytes": 1050499116,
+      "sha256": "25e4883bf4b00e90bcd65d036b86f2165c768a3c711d10818af23ac27c29258e",
+      "serverDigest": "sha256:25e4883bf4b00e90bcd65d036b86f2165c768a3c711d10818af23ac27c29258e",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1050499116,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-03.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-03.zip",
+      "bytes": 1272444365,
+      "sha256": "9174f2e0d0806b3d35d06ea037a3cb70ee7efa54a48343f2c1c95b0b5f896678",
+      "serverDigest": "sha256:9174f2e0d0806b3d35d06ea037a3cb70ee7efa54a48343f2c1c95b0b5f896678",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1272444365,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-04.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-04.zip",
+      "bytes": 1085907873,
+      "sha256": "ceddad8655af64271cf4b2ea999f02b91ea175d33377e7131ca466522f82aa1a",
+      "serverDigest": "sha256:ceddad8655af64271cf4b2ea999f02b91ea175d33377e7131ca466522f82aa1a",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1085907873,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-05.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-05.zip",
+      "bytes": 1085531989,
+      "sha256": "fc8c551f8f6ef72b8fcfdde5c8104ca182b83055e1293d8db82d62e7b925f409",
+      "serverDigest": "sha256:fc8c551f8f6ef72b8fcfdde5c8104ca182b83055e1293d8db82d62e7b925f409",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1085531989,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-06.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-06.zip",
+      "bytes": 1045556342,
+      "sha256": "22a7f0af68fe149cee2d3975e79699481d5ca40ecc0065b926bd412f9b00fb80",
+      "serverDigest": "sha256:22a7f0af68fe149cee2d3975e79699481d5ca40ecc0065b926bd412f9b00fb80",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1045556342,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-07.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-07.zip",
+      "bytes": 1068784617,
+      "sha256": "5f6f487235aaaca791631aeca756f41c9793388b919025d21fb33fc337ea43ad",
+      "serverDigest": "sha256:5f6f487235aaaca791631aeca756f41c9793388b919025d21fb33fc337ea43ad",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 1068784617,
+      "zipSignatureVerified": true
+    },
+    {
+      "name": "neodragon-08.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-coreml-9s-v1/neodragon-08.zip",
+      "bytes": 350991412,
+      "sha256": "c04ae617fd9dd661ecbdbbed1456203e65c87abd27de37bc1fb763c88c71a88f",
+      "serverDigest": "sha256:c04ae617fd9dd661ecbdbbed1456203e65c87abd27de37bc1fb763c88c71a88f",
+      "publicRangeStatus": 206,
+      "publicRangeBytes": 32,
+      "publicRangeTotalBytes": 350991412,
+      "zipSignatureVerified": true
+    }
+  ],
+  "verificationSemantics": "All local ZIPs passed full decompression and SHA-256; all upload digests match GitHub; anonymous public manifest matches byte-for-byte; each public archive served a correct 32-byte range with ZIP signature and expected total size. No user or generated video was uploaded."
+}
