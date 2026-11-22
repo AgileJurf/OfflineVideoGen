@@ -1,0 +1,26 @@
+{
+  "status": "passed-chained-parity",
+  "scope": "Compare a complete Core ML motion prediction with the unmodified transformer.\n\nUses actual sailboat prompt embeddings and deterministic latent inputs. This is\nan integration/parity check, not a generated video or a device speed benchmark.\n",
+  "deviceValidated": false,
+  "seconds": 9,
+  "stage": 2,
+  "seed": 42,
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "parity": {
+    "passed": true,
+    "finite": true,
+    "shape": [
+      1,
+      16,
+      1,
+      40,
+      64
+    ],
+    "relativeL2": 0.0012751329789763752,
+    "maxAbsoluteError": 0.0018564462661743164,
+    "rmse": 0.0004059969674404695,
+    "outputSHA256": "cb149cb842450b5d2a522342a30b3065f5bbac7a4343e5d63821dba23055acd4"
+  },
+  "processLifetimeMaxRSSBytes": 3656855552
+}

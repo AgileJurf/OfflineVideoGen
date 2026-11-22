@@ -57,14 +57,17 @@ public final class BenchmarkLog: @unchecked Sendable {
         values["physicalMemoryBytes"] = String(ProcessInfo.processInfo.physicalMemory)
         values["logicalProcessorCount"] = String(ProcessInfo.processInfo.activeProcessorCount)
         values["sampleIntervalSeconds"] = String(sampleInterval)
-        values["modelRevision"] = MOVDModel.revision
-        values["expectedPartitions"] = MOVDModel.requiredNames.joined(separator: ",")
+        values["modelRevision"] = metadata["modelRevision"] ?? MOVDModel.revision
+        values["expectedPartitions"] = metadata["expectedPartitions"]
+            ?? (values["modelRevision"] == MOVDModel.revision ? MOVDModel.requiredNames.joined(separator: ",") : "")
         values["gpuUtilization"] = "not measured; requires Instruments"
         values["memorySemantics"] = "phys_footprint samples; lifetime peak covers the entire app process, not this operation"
         values["availableMemorySemantics"] = "os_proc_available_memory: advisory additional bytes the app may allocate before its current limit; not device free RAM; absent on simulator"
         values["cpuSemantics"] = "getrusage process CPU seconds; includes logger overhead and excludes separate Core ML service processes"
         #if targetEnvironment(simulator)
         values["executionEnvironment"] = "simulator"
+        #elseif os(macOS)
+        values["executionEnvironment"] = "macos"
         #else
         values["executionEnvironment"] = "physical-device"
         #endif

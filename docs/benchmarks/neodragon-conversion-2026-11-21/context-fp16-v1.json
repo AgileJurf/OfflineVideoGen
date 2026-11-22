@@ -1,0 +1,75 @@
+{
+  "component": "context_adapter",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "precision": "float16",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "numpy": "1.26.4",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "architecture": "x86_64",
+  "threads": 4,
+  "scope": "Mac component parity; not full diffusion or iPhone validation",
+  "deviceValidated": false,
+  "prompts": [
+    "A small sailboat glides across a calm lake at sunrise.",
+    "A red flag waves gently in the wind against a blue sky.",
+    "A yellow ball rolls slowly across a wooden table."
+  ],
+  "seed": 42,
+  "gate": "finite, matching shape and relative L2 <= 0.01 for each fixed prompt",
+  "status": "passed-component-parity",
+  "conversionSeconds": 9.752122612961102,
+  "packageBytes": 260090752,
+  "referenceHashes": [
+    "6a69cb0921fa717e3feda84e2e77d5e81e75642c11cb523cdf6c55f24cc655dc",
+    "cfa30e5eb8c85552df3dc31c673a06f51985a33a424f046dc661dd7e171709a4",
+    "8f6fdd2291335b3461ce38cddafb561e1295df01237a5eb190155b99c6b1fe2b"
+  ],
+  "macLoadSeconds": 1.5574806020013057,
+  "cases": [
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        128,
+        1536
+      ],
+      "relativeL2": 0.0011678035458788938,
+      "maxAbsoluteError": 0.019449234008789062,
+      "rmse": 0.0006991749451167286,
+      "outputSHA256": "ec66e4e05248a32dab70cb9947011692845b2865f07cbba01c445fcd3e176a27",
+      "macPredictionSeconds": 0.6304735449957661
+    },
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        128,
+        1536
+      ],
+      "relativeL2": 0.0012579626980540582,
+      "maxAbsoluteError": 0.021917343139648438,
+      "rmse": 0.0007283823933958786,
+      "outputSHA256": "b56d34e020bef958d0676e6c8b48c870fda468e6fe0790894554060ceed0d6a5",
+      "macPredictionSeconds": 0.4856375270173885
+    },
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        128,
+        1536
+      ],
+      "relativeL2": 0.001358593447666722,
+      "maxAbsoluteError": 0.022507667541503906,
+      "rmse": 0.0008404282124654506,
+      "outputSHA256": "9d70e7ef470e0a2035b943b4aef271a22c36eb70937337c66459a49d6be5c28d",
+      "macPredictionSeconds": 0.4762778169824742
+    }
+  ],
+  "processLifetimeMaxRSSBytes": 2139918336
+}

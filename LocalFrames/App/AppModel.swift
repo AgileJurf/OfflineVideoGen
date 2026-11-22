@@ -8,6 +8,20 @@ import AVFoundation
 final class AppModel: ObservableObject {
     @Published var prompt = ""
     @Published var duration = 2
+    @Published var generationModel: VideoModelChoice = .movd {
+        didSet {
+            if generationModel == .neodragon { smoothAfterGeneration = false }
+            if generationModel == .movd && duration > 5 { duration = 5 }
+            saveCreationPreferences()
+        }
+    }
+    @Published var neodragonInstalled = false
+    @Published var installingNeodragon = false
+    let neodragonInstaller: NeodragonInstaller
+    let neodragonDirectory: URL
+    let neodragonManifest = try? NeodragonManifest.bundled()
+    var selectedModelInstalled: Bool { generationModel == .movd ? installed : neodragonInstalled }
+    var supportedDurations: ClosedRange<Int> { generationModel == .movd ? 2...5 : 2...(neodragonManifest?.maximumSeconds ?? 2) }
     @Published var smoothAfterGeneration = false { didSet { saveCreationPreferences() } }
     @Published private(set) var pendingSmoothingVideo: VideoRecord?
     @Published var workflowReview: VideoRecord?
@@ -65,8 +79,10 @@ final class AppModel: ObservableObject {
         let seed: String
         var recordDiagnostics: Bool? = nil
         var smoothAfterGeneration: Bool? = nil
+        var model: VideoModelChoice? = nil
     }
     private let engine = MOVDEngine()
+    private let neodragonEngine = NeodragonEngine()
     private var operation: Task<Void, Never>?
     private var activeBenchmarkLog: BenchmarkLog?
     private var pausedForMemory = false
@@ -95,6 +111,7 @@ final class AppModel: ObservableObject {
     }
     var isGenerating: Bool { generationControl != nil }
     var smoothingSelectionIssue: String? {
+        if generationModel == .neodragon { return "Neodragon generates 24 FPS locally and does not use online smoothing." }
         if !support.enabled { return "Enable online support in Setup to add the free smoothing stage." }
         if duration != 2 || outputFraming != .square { return "24 FPS smoothing currently supports 2-second square videos. Choose those settings, or use 12 FPS offline." }
         return nil
@@ -109,6 +126,9 @@ final class AppModel: ObservableObject {
         let modelRoot = support.appendingPathComponent("Models", isDirectory: true)
         modelDirectory = modelRoot.appendingPathComponent("Installed", isDirectory: true)
         installer = ModelInstaller(root: modelRoot)
+        let optionalRoot = support.appendingPathComponent("OptionalModels/Neodragon", isDirectory: true)
+        neodragonDirectory = optionalRoot.appendingPathComponent("Installed", isDirectory: true)
+        neodragonInstaller = NeodragonInstaller(root: optionalRoot)
         self.support = OnlineSupport(directory: support.appendingPathComponent("OnlineSupport", isDirectory: true))
         temporaryDirectory = support.appendingPathComponent("Temporary", isDirectory: true)
         benchmarkDirectory = support.appendingPathComponent("Benchmarks", isDirectory: true)
@@ -120,6 +140,8 @@ final class AppModel: ObservableObject {
             useFixedSeed = preferences.useFixedSeed; generationSeed = preferences.seed
             recordCreationDiagnostics = preferences.recordDiagnostics ?? false
             smoothAfterGeneration = preferences.smoothAfterGeneration ?? false
+            generationModel = preferences.model ?? .movd
+            if generationModel == .neodragon { smoothAfterGeneration = false }
         }
         preferencesLoaded = true
         self.support.onDisable = { [weak self] in self?.closeSmoothingReview(); self?.helperAccount.cancel() }
@@ -130,7 +152,7 @@ final class AppModel: ObservableObject {
         let preferences = CreationPreferences(style: visualStyle, framing: outputFraming,
                                               useFixedSeed: useFixedSeed, seed: generationSeed,
                                               recordDiagnostics: recordCreationDiagnostics,
-                                              smoothAfterGeneration: smoothAfterGeneration)
+                                              smoothAfterGeneration: smoothAfterGeneration, model: generationModel)
         do {
             try FileManager.default.createDirectory(at: preferencesURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(preferences).write(to: preferencesURL, options: .atomic)
@@ -139,6 +161,7 @@ final class AppModel: ObservableObject {
 
     func reuseSettings(_ video: VideoRecord) {
         guard !working, video.canReuseSettings else { return }
+        generationModel = video.isNeodragon ? .neodragon : .movd
         prompt = video.prompt; duration = video.duration; visualStyle = video.style
         smoothAfterGeneration = video.smoothing != nil
         outputFraming = video.isCrop ? video.framing : (video.requestedFraming ?? .square)
@@ -165,6 +188,7 @@ final class AppModel: ObservableObject {
             }
             await helperAccount.restore()
             installed = await installer.isInstalled()
+            neodragonInstalled = await neodragonInstaller.isInstalled()
             hasModelRollback = await installer.hasRollback()
             refreshBenchmarkFiles()
             refreshSavedBaseline()
@@ -172,6 +196,7 @@ final class AppModel: ObservableObject {
     }
 
     func generate() {
+        if generationModel == .neodragon { beginNeodragonGeneration(); return }
         if smoothAfterGeneration, let issue = smoothingSelectionIssue { errorMessage = issue; return }
         if pendingSmoothingVideo != nil { errorMessage = "Finish the pending 24 FPS job or choose Keep 12 FPS before starting another job."; return }
         beginGeneration(benchmarking: false)
@@ -194,6 +219,7 @@ final class AppModel: ObservableObject {
 
     func runBaselineBenchmark() {
         guard installed, !working else { return }
+        generationModel = .movd
         prompt = Self.benchmarkPrompts[benchmarkPromptIndex]
         duration = 2
         beginGeneration(benchmarking: true)
@@ -201,6 +227,7 @@ final class AppModel: ObservableObject {
 
     func resumeBaseline() {
         guard let pendingBaseline, !working, installed else { return }
+        generationModel = .movd
         prompt = pendingBaseline.request.prompt
         duration = pendingBaseline.request.duration
         benchmarkSeed = String(pendingBaseline.request.seed)
@@ -537,7 +564,7 @@ final class AppModel: ObservableObject {
     private func finish(success: Bool = false) {
         let reviewAfterGeneration = generationWillSmooth && success
         BackgroundGeneration.shared.finish(success: success)
-        working = false; installing = false; exportingCrop = false; smoothingActive = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        working = false; installing = false; installingNeodragon = false; exportingCrop = false; smoothingActive = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
         generationWillSmooth = false
         refreshBenchmarkFiles(); refreshSavedBaseline()
         if reviewAfterGeneration && inForeground && support.enabled { workflowReview = pendingSmoothingVideo }
@@ -571,7 +598,7 @@ final class AppModel: ObservableObject {
         if let revision = Bundle.main.url(forResource: "build-revision", withExtension: "txt") {
             metadata["sourceRevision"] = try String(contentsOf: revision, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        if let manifest = Bundle.main.url(forResource: "model-manifest", withExtension: "json") {
+        if metadata["manifestSHA256"] == nil, let manifest = Bundle.main.url(forResource: "model-manifest", withExtension: "json") {
             metadata["manifestSHA256"] = try ModelInstaller.sha256(manifest)
         }
         return try BenchmarkLog(url: benchmarkDirectory.appendingPathComponent("\(kind)-\(UUID().uuidString).jsonl"), kind: kind, metadata: metadata)
@@ -630,6 +657,135 @@ final class AppModel: ObservableObject {
                 PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
             }
             notice = "Saved to Photos."
+        } catch { errorMessage = error.localizedDescription }
+    }
+}
+
+extension AppModel {
+    func installNeodragon() {
+        guard !working, let manifest = neodragonManifest else { return }
+        do {
+            let log = try makeBenchmarkLog(kind: "installation", fields: ["modelID": manifest.modelID,
+                "modelRevision": manifest.weightsRevision, "modelVersion": manifest.modelVersion,
+                "expectedPartitions": manifest.archives.flatMap(\.models).joined(separator: ","),
+                "manifestSHA256": try optionalManifestHash()])
+            support.cancel(); working = true; installing = true; installingNeodragon = true
+            installationStage = .preparing; activeBenchmarkLog = log; pausedForMemory = false
+            notice = nil; progress = .init(0, "Preparing optional Neodragon installation")
+            operation = Task {
+                defer { finish() }
+                do {
+                    try await neodragonInstaller.install(manifest, benchmark: log, stage: { stage in
+                        Task { @MainActor in self.installationStage = stage }
+                    }) { progress in Task { @MainActor in self.progress = progress } }
+                    neodragonInstalled = await neodragonInstaller.isInstalled()
+                    try log.finish(status: neodragonInstalled ? "succeeded" : "failed")
+                    if neodragonInstalled {
+                        generationModel = .neodragon; duration = 2
+                        notice = "Neodragon is installed separately. Start with a 2-second test; device performance and longer-video quality are experimental."
+                    }
+                } catch is CancellationError {
+                    try? log.finish(status: "cancelled")
+                    notice = "Neodragon installation paused. Completed downloads are kept; local model preparation may repeat when resumed."
+                } catch {
+                    try? log.finish(status: "failed", fields: BenchmarkLog.diagnosticErrorFields(error, phase: "compile"))
+                    errorMessage = error.localizedDescription
+                }
+            }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    func removeNeodragon() async {
+        guard !working else { return }
+        do {
+            try await neodragonInstaller.remove()
+            neodragonInstalled = false
+            if generationModel == .neodragon { generationModel = .movd }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func optionalManifestHash() throws -> String {
+        guard let url = Bundle.main.url(forResource: "neodragon-manifest", withExtension: "json") else {
+            throw GenerationError.modelMissing("Neodragon download manifest")
+        }
+        return try ModelInstaller.sha256(url)
+    }
+
+    private func beginNeodragonGeneration() {
+        guard neodragonInstalled, !working else { return }
+        guard pendingSmoothingVideo == nil else {
+            errorMessage = "Finish the pending smoothing job or keep its original before starting another generation."
+            return
+        }
+        do {
+            let seed: UInt64
+            if useFixedSeed {
+                guard let value = UInt64(generationSeed) else {
+                    errorMessage = "Enter a whole-number seed from 0 to 18446744073709551615."; return
+                }
+                seed = value
+            } else { seed = UInt64.random(in: 0...UInt64.max) }
+            let request = try NeodragonGenerationRequest(prompt: prompt, duration: duration, seed: seed, style: visualStyle)
+            let installation = try NeodragonEngine.validateInstallation(at: neodragonDirectory)
+            let geometry = try NeodragonModel.geometry(seconds: duration)
+            // The optional port always keeps local evidence while device validation
+            // is in progress. Diagnostics remain subject to separate upload consent.
+            let log = try makeBenchmarkLog(kind: "generation", fields: ["modelID": NeodragonModel.identifier,
+                "modelRevision": NeodragonModel.weightsRevision, "manifestSHA256": try optionalManifestHash(),
+                "prompt": request.prompt, "effectiveModelPrompt": request.effectivePrompt, "visualStyle": request.style.rawValue,
+                "seed": String(seed), "durationSeconds": String(request.duration), "width": "512", "height": "320", "fps": "24",
+                "generationMode": GenerationMode.textToVideo.rawValue, "requestedFraming": "native-16:10",
+                "profileID": "neodragon-hybrid-experimental-v1", "precision": "Mixed FP16/FP32; T5 Float32",
+                "configuration": "Neodragon hybrid mixed precision · native 24 FPS",
+                "expectedPartitions": installation.modelNames.joined(separator: ","),
+                "expectedEvaluations": String(4 + (geometry.latentFrames - 1) * 3),
+                "schedule": "SSD-1B LCM 4 steps, then 3 flow evaluations per subsequent latent unit",
+                "checkpointPolicy": "Cooling retains in-memory state; interruption ends this experimental job",
+                "cacheCondition": "uncontrolled OS cache; four tiny decoder models retained within the job"])
+            support.cancel(); working = true; activeBenchmarkLog = log
+            installing = false; generationWillSmooth = false; pausedForMemory = false; pauseReason = nil; notice = nil
+            let control = GenerationControl { [weak self] reason in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.pauseReason = reason
+                    BackgroundGeneration.shared.report(self.progress, paused: reason == nil ? nil : self.progressMessage)
+                }
+            }
+            generationControl = control; control.setForeground(inForeground)
+            progress = .init(0, "Preparing Neodragon generation")
+            BackgroundGeneration.shared.statusChanged = { [weak self] status in self?.backgroundStatus = status }
+            BackgroundGeneration.shared.start(control: control, log: log, onExpiration: { [weak self] in
+                self?.operation?.cancel()
+                self?.notice = "Background execution ended. Neodragon has no saved-job recovery yet; open the app to start another test."
+            }) { [self] in
+                self.operation = Task { [self] in
+                    var succeeded = false
+                    let output = self.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+                    defer { try? FileManager.default.removeItem(at: output); self.finish(success: succeeded) }
+                    do {
+                        let metrics = try await self.neodragonEngine.generate(request, modelsAt: self.neodragonDirectory, output: output,
+                                                                       benchmark: log, control: control) { progress in
+                            Task { @MainActor in
+                                self.progress = progress
+                                BackgroundGeneration.shared.report(progress, paused: self.pauseReason == nil ? nil : self.progressMessage)
+                            }
+                        }
+                        try Task.checkCancellation()
+                        let item = try await self.library.addNeodragon(temporaryURL: output, request: request, metrics: metrics)
+                        self.videos = try await self.library.list(); self.selectedVideo = item
+                        try log.finish(status: "succeeded", fields: ["videoID": item.id.uuidString])
+                        succeeded = true
+                    } catch is CancellationError {
+                        try? log.finish(status: "cancelled")
+                        self.notice = "Neodragon generation cancelled. The local diagnostic journal is retained."
+                    } catch {
+                        var fields = BenchmarkLog.diagnosticErrorFields(error)
+                        fields["error"] = String(describing: error)
+                        try? log.finish(status: "failed", fields: fields)
+                        self.errorMessage = error.localizedDescription
+                    }
+                }
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 }

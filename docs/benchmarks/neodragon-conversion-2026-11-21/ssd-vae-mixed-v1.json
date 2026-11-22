@@ -1,0 +1,460 @@
+{
+  "status": "passed-chained-parity",
+  "deviceValidated": false,
+  "precision": "mixed",
+  "component": "ssd_1b_vae",
+  "scope": "Synthetic inputs, Mac component and chained parity; not text-to-image/video generation",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "partitions": [
+    {
+      "name": "ssd_vae_scale",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          4,
+          80,
+          128
+        ],
+        "relativeL2": 3.246942313021095e-08,
+        "maxAbsoluteError": 9.5367431640625e-07,
+        "rmse": 7.52169162947858e-08,
+        "outputSHA256": "9d24ab1e5a8c08802a72dd503835d8bbee44b3919b019d14f250f500f196f56f"
+      },
+      "packageBytes": 1394,
+      "conversionAndCheckSeconds": 2.741123759013135
+    },
+    {
+      "name": "ssd_vae_post_quant_conv",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          4,
+          80,
+          128
+        ],
+        "relativeL2": 4.9414104277933316e-08,
+        "maxAbsoluteError": 4.76837158203125e-07,
+        "rmse": 7.191477531662626e-08,
+        "outputSHA256": "70c3687c2c24dae72e91bf937af92f57cd1a59b608cdcac4abe56dba916ac330"
+      },
+      "packageBytes": 3091,
+      "conversionAndCheckSeconds": 2.9179809170309454
+    },
+    {
+      "name": "ssd_vae_decoder_conv_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0002772596258350137,
+        "maxAbsoluteError": 0.006220817565917969,
+        "rmse": 0.0004196294871481611,
+        "outputSHA256": "e89d46548dbc1ab7dd4f2ccc9ef6e15d46f83d9e0246b1440aa16593e5088157"
+      },
+      "packageBytes": 41042,
+      "conversionAndCheckSeconds": 1.1851079790503718
+    },
+    {
+      "name": "ssd_vae_decoder_mid_block_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0002786095678916926,
+        "maxAbsoluteError": 0.016290664672851562,
+        "rmse": 0.0009868504200611433,
+        "outputSHA256": "d7a591ac8d9a8778990c1e51865f0c247a8ba2c1cc767c7f7e5b739d536468d1"
+      },
+      "packageBytes": 9463683,
+      "conversionAndCheckSeconds": 6.497860228992067
+    },
+    {
+      "name": "ssd_vae_decoder_mid_block_attentions_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.00032901486484415216,
+        "maxAbsoluteError": 0.016979217529296875,
+        "rmse": 0.0011123195360104533,
+        "outputSHA256": "4f0fa086aa3a8c26de9dfe67ce57e13934a30d27b4b2feb137bfae745d1647c2"
+      },
+      "packageBytes": 2117277,
+      "conversionAndCheckSeconds": 11.621100638993084
+    },
+    {
+      "name": "ssd_vae_decoder_mid_block_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0004917904386032412,
+        "maxAbsoluteError": 0.017641067504882812,
+        "rmse": 0.0017999966017417798,
+        "outputSHA256": "be3f0cd5654ac2077980e146eb1c6305865fa8dff1a426f2a94d507f66198724"
+      },
+      "packageBytes": 9463683,
+      "conversionAndCheckSeconds": 6.634998222987633
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_0_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0007205028784987648,
+        "maxAbsoluteError": 0.032056570053100586,
+        "rmse": 0.0031218232183160433,
+        "outputSHA256": "4de3e88ac333576ae2db4e9b03dfffc81d5bc4d4ee6df4b4f50eef6b2522fc6a"
+      },
+      "packageBytes": 9463683,
+      "conversionAndCheckSeconds": 8.54461593698943
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_0_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0008829888761624856,
+        "maxAbsoluteError": 0.046105384826660156,
+        "rmse": 0.0042368552153383785,
+        "outputSHA256": "c48afbd95c84fb74d406dedaa349a3bb804481edfe0285828e1f667f46cef244"
+      },
+      "packageBytes": 9463683,
+      "conversionAndCheckSeconds": 8.061781818047166
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_0_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          80,
+          128
+        ],
+        "relativeL2": 0.0013521341300434357,
+        "maxAbsoluteError": 0.04116487503051758,
+        "rmse": 0.004244346294964455,
+        "outputSHA256": "f3e0266c7fe6eca39753f69e82be120d9fc6c07661e752017696a4020983640b"
+      },
+      "packageBytes": 9463683,
+      "conversionAndCheckSeconds": 6.5288582789944485
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_0_upsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          160,
+          256
+        ],
+        "relativeL2": 0.000893843122027134,
+        "maxAbsoluteError": 0.3100414276123047,
+        "rmse": 0.018857030028045986,
+        "outputSHA256": "459a7849635a6fd305d5b23d9febf9f86224fb73b5027dd34193033548e18ee9"
+      },
+      "packageBytes": 4723280,
+      "conversionAndCheckSeconds": 15.162569990963675
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_1_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          160,
+          256
+        ],
+        "relativeL2": 0.0008675765128718592,
+        "maxAbsoluteError": 0.5420379638671875,
+        "rmse": 0.01969784887551987,
+        "outputSHA256": "13145352250e0e2b461792735f750abecc56977e337af5fd2de8c12a8f5f3937"
+      },
+      "packageBytes": 9463712,
+      "conversionAndCheckSeconds": 27.01607559697004
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_1_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          160,
+          256
+        ],
+        "relativeL2": 0.0009490253963308475,
+        "maxAbsoluteError": 0.7336349487304688,
+        "rmse": 0.024855105017391514,
+        "outputSHA256": "d4f53c064a45b4d2e9757912a77719e3cf7082d8fe5d94a6e9ab82a9ef29c2c0"
+      },
+      "packageBytes": 9463712,
+      "conversionAndCheckSeconds": 23.28141467401292
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_1_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          160,
+          256
+        ],
+        "relativeL2": 0.0013754441872542967,
+        "maxAbsoluteError": 0.5936012268066406,
+        "rmse": 0.026813621372317593,
+        "outputSHA256": "2d83e7eb8a62bf14ed55c1d1d6c819ea34a6ba810b8ba8f6cba7b38c76660bab"
+      },
+      "packageBytes": 9463712,
+      "conversionAndCheckSeconds": 26.202791022020392
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_1_upsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          512,
+          320,
+          512
+        ],
+        "relativeL2": 0.0013036587084661454,
+        "maxAbsoluteError": 1.1991996765136719,
+        "rmse": 0.05974728052663896,
+        "outputSHA256": "bbd07cee4b96a29026241314bbf269599c02d564a6ce4b4a2f75376c5c608664"
+      },
+      "packageBytes": 4723282,
+      "conversionAndCheckSeconds": 74.38147437694715
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_2_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          256,
+          320,
+          512
+        ],
+        "relativeL2": 0.0010305140364745896,
+        "maxAbsoluteError": 0.8924636840820312,
+        "rmse": 0.020369538993681723,
+        "outputSHA256": "a571710581e7b1a1edd40ae773fc21a8609f7d42e98c529048109005e484179e"
+      },
+      "packageBytes": 3829718,
+      "conversionAndCheckSeconds": 58.264581134018954
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_2_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          256,
+          320,
+          512
+        ],
+        "relativeL2": 0.0011598276456327326,
+        "maxAbsoluteError": 1.486328125,
+        "rmse": 0.02192878277081955,
+        "outputSHA256": "bdf7752bc227f768dea0ede2a009635b482fde4ac1386520c2780d59b9601234"
+      },
+      "packageBytes": 2378652,
+      "conversionAndCheckSeconds": 30.83379344799323
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_2_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          256,
+          320,
+          512
+        ],
+        "relativeL2": 0.0015957608505436048,
+        "maxAbsoluteError": 1.5621337890625,
+        "rmse": 0.02339134753694453,
+        "outputSHA256": "6c5899457fee33b616f5601b40666fff44fdbf4728cd7b32430e71d9066dff63"
+      },
+      "packageBytes": 2378652,
+      "conversionAndCheckSeconds": 27.86197925900342
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_2_upsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          256,
+          640,
+          1024
+        ],
+        "relativeL2": 0.0016696616457473816,
+        "maxAbsoluteError": 2.7198486328125,
+        "rmse": 0.014943970221898353,
+        "outputSHA256": "149b5f87a88a1ec1df549b1e29f45de6ceb8b9774066a7477b23f0dec9996270"
+      },
+      "packageBytes": 1183825,
+      "conversionAndCheckSeconds": 105.10976699599996
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_3_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          640,
+          1024
+        ],
+        "relativeL2": 0.0014888372102179089,
+        "maxAbsoluteError": 4.32452392578125,
+        "rmse": 0.017131277695361182,
+        "outputSHA256": "13d7be0bf35652d4914a4e93ea50fdaa2ed2fdd2e0df7c38e2f59c1bb9edb153"
+      },
+      "packageBytes": 971981,
+      "conversionAndCheckSeconds": 116.76484755205456
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_3_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          640,
+          1024
+        ],
+        "relativeL2": 0.0014727050736686796,
+        "maxAbsoluteError": 4.392425537109375,
+        "rmse": 0.017419210174893278,
+        "outputSHA256": "4420f01ad86d6f8faa2b5a8127bb1f4e9957f5d70cf13c25e24390d66174f1ab"
+      },
+      "packageBytes": 605595,
+      "conversionAndCheckSeconds": 68.47238477499923
+    },
+    {
+      "name": "ssd_vae_decoder_up_blocks_3_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          640,
+          1024
+        ],
+        "relativeL2": 0.001466183515254205,
+        "maxAbsoluteError": 4.44830322265625,
+        "rmse": 0.017698095871402492,
+        "outputSHA256": "e39f06d6b876d275844fa600840098e261f6538c8bba0fb7373b8e94f17bf288"
+      },
+      "packageBytes": 605595,
+      "conversionAndCheckSeconds": 71.09415595501196
+    },
+    {
+      "name": "ssd_vae_output",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          3,
+          640,
+          1024
+        ],
+        "relativeL2": 0.0010923532229362948,
+        "maxAbsoluteError": 0.005911692976951599,
+        "rmse": 0.0001626247101072461,
+        "outputSHA256": "3334ae31802276f79d06a51fe7366af7c9eeb9b0cc095a32aad36a2864faac8f"
+      },
+      "packageBytes": 15441,
+      "conversionAndCheckSeconds": 15.572667136962991
+    }
+  ],
+  "partitioningParity": {
+    "passed": true,
+    "finite": true,
+    "shape": [
+      1,
+      3,
+      640,
+      1024
+    ],
+    "relativeL2": 0.0,
+    "maxAbsoluteError": 0.0,
+    "rmse": 0.0,
+    "outputSHA256": "0171c03c7498ebc25d2dbfc57a9b82a291f0a999e9a95115d6b3b4aab6e0da01"
+  },
+  "coreMLChainedParity": {
+    "passed": true,
+    "finite": true,
+    "shape": [
+      1,
+      3,
+      640,
+      1024
+    ],
+    "relativeL2": 0.0010923532229362948,
+    "maxAbsoluteError": 0.005911692976951599,
+    "rmse": 0.0001626247101072461,
+    "outputSHA256": "3334ae31802276f79d06a51fe7366af7c9eeb9b0cc095a32aad36a2864faac8f"
+  },
+  "processLifetimeMaxRSSBytes": 6744489984
+}

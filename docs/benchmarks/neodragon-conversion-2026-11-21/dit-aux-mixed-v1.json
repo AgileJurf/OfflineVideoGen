@@ -1,0 +1,479 @@
+{
+  "status": "passed-component-parity",
+  "seed": 42,
+  "deviceValidated": false,
+  "scope": "Mac component parity with synthetic activations; not a generated video",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "partitions": [
+    {
+      "name": "time_embedding",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            1536
+          ],
+          "relativeL2": 2.2879127989043246e-07,
+          "maxAbsoluteError": 6.67572021484375e-06,
+          "rmse": 2.048075078538976e-06,
+          "outputSHA256": "f10190229481eac7e1210cf7d3d467eac85a770af4aad62152576018f7beee64"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            1536
+          ],
+          "relativeL2": 1.1640564805544778e-07,
+          "maxAbsoluteError": 1.1801719665527344e-05,
+          "rmse": 1.3109433575288572e-06,
+          "outputSHA256": "8d5801d26bba19b08567ccde46775b67892545ce48b2c99fb197b95072885871"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            1536
+          ],
+          "relativeL2": 1.1543497530512609e-07,
+          "maxAbsoluteError": 4.76837158203125e-06,
+          "rmse": 1.372447531228336e-06,
+          "outputSHA256": "1332f466b86938bf64b903b9c853769792f36a8d0b019073146985848d064645"
+        }
+      ],
+      "packageBytes": 16537158
+    },
+    {
+      "name": "patch_s0_p0",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.218991864094404e-05,
+          "maxAbsoluteError": 0.0007426738739013672,
+          "rmse": 5.329065503283676e-05,
+          "outputSHA256": "0db6b791741c3a754586d3acff0d093947682148723fbd9f18edddb92d3d3626"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.468580515587552e-05,
+          "maxAbsoluteError": 0.0008847713470458984,
+          "rmse": 5.516188217660621e-05,
+          "outputSHA256": "d0a13b22d3a9aadfd1b6c79f79786c31720df5226eae3bd4e93b48253412ecae"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.202255118200868e-05,
+          "maxAbsoluteError": 0.0007297992706298828,
+          "rmse": 5.320766163712953e-05,
+          "outputSHA256": "cd4fba2420f698baf38a5d92d06de260355a2538df0eadd8576c01d1d86a1604"
+        }
+      ],
+      "packageBytes": 450100
+    },
+    {
+      "name": "patch_s0_p1",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.480861185364634e-05,
+          "maxAbsoluteError": 0.0005896091461181641,
+          "rmse": 5.503785463432806e-05,
+          "outputSHA256": "16dd35df206d7889ef53b836406546fb6046f48c323a63d6170ca066ab9561ea"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.169181434501194e-05,
+          "maxAbsoluteError": 0.0006327629089355469,
+          "rmse": 5.2981327553733235e-05,
+          "outputSHA256": "c3cf1d52b76816ba0d4e149ce3ee5dd1d6a3e4527b73e6287182b1261b864aaa"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.258882389938902e-05,
+          "maxAbsoluteError": 0.0007195472717285156,
+          "rmse": 5.3475848966344496e-05,
+          "outputSHA256": "7e28cb8aa63a70a8a21a9176d4069871217116f1371465f462d11b40144b5bd3"
+        }
+      ],
+      "packageBytes": 450100
+    },
+    {
+      "name": "patch_s1_p1",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.314785904809279e-05,
+          "maxAbsoluteError": 0.0010683536529541016,
+          "rmse": 5.4064011602441585e-05,
+          "outputSHA256": "7650b0220ce21a23bedb224e08f427bd9488e5f38c470a300711a39889e6f05b"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.401454342919852e-05,
+          "maxAbsoluteError": 0.0009748935699462891,
+          "rmse": 5.468310083445997e-05,
+          "outputSHA256": "826a079449d79f7339fe868e8793abc6d9f597f10d7712282436b76e7f9ff33a"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.406871032538817e-05,
+          "maxAbsoluteError": 0.0011289119720458984,
+          "rmse": 5.48136936463305e-05,
+          "outputSHA256": "d81ec637e49f3955481ae4af29e0f1a130d40b6ab0bb2f4258e25c801d058e4f"
+        }
+      ],
+      "packageBytes": 1187388
+    },
+    {
+      "name": "patch_s0_p2",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.525331193639844e-05,
+          "maxAbsoluteError": 0.0006418228149414062,
+          "rmse": 5.562900672831295e-05,
+          "outputSHA256": "17cbe33f1cc6f6df3aa511c914787e471e129c9397fb62f847ae142b0561aa81"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.574529754420211e-05,
+          "maxAbsoluteError": 0.00067138671875,
+          "rmse": 5.605155955341585e-05,
+          "outputSHA256": "092d6c17de8dadf4d4aba3dfef66169c722a54c863535f0b026ee635dd1a4adb"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            40,
+            1536
+          ],
+          "relativeL2": 7.481444167050734e-05,
+          "maxAbsoluteError": 0.0005785226821899414,
+          "rmse": 5.5215841504806144e-05,
+          "outputSHA256": "d9c8861973a9d700a32ccd46c0e312ea5db1eb976c3cde6bddac0fcd574bee05"
+        }
+      ],
+      "packageBytes": 450100
+    },
+    {
+      "name": "patch_s1_p2",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.349223141724865e-05,
+          "maxAbsoluteError": 0.001016855239868164,
+          "rmse": 5.430300855510129e-05,
+          "outputSHA256": "f111c943667e895042a9dae6c02b2e1ef15f02b7d19d857e91cc2b0eaae5cef3"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.340553902801805e-05,
+          "maxAbsoluteError": 0.0009832382202148438,
+          "rmse": 5.423757123299748e-05,
+          "outputSHA256": "e74fc90c58fd1150b59784424d4a788cc36f7be3b93452ac5f4c9c0e5df9a0b1"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            160,
+            1536
+          ],
+          "relativeL2": 7.413615563038102e-05,
+          "maxAbsoluteError": 0.0008497238159179688,
+          "rmse": 5.48088429844922e-05,
+          "outputSHA256": "ba7afde9908f9b501163bab4492b2388f1b08f375add6fd87d52d65a6ddd280c"
+        }
+      ],
+      "packageBytes": 1187388
+    },
+    {
+      "name": "patch_s2_p2",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            640,
+            1536
+          ],
+          "relativeL2": 7.350697995028838e-05,
+          "maxAbsoluteError": 0.0010426044464111328,
+          "rmse": 5.435076837270069e-05,
+          "outputSHA256": "7c56909fdbee4249213e9586c2c7762a8c9c9a17905d8bacfdec6eb734899212"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            640,
+            1536
+          ],
+          "relativeL2": 7.315135388715544e-05,
+          "maxAbsoluteError": 0.0010178089141845703,
+          "rmse": 5.405352415618229e-05,
+          "outputSHA256": "e3b3e22b5f656f01b4f031f69248f4f37d9d2991deabaef8a9f2fa5249e31df0"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            640,
+            1536
+          ],
+          "relativeL2": 7.34228644783566e-05,
+          "maxAbsoluteError": 0.0010502338409423828,
+          "rmse": 5.4295986060087675e-05,
+          "outputSHA256": "7a367f8ad4c95a02c7587cb9d8f90ea07598d7d1acd187f8d2825425eb33c5fa"
+        }
+      ],
+      "packageBytes": 4136510
+    },
+    {
+      "name": "output_s0",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            10,
+            16
+          ],
+          "relativeL2": 0.0004970959880226794,
+          "maxAbsoluteError": 0.002536773681640625,
+          "rmse": 0.00036076400253196814,
+          "outputSHA256": "19370de35c96592e045e80e297865c3a8de47b2a56d6fbd4eb79dda2fd92aa80"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            10,
+            16
+          ],
+          "relativeL2": 0.000479516841742281,
+          "maxAbsoluteError": 0.0022644996643066406,
+          "rmse": 0.00035872554957564037,
+          "outputSHA256": "2be6eb4290ad04f8fe3945cab894add832b54ce6f688646575f70555285e4598"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            10,
+            16
+          ],
+          "relativeL2": 0.0004897037784423919,
+          "maxAbsoluteError": 0.0020771026611328125,
+          "rmse": 0.0003519128435105472,
+          "outputSHA256": "e10a53bda2a279e10eb9c472f58f2ac1246b0839ab76ae4f84b6ea3c6cff761d"
+        }
+      ],
+      "packageBytes": 9649089
+    },
+    {
+      "name": "output_s1",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            20,
+            32
+          ],
+          "relativeL2": 0.0004970370885079631,
+          "maxAbsoluteError": 0.0022132396697998047,
+          "rmse": 0.0003812759294529474,
+          "outputSHA256": "584eb52fd4a1c281ab5370a74e77823426ddba0fbc64ee2320a607cbc553668e"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            20,
+            32
+          ],
+          "relativeL2": 0.0005052139139932882,
+          "maxAbsoluteError": 0.002681732177734375,
+          "rmse": 0.00035237070893993433,
+          "outputSHA256": "1ecff947ef0eb4d8bc52ba293483d210b6ff71ca97ced60f3d9f88355196537d"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            20,
+            32
+          ],
+          "relativeL2": 0.0005112423237691384,
+          "maxAbsoluteError": 0.0023756027221679688,
+          "rmse": 0.0003588685799448615,
+          "outputSHA256": "568d23ab2d42de9b0e885e9e3517fdf06ea0226947637158da157ce327bd1c95"
+        }
+      ],
+      "packageBytes": 9649100
+    },
+    {
+      "name": "output_s2",
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            40,
+            64
+          ],
+          "relativeL2": 0.0004940763958139595,
+          "maxAbsoluteError": 0.002651214599609375,
+          "rmse": 0.00039022861112787113,
+          "outputSHA256": "c440d069846a76e66ffb8776c90c78a5f4bcd3de3c2197ab86cec87121259f75"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            40,
+            64
+          ],
+          "relativeL2": 0.0004976771071157868,
+          "maxAbsoluteError": 0.0031969547271728516,
+          "rmse": 0.0003631764546083675,
+          "outputSHA256": "bdb05fb0d9bd677153e301f7f9d01c7355e33fdee5b456f6b5c29c427e4af380"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            16,
+            1,
+            40,
+            64
+          ],
+          "relativeL2": 0.0005266468939244967,
+          "maxAbsoluteError": 0.0027031898498535156,
+          "rmse": 0.0004053821236070635,
+          "outputSHA256": "5abbc58c18f5a7f0ad93ea03b1cc4c3c431b6bae2b705a2b12ba81cdf2afd754"
+        }
+      ],
+      "packageBytes": 9649109
+    }
+  ],
+  "processLifetimeMaxRSSBytes": 1529987072
+}

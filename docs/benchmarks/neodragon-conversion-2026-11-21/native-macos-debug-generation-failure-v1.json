@@ -1,0 +1,20 @@
+{
+  "scope": "Native macOS CPU Debug Swift engine; not an iPhone performance benchmark",
+  "status": "failed-app-shape-validation",
+  "lastSuccessfulPrediction": "ssd_vae_decoder_up_blocks_2_upsamplers_0",
+  "requiredOutputShape": [
+    1,
+    256,
+    640,
+    1024
+  ],
+  "requiredElements": 167772160,
+  "previousValidationLimit": 100000000,
+  "elapsedSeconds": 1194.7121373360278,
+  "completedImageEvaluations": 4,
+  "videoGenerated": false,
+  "nativePredictionReturned": true,
+  "outputFinitenessAtFailure": "Not yet checked: element-count guard rejected this known shape first",
+  "journalSHA256": "48ed04dd5c9ef26a50517777249752f91b80437ffba58f7b45b57d30c74d1244",
+  "deviceValidated": false
+}

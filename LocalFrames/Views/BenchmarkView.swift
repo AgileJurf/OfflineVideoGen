@@ -80,7 +80,7 @@ private struct BenchmarkSessionView: View {
                 LabeledContent("Peak sampled memory", value: ByteCountFormatter.string(fromByteCount: Int64(session.peakMemoryBytes), countStyle: .memory))
                 LabeledContent("Thermal states", value: session.thermalStates.sorted().joined(separator: ", "))
                 LabeledContent("Memory warnings", value: String(session.memoryWarnings))
-                LabeledContent("Completed diffusion evaluations", value: "\(session.completedSteps)/21")
+                LabeledContent("Completed diffusion evaluations", value: "\(session.completedSteps)/\(session.expectedEvaluations)")
                 LabeledContent("Restored evaluations", value: String(session.restoredSteps))
                 LabeledContent("New diffusion evaluations", value: String(max(0, session.completedSteps - session.restoredSteps)))
                 LabeledContent("Requested output", value: "\(session.width) × \(session.height) · \(session.fps) FPS")
@@ -162,7 +162,7 @@ struct VideoComparisonView: View {
             Text(label).font(.headline)
             Text(video.prompt)
             Text("Style: " + video.style.name)
-            Text(video.isCrop ? "Center-cropped copy" : (video.smoothing == nil ? "Native square output" : "RIFE interpolated copy"))
+            Text(video.isCrop ? "Center-cropped copy" : (video.smoothing == nil ? video.framingName + " output" : "RIFE interpolated copy"))
             if let smoothing = video.smoothing { Text("Smoothing + transfer: \(smoothing.elapsedSeconds, specifier: "%.2f") s") }
             Text("Seed \(video.seed)")
             Text(video.metrics.profileID ?? "Earlier baseline")

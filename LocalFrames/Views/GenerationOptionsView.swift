@@ -6,7 +6,8 @@ struct GenerationOptionsView: View {
     @Binding var tokenCount: Int?
     var focusedField: FocusState<CreationField?>.Binding
     @State private var tokenError: String?
-    private var promptKey: String { model.visualStyle.rawValue + "\n" + model.prompt }
+    private var promptKey: String { model.generationModel.rawValue + "\n" + String(model.neodragonInstalled) + "\n" + model.visualStyle.rawValue + "\n" + model.prompt }
+    private var tokenLimit: Int { model.generationModel == .movd ? 63 : 128 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -22,14 +23,17 @@ struct GenerationOptionsView: View {
                 }.scrollIndicators(.hidden)
                 Text(model.visualStyle.detail).font(.subheadline)
                 HStack {
-                    Text(tokenCount.map { "\($0)/63 model tokens · scene + style" } ?? "Checking prompt tokens…")
-                        .foregroundStyle((tokenCount ?? 0) > 63 ? .orange : .secondary)
+                    Text(tokenCount.map { "\($0)/\(tokenLimit) model tokens · scene + style" } ?? "Checking prompt tokens…")
+                        .foregroundStyle((tokenCount ?? 0) > tokenLimit ? .orange : .secondary)
                         .accessibilityIdentifier("promptTokenBudget")
                 }.font(.caption)
-                if (tokenCount ?? 0) > 63 {
+                if (tokenCount ?? 0) > tokenLimit {
                     Text("Shorten your scene or choose Default. Your prompt will not be truncated.").font(.caption).foregroundStyle(.orange)
                 }
                 if let tokenError { Text(tokenError).font(.caption).foregroundStyle(.orange) }
+                if model.generationModel == .neodragon {
+                    Text("The CLIP encoders must also fit 77 tokens, including special tokens. Every encoder is checked without truncation.").font(.caption).foregroundStyle(.secondary)
+                }
                 DisclosureGroup("Text sent to the model") {
                     Text(model.visualStyle.applying(to: model.prompt)).font(.caption).textSelection(.enabled).padding(.top, 4)
                     Text("Illustrated swatches, not example results. These styles use prompt instructions, not trained adapters.").font(.caption).foregroundStyle(.secondary)
@@ -37,8 +41,14 @@ struct GenerationOptionsView: View {
             }
             CreationSection("Video settings", icon: "film", detail: "Length and framing of your saved video") {
                 Picker("Duration", selection: $model.duration) {
-                    ForEach(2...5, id: \.self) { Text("\($0) sec").tag($0) }
-                }.pickerStyle(.segmented).accessibilityIdentifier("durationPicker")
+                    ForEach(model.supportedDurations, id: \.self) { Text("\($0) seconds").tag($0) }
+                }.pickerStyle(.menu).accessibilityIdentifier("durationPicker")
+                if model.generationModel == .neodragon {
+                    LabeledContent("Native output", value: "512 × 320 · 24 FPS").font(.subheadline)
+                    Text("Landscape 16:10. Each extra second generates more motion frames. Start with 2 seconds while validating this model on your phone; longer jobs can take substantially longer.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Time estimates use this job’s measurements and can rise as motion context grows.").font(.caption).foregroundStyle(.secondary)
+                } else {
                 Text("Output framing").font(.subheadline.weight(.medium))
                 Picker("Output framing", selection: $model.outputFraming) {
                     Text("Square").tag(OutputFraming.square)
@@ -49,9 +59,10 @@ struct GenerationOptionsView: View {
                     FramingDiagram(framing: model.outputFraming).frame(width: 66, height: 66)
                     Text(model.outputFraming.detail).font(.caption).foregroundStyle(.secondary)
                 }
+                }
             }
             CreationSection("Repeatable settings", icon: "slider.horizontal.3", detail: "Use the same seed to compare results") {
-                LabeledContent("Generation preset", value: "Baseline · 21 evaluations").font(.subheadline)
+                LabeledContent("Generation preset", value: model.generationModel == .movd ? "Baseline · 21 evaluations" : "Neodragon hybrid · experimental").font(.subheadline)
                 Toggle(isOn: $model.useFixedSeed) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Use a fixed seed")
@@ -74,10 +85,18 @@ struct GenerationOptionsView: View {
                 tokenError = "Use a scene of up to 500 characters. Your text has not been shortened."
                 return
             }
+            guard model.generationModel != .neodragon || model.neodragonInstalled else {
+                tokenError = "Install the optional Neodragon model in Setup to check this prompt."
+                return
+            }
             let text = model.visualStyle.applying(to: model.prompt)
+            let choice = model.generationModel
+            let directory = model.neodragonDirectory
             do {
                 try await Task.sleep(for: .milliseconds(250))
-                let count = try await Task.detached(priority: .userInitiated) { try MOVDEngine.promptTokenCount(text) }.value
+                let count = try await Task.detached(priority: .userInitiated) {
+                    try choice == .movd ? MOVDEngine.promptTokenCount(text) : NeodragonEngine.promptTokenCount(text, modelsAt: directory)
+                }.value
                 try Task.checkCancellation()
                 tokenCount = count
             } catch is CancellationError { }
@@ -174,7 +193,7 @@ struct ModelCapabilitiesView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         List {
-            Section("Current model") {
+            Section("MOVD") {
                 LabeledContent("MOVD text to video", value: model.installed ? "Installed" : "Not installed")
                 LabeledContent("Revision", value: String(MOVDModel.revision.prefix(8)))
                 LabeledContent("Download", value: "14.1 GB · SHA-256 verified")
@@ -188,14 +207,25 @@ struct ModelCapabilitiesView: View {
                         Text(mode.unavailableReason ?? "").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Text("No compatible, device-validated optional model package is available in this build. Additional model downloads will require your confirmation when a verified package is available.").font(.caption)
+                Text("Image import and video continuation need their own validated conditioning workflow. These modes are not enabled in this build.").font(.caption)
+            }
+            Section("Optional Neodragon") {
+                LabeledContent("Installation", value: model.neodragonInstalled ? "Installed" : "Not installed")
+                Text("Separate hybrid text-to-video model: SSD-1B first-image diffusion, Pyramid MMDiT motion generation and a causal video decoder. Native output is 512 × 320, 24 FPS, landscape 16:10.")
+                if let manifest = model.neodragonManifest {
+                    Text("Supports selecting 2–\(manifest.maximumSeconds) seconds with this package. This port is experimental; confirm complete generation and quality on your iPhone before relying on longer jobs.")
+                } else {
+                    Text("Download is not yet enabled while the converted package is validated.")
+                }
+                Text("Neodragon does not use the online smoothing helper. The original MOVD model, baseline recovery, and generated videos remain separate.")
+                Text("Thermal pauses retain the running Neodragon job in memory. Saved-job recovery after force-quitting is not yet supported for this experimental model.")
             }
             Section("Framing and style") {
-                Text("Portrait and landscape are explicitly labeled center crops of square output. Native non-square inference is not enabled.")
+                Text("MOVD portrait and landscape exports are explicitly labeled center crops of square output. Neodragon uses its own native landscape dimensions; portrait and square crops are not offered for it.")
                 Text("All 12 visual styles use text conditioning. Style quality is awaiting on-device comparison; no LoRA or trained style adapter is installed.")
             }
             Section("Offline and rollback") {
-                Text("Generation, styling, crop exports, comparison and the local library do not require a server after the MOVD model is installed.")
+                Text("Generation, styles, exports, comparison and the local library use local files after the selected model is installed. Online support is optional.")
                 Text("Original weights, the baseline sampler, thermal pauses and saved-baseline recovery are preserved. Cropping always creates a separate library item.")
             }
         }.navigationTitle("Model capabilities")

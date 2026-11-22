@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A19000000000000000000004 /* neodragon-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000003 /* neodragon-manifest.json */; };
+		A19000000000000000000002 /* NeodragonInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000001 /* NeodragonInstaller.swift */; };
 		A16000000000000000000002 /* GenerationWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A16000000000000000000001 /* GenerationWorkflowView.swift */; };
 		A15000000000000000000004 /* HuggingFaceAccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15000000000000000000003 /* HuggingFaceAccountTests.swift */; };
 		A15000000000000000000002 /* HuggingFaceAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15000000000000000000001 /* HuggingFaceAccount.swift */; };
@@ -64,6 +66,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A19000000000000000000003 /* neodragon-manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/neodragon-manifest.json"; sourceTree = "<group>"; };
+		A19000000000000000000001 /* NeodragonInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/NeodragonInstaller.swift; sourceTree = "<group>"; };
 		A16000000000000000000001 /* GenerationWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationWorkflowView.swift; sourceTree = "<group>"; };
 		A15000000000000000000003 /* HuggingFaceAccountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesTests/HuggingFaceAccountTests.swift; sourceTree = "<group>"; };
 		A15000000000000000000001 /* HuggingFaceAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/HuggingFaceAccount.swift; sourceTree = "<group>"; };
@@ -164,6 +168,8 @@
 				64955CBB9888BE58AD2B1590 /* LocalFrames/Views/RootView.swift */,
 				2DB1C44E28A5D023461904E6 /* LocalFrames/Services/VideoLibrary.swift */,
 				39B12CF3A348F16708961C4B /* LocalFrames/Services/ModelInstaller.swift */,
+				A19000000000000000000001 /* NeodragonInstaller.swift */,
+				A19000000000000000000003 /* neodragon-manifest.json */,
 				3EAE767F204296473D3FF2C3 /* LocalFrames/Resources/model-manifest.json */,
 				DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */,
 				70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */,
@@ -309,6 +315,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1300000000000000000000A /* support-config.json in Resources */,
+				A19000000000000000000004 /* neodragon-manifest.json in Resources */,
 				9BAB60B45E80E8A7ADFBF6AA /* LocalFrames/Resources/model-manifest.json in Resources */,
 				2463BF9F68A03EAAA7001AC5 /* LocalFrames/Resources/PrivacyInfo.xcprivacy in Resources */,
 				F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */,
@@ -365,6 +372,7 @@
 				1828C28FB9E556EB412347C8 /* LocalFrames/Views/RootView.swift in Sources */,
 				22AE7394B931FBE3EFCFE150 /* LocalFrames/Services/VideoLibrary.swift in Sources */,
 				8C73D23E356DAECD8A5CDEAA /* LocalFrames/Services/ModelInstaller.swift in Sources */,
+				A19000000000000000000002 /* NeodragonInstaller.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

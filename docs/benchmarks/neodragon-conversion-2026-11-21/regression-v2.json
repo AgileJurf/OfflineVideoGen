@@ -1,0 +1,9 @@
+{
+  "scope": "Local unit/UI suite including VAE activation-bound and overflow regression; no live upload or model download",
+  "deviceValidated": false,
+  "totalTestCount": 86,
+  "passedTests": 80,
+  "failedTests": 0,
+  "skippedTests": 6,
+  "summarySHA256": "b144f708ae64332fe5a4994d0fe8a3f68ffdab310b9116a557d473fc7a335015"
+}

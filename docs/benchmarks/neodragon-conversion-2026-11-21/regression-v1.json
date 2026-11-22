@@ -1,0 +1,10 @@
+{
+  "scope": "Complete local unit/UI suite on dedicated iOS 18.4 Intel Simulator; no live helper upload or large model download",
+  "passedTests": 79,
+  "failedTests": 0,
+  "skippedTests": 6,
+  "totalTestCount": 85,
+  "skips": "Five opt-in Neodragon fixture tests and one live synthetic upload test; native fixtures are executed separately.",
+  "deviceValidated": false,
+  "summarySHA256": "81ecbc4bfdb226f9ecb67629b4f1dd697918c0bc0d38e6c60f320a7ccdaab6b5"
+}

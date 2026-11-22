@@ -1,0 +1,79 @@
+{
+  "status": "passed-component-parity",
+  "deviceValidated": false,
+  "seed": 42,
+  "precision": "mixed",
+  "singleFrame2DSpecialization": true,
+  "scope": "Mac VAE encoder component parity, synthetic images; not a generated video",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "specializationParity": [
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        32,
+        1,
+        40,
+        64
+      ],
+      "relativeL2": 4.499772426550996e-07,
+      "maxAbsoluteError": 7.2479248046875e-05,
+      "rmse": 1.0348817501502114e-05,
+      "outputSHA256": "5aa6425a4daef69fa7b21c05d6463d3505761d8e33fb3f038b21eac01a2f6764"
+    },
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        32,
+        1,
+        40,
+        64
+      ],
+      "relativeL2": 3.323388553361328e-07,
+      "maxAbsoluteError": 5.7220458984375e-05,
+      "rmse": 8.079844885901789e-06,
+      "outputSHA256": "3bdae39682e5d7dccbce2078624387408d62588ac33894858d15b3667d1fde97"
+    }
+  ],
+  "cases": [
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        32,
+        1,
+        40,
+        64
+      ],
+      "relativeL2": 0.00039257059618876867,
+      "maxAbsoluteError": 0.053081512451171875,
+      "rmse": 0.0090285487160234,
+      "outputSHA256": "d0818f32b13d1f8b77913c0733ea6e20dcde40ad46725ac8a76ebf246bc20f01"
+    },
+    {
+      "passed": true,
+      "finite": true,
+      "shape": [
+        1,
+        32,
+        1,
+        40,
+        64
+      ],
+      "relativeL2": 0.0003268415518989893,
+      "maxAbsoluteError": 0.04050445556640625,
+      "rmse": 0.007946194070327034,
+      "outputSHA256": "57e3e7a7cf6f2362dfd0b5f2d4abde206f37b5040686c5dfbb419c5a5aec5855"
+    }
+  ],
+  "packageBytes": 74993918,
+  "processLifetimeMaxRSSBytes": 1588346880
+}

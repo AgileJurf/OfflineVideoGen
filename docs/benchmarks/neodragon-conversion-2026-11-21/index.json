@@ -1,0 +1,276 @@
+{
+  "scope": "Numerical conversion evidence from Mac CPU checks; not iPhone performance, complete video success, or perceptual quality validation",
+  "deviceValidated": false,
+  "reports": [
+    {
+      "file": "text-fp16-v2.json",
+      "status": "failed-component-parity",
+      "sha256": "e693d36cde2b91661ad1b0c941d8c80adbaf3dcde1ef02cbad425fb9f82ca748"
+    },
+    {
+      "file": "text-fp32-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "93480012d39aa18f8f7407e86cdbfcd8d3904f368fc6b470252e47cc7081f4f9"
+    },
+    {
+      "file": "context-fp16-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "79e6df051e91a80651e3f6a61164633fb28ca636cd87a58a968b1861e8840213"
+    },
+    {
+      "file": "video-clip1-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "c8ebe97ef594aa71ead56127f2088c3b29139aef060253db5618dac27c070cef"
+    },
+    {
+      "file": "video-clip2-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "3e55edf4fca4103ba5c9e7502558392248cbb325b7b12173b0adddbfa79d492a"
+    },
+    {
+      "file": "ssd-clip1-mixed-v3.json",
+      "status": "passed-component-parity",
+      "sha256": "63a67da383d1d24099b2b659ae074e25b20f7bade7338d2e3d55566362c830d4"
+    },
+    {
+      "file": "ssd-clip2-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "a2067c1897770c67294b59565957686f66ec836241416fc4086aa81dc8645d13"
+    },
+    {
+      "file": "dit-aux-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "e418d29bfffdf662122856e64603597d32c0dc5f3386b608364b3f9c0746f40a"
+    },
+    {
+      "file": "decoder-fp16-v2.json",
+      "status": "passed-component-parity",
+      "sha256": "42c6c300643bacd927786578efb78a8ae66eed7e1a89877f56cfcff0348dbd00"
+    },
+    {
+      "file": "image-encoder-2d-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "e88fdcb1c02ac88d4e64910c16142bdb7525d75b85b7d56baf9e629a416de619"
+    },
+    {
+      "file": "ssd-unet-mixed-v1.json",
+      "status": "passed-chained-parity",
+      "sha256": "77a1820cbd46f88815ec41f3a4aa4f5c7fcef85024d31ce05268ee168f303852"
+    },
+    {
+      "file": "ssd-vae-mixed-v1.json",
+      "status": "passed-chained-parity",
+      "sha256": "88c557c11f6cc37527d15291bea8f317a47eb1094712288d88de2d88d7fef6df"
+    },
+    {
+      "file": "dit-chain-2s-v1.json",
+      "status": "passed-chained-parity",
+      "sha256": "6f5cf35402b7141875091462e168d69af5fc5bc7b72f8feeebf0e9f8a4488112"
+    },
+    {
+      "file": "dit-block0-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "0b009b6f8c037302cd7ba5f1b2cf74d9d6037c9f9275f398198e6877d9cfea91"
+    },
+    {
+      "file": "dit-block1-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "afd1bf948340c999f2b49630182f1d324815c4937ed4753fee2efe474ee22a98"
+    },
+    {
+      "file": "dit-block2-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "f66545a29e5ae510deaf5d17793da8a946605ff9f1887dcee04383deb527069b"
+    },
+    {
+      "file": "dit-block3-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "364707c5313c55d422897e1a2a657af9df5ad88b5c1c8d7dc40f0125bf4c1651"
+    },
+    {
+      "file": "dit-block4-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "a616f473b902e44f381932959ef1c36c47c88ca6d7c582150485c75e4adc9468"
+    },
+    {
+      "file": "dit-block5-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "550c77d57e11529b82da1137436dfd5119428e35b50d9cae0c6bd5cfa034e1da"
+    },
+    {
+      "file": "dit-block6-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "ee15b7c62d883763638f022e2ae19aa68c4049e588cd15ea983f348fb656feba"
+    },
+    {
+      "file": "dit-block7-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "dcde8f6577ea5320eb8f260839346aa4f69df6af94fd8d9e711f818f4c61b4c6"
+    },
+    {
+      "file": "dit-block8-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "425d3c28797680cf1f5e5757f7d3ff47c91cc780db444c0640ed2f5ce13f640f"
+    },
+    {
+      "file": "dit-block9-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "f5f91abbd892cb1f76b4e3d188c64b59aaf0140f12e8eabe9afb091effc4880b"
+    },
+    {
+      "file": "dit-block10-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "37db93e8d1b5af37796edec28f253163e2d94a8543cc2f706db0db45773977dc"
+    },
+    {
+      "file": "dit-block11-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "6f2bace9370059b42b4e4f7aec5f7761172d9e25736e9dc9a4425c9378fe1556"
+    },
+    {
+      "file": "dit-block12-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "4341aa3e3fc42c636c8ee456bf45ecc532b8e04cee17477cecdf8aed3fa7e019"
+    },
+    {
+      "file": "dit-block13-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "d900b1be162f78439d3248dc9290e3e588a5bc047324f565971aa33f0ce4a4f2"
+    },
+    {
+      "file": "dit-block14-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "6494401329f6fb91362a7edfba54c8c2c04c714f111bf8aaf4af8ef25de7c2da"
+    },
+    {
+      "file": "dit-block15-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "1c8a6c2add6a397e6a7c6c6b53610c21e1a94661dd720ddee0069a30aba0e31d"
+    },
+    {
+      "file": "dit-block16-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "38081cc7e962039d0c12b116cc25a8537adcdff728ae3d673667bd2b16b2bced"
+    },
+    {
+      "file": "dit-block17-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "266a95cd3bd334964cb1df70d82ec77ba2ea9ea6884d3a807b3dbdb76c97b9e4"
+    },
+    {
+      "file": "dit-block0-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "82fb8561849a7851387ff4b28bc860a71873f69d642bd69e9520ec452814111f"
+    },
+    {
+      "file": "dit-block1-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "bc3abe734f85e577c8f413c70ffd3538248c7804fd0a519ea0e29d0245c25854"
+    },
+    {
+      "file": "dit-block2-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "d01cdb28344e4ec3a746efd9f8fb25e65810aa8a15b9010c2cc82d3a17cbdafc"
+    },
+    {
+      "file": "dit-block3-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "8dbf9cff7128418dcaa35a07f3c2243c9d8c00ab09d1e2d2d65def8e8a985644"
+    },
+    {
+      "file": "dit-block4-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "c0bff073833e5b66895e9633b1feae011d5e94840679e63244cd094b0735604b"
+    },
+    {
+      "file": "dit-block5-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "9de160d109e076b955649c65f1904efe31892e83353b42305de79c1086aa0fd1"
+    },
+    {
+      "file": "dit-block6-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "0be779ca99e469a19cb507756431c754da7d967a41af615b643bcce3cd5fe19a"
+    },
+    {
+      "file": "dit-block7-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "cb27c514eaa31d33cb5d535afcf8f3c8fd3caf64dbdb1fe7db5c3a39ca4e14fe"
+    },
+    {
+      "file": "dit-block8-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "6e28c3af71bda5cbf16734ed48b89aafe16dc2ad585c97361a8226948055a7eb"
+    },
+    {
+      "file": "dit-block9-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "6ef83e0594c1838e2f34c3e110cd03a72d7b6d75ae03c4296223f2cd4643e209"
+    },
+    {
+      "file": "dit-block10-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "6b6c7d6c4ca2c4cf9067a26cfc8b18fe8a639ddd6a3aaf54cdae0f02e41cc306"
+    },
+    {
+      "file": "dit-block11-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "c515264189454fe93a1e50397dca2939007bb86233fde600a9fa198ca9134a82"
+    },
+    {
+      "file": "dit-block12-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "7efddc061c355995e442692520c291035eb76ef912821b846fd2b60ddda0f41f"
+    },
+    {
+      "file": "dit-block13-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "a34bde590bdc7cc8a4715ac0aa2ccd4b682fa09c5127470b499e110d4d486437"
+    },
+    {
+      "file": "dit-block14-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "9f3ce5482f23a512a452f1ee0fc1156ecdbdeb82bf25a5736550669d85a6e28e"
+    },
+    {
+      "file": "dit-block15-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "39833c52c581e0df0c6a389ddba7c0dd6a914de6e9a0b1a75c7d120bab0c335a"
+    },
+    {
+      "file": "dit-block16-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "37edcebdfe149dfaf4c9ab634346e340158f5d47d4b1d46bc5d8afb01cc0c0df"
+    },
+    {
+      "file": "dit-block17-9s-mixed-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "83bb1cd410a41e6b9a8d10139ee84d7da1d27bc86fba2c4dcaa0247319fe720e"
+    },
+    {
+      "file": "dit-chain-9s-v1.json",
+      "status": "passed-chained-parity",
+      "sha256": "76fde39fe753a64244d96d9ee5bc4c352990dce60598e9d283572e5326409411"
+    },
+    {
+      "file": "native-clip-precision-v1.json",
+      "status": "one-float32-candidate-passed-three-mixed-candidates-failed-native-screen",
+      "sha256": "fd9bb91206aab9547f74622227ef768f412b6f27a0af0468581e47a2ccbfcf45"
+    },
+    {
+      "file": "ssd-clip1-fp32-v1.json",
+      "status": "passed-component-parity",
+      "sha256": "1e2eaf6ed02354be7003c3bcd26580ce1d49a24046caea402a16a874d46d6bfb"
+    },
+    {
+      "file": "native-macos-clip-mixed-v1.json",
+      "status": "passed-native-macos-group-parity",
+      "sha256": "2a6d3a14f9c6d05d8a5456385586861737becb15b19a010010d2d4861588977c"
+    },
+    {
+      "file": "native-macos-debug-generation-failure-v1.json",
+      "status": "failed-app-shape-validation",
+      "sha256": "2c530eff0ef2c17172b170dd6f97c11de8c7ce9130585f83ecae5410ff6efdbf"
+    }
+  ]
+}

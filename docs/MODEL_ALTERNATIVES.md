@@ -1,6 +1,6 @@
 # Alternatives to the working MOVD engine
 
-Research snapshot: 21 November 2026. This is a candidate ranking, not an iPhone benchmark or an implementation claim. No alternative weights were downloaded, converted or activated. The working MOVD model and library remain unchanged.
+Research snapshot before the optional-model implementation: 21 November 2026. At the time of this ranking no alternative weights had been downloaded, converted or activated. Subsequent Neodragon conversion work and its exact validation status are recorded in [the implementation report](NEODRAGON_IMPLEMENTATION.md). This ranking is not an iPhone benchmark. The working MOVD model and library remain available.
 
 ## Recommendation
 

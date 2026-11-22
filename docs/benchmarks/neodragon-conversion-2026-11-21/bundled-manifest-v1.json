@@ -1,0 +1,9 @@
+{
+  "scope": "Bundled optional-model manifest and duration range; three focused Simulator tests after packaging manifest into app",
+  "deviceValidated": false,
+  "totalTestCount": 3,
+  "passedTests": 3,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "summarySHA256": "78b7118a334c688d74fa896d054bb5a5ac262046506907e18179c91fbb7aec62"
+}

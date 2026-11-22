@@ -1,0 +1,13 @@
+{
+  "result": "Passed",
+  "totalTestCount": 7,
+  "passedTests": 7,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "startTime": 1795319353.372,
+  "finishTime": 1795319433.741,
+  "scope": "Native helper tests on iOS Simulator: tokenizer parity, scheduler math, tensor strides, model-root isolation, duration/settings reuse and journal metadata. Not a complete video generation or iPhone performance result.",
+  "deviceValidated": false,
+  "sourceResultBundle": "NativeHelpersParityV2.xcresult",
+  "sourceSummarySHA256": "a87da5569ce11f5427141e580f3e6a6bf405f53a78184e221dc63013dede450c"
+}

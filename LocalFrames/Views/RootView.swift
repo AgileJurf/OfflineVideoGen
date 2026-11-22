@@ -66,6 +66,17 @@ struct CreateView: View {
                 }
                 PendingSmoothingCard()
                 if model.working { GenerationJobCard() }
+                CreationSection("Video model", icon: "cpu", detail: "Choose the model used on this iPhone") {
+                    Picker("Video model", selection: $model.generationModel) {
+                        Text("MOVD").tag(VideoModelChoice.movd)
+                        Text("Neodragon · experimental").tag(VideoModelChoice.neodragon).disabled(!model.neodragonInstalled)
+                    }.pickerStyle(.menu).disabled(model.working).accessibilityIdentifier("generationModelPicker")
+                    Text(model.generationModel == .movd ? "256 × 256 · 12 FPS · 2–5 seconds" : "512 × 320 · 24 FPS · up to \(model.supportedDurations.upperBound) seconds")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if !model.neodragonInstalled {
+                        Button("Optional Neodragon model in Setup") { hideKeyboard(); openSetup() }.font(.caption).disabled(model.working)
+                    }
+                }
                 CreationSection("Your scene", icon: "text.bubble", detail: "Describe a subject, an action and a setting") {
                     TextField("A small sailboat glides across a calm lake at sunrise…", text: $model.prompt, axis: .vertical)
                         .lineLimit(3...6).focused($focusedField, equals: .prompt)
@@ -77,8 +88,15 @@ struct CreateView: View {
                     }.font(.caption).foregroundStyle(.secondary)
                 }
                 GenerationOptionsView(tokenCount: $tokenCount, focusedField: $focusedField)
-                GenerationFinishOptions(support: model.support, account: model.helperAccount)
-                if !model.installed {
+                if model.generationModel == .movd {
+                    GenerationFinishOptions(support: model.support, account: model.helperAccount)
+                } else {
+                    CreationSection("Frame rate", icon: "film", detail: "Native 24 FPS generation") {
+                        Label("Entire job stays on your iPhone", systemImage: "iphone")
+                        Text("No upload, frame-smoothing helper, or Hugging Face quota is needed.").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if !model.selectedModelInstalled {
                     Button { hideKeyboard(); openSetup() } label: {
                         Label("Install the video model to begin", systemImage: "arrow.down.circle").frame(maxWidth: .infinity)
                     }.buttonStyle(.bordered).accessibilityIdentifier("openSetup")
@@ -88,8 +106,8 @@ struct CreateView: View {
                         Label(model.smoothAfterGeneration ? "Start 24 FPS video job" : "Generate Video", systemImage: "sparkles")
                             .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
                     }.buttonStyle(.borderedProminent)
-                        .disabled(!model.installed || model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                  || model.prompt.count > 500 || tokenCount == nil || (tokenCount ?? 0) > 63
+                        .disabled(!model.selectedModelInstalled || model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  || model.prompt.count > 500 || tokenCount == nil || (tokenCount ?? 0) > (model.generationModel == .movd ? 63 : 128)
                                   || (model.useFixedSeed && UInt64(model.generationSeed) == nil)
                                   || (model.smoothAfterGeneration && model.smoothingSelectionIssue != nil))
                         .accessibilityIdentifier("generateButton")
@@ -178,7 +196,7 @@ struct SetupView: View {
                 Text("Download: approximately 14.1 GB. Allow 50 GB free during installation. Wi-Fi required.")
                     .font(.footnote).foregroundStyle(.secondary)
                 if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
-                if model.installing {
+                if model.installing && !model.installingNeodragon {
                     ProgressView(value: model.progress.fraction)
                     Text(model.progressMessage).font(.caption)
                     Button("Pause installation") { model.cancel() }
@@ -190,13 +208,9 @@ struct SetupView: View {
                     Button("Install model") { model.install() }.disabled(model.working).accessibilityIdentifier("installModelButton")
                 }
             } header: { Text("Offline video model") }
+            NeodragonSetupSection()
             Section("Online assistance") {
                 SetupOnlineSummary(support: model.support, account: model.helperAccount)
-            }
-            Section("While the app is minimized") {
-                Label("Background generation", systemImage: "iphone")
-                Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("backgroundAvailability")
-                Text("Each generation requests system-managed GPU time. Cooling pauses remain active. Force-quitting ends the task; iOS can also stop it. Baseline tests save motion steps for recovery.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Developer tools") {
                 NavigationLink("Benchmark results and comparisons") { BenchmarkView() }.accessibilityIdentifier("openBenchmarks")
@@ -204,9 +218,9 @@ struct SetupView: View {
             }
             Section("About this build") {
                 NavigationLink("Model capabilities and optional models") { ModelCapabilitiesView() }
-                LabeledContent("Engine", value: "MOVD / Open-Sora")
-                LabeledContent("Output", value: "256 × 256 · 12 FPS")
-                LabeledContent("Duration", value: "2–5 seconds")
+                LabeledContent("Selected engine", value: model.generationModel.name)
+                LabeledContent("Output", value: model.generationModel == .movd ? "256 × 256 · 12 FPS" : "512 × 320 · 24 FPS")
+                LabeledContent("Duration", value: "2–\(model.supportedDurations.upperBound) seconds")
                 Text("Xcode Cloud tests check the app and supporting code. Device benchmarks record generation time, sampled memory and thermal behavior. Model and sampler changes need on-device quality comparisons.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Link("Source and model documentation", destination: URL(string: "https://github.com/AgileJurf/OfflineVideoGen")!)
@@ -216,6 +230,60 @@ struct SetupView: View {
                 Button("Delete model", role: .destructive) { Task { await model.removeModel() } }
             }
 
+    }
+}
+
+struct NeodragonSetupSection: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var confirmInstall = false
+    @State private var confirmDelete = false
+    private func size(_ bytes: Int64) -> String { ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+    var body: some View {
+        Section("Optional video model") {
+            Label("Neodragon · experimental", systemImage: model.neodragonInstalled ? "checkmark.seal.fill" : "cpu")
+                .font(.headline).foregroundStyle(model.neodragonInstalled ? .mint : .primary)
+            Text("Native 512 × 320 landscape video at 24 FPS. Generation stays on this iPhone after installation.").font(.subheadline)
+            NavigationLink("Model licenses and use terms") {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text("Neodragon uses Qualcomm’s published hybrid checkpoint. Its model card specifies BSD-3-Clause-Clear and the Qualcomm Responsible AI License.")
+                        Link("Qualcomm model use terms", destination: URL(string: "https://www.qualcomm.com/site/responsible-ai-license")!)
+                        Link("Original model and documentation", destination: URL(string: "https://huggingface.co/Qualcomm-AI-Research/Neodragon")!)
+                        Text(NeodragonModel.licenseNotices).font(.caption).textSelection(.enabled)
+                    }.padding()
+                }.navigationTitle("Neodragon licenses")
+            }
+            if let manifest = model.neodragonManifest {
+                Text("2–\(manifest.maximumSeconds) seconds · \(size(manifest.downloadBytes)) download · allow \(size(manifest.minimumFreeBytes)) free during installation. Wi-Fi required.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                Text("Start with a 2-second test. Speed, memory use and longer-video quality still require validation on your device. MOVD remains available separately.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                if model.installingNeodragon {
+                    ProgressView(value: model.progress.fraction)
+                    Text(model.progressMessage).font(.caption)
+                    Button("Pause Neodragon installation", action: model.cancel)
+                } else if model.neodragonInstalled {
+                    Label("Installed for offline use", systemImage: "checkmark.circle").foregroundStyle(.mint)
+                    Button("Remove Neodragon", role: .destructive) { confirmDelete = true }.disabled(model.working)
+                } else {
+                    Button("Download optional Neodragon model") { confirmInstall = true }
+                        .disabled(model.working).accessibilityIdentifier("installNeodragonButton")
+                }
+            } else {
+                Text("The converted model package is still being validated. Download and generation are unavailable until those checks pass.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .confirmationDialog("Download the optional Neodragon model?", isPresented: $confirmInstall, titleVisibility: .visible) {
+            Button("Download over Wi-Fi", action: model.installNeodragon)
+        } message: {
+            if let manifest = model.neodragonManifest {
+                Text("Downloads \(size(manifest.downloadBytes)) and needs \(size(manifest.minimumFreeBytes)) free during installation. This experimental model is stored separately from MOVD. Your videos remain in Library.")
+            }
+        }
+        .confirmationDialog("Remove only the optional Neodragon model?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Remove Neodragon", role: .destructive) { Task { await model.removeNeodragon() } }
+        } message: { Text("MOVD and all saved videos will remain available.") }
     }
 }
 
@@ -229,13 +297,13 @@ struct DeviceBenchmarkToolsView: View {
             Section("Baseline test") {
                 Toggle(isOn: $model.recordCreationDiagnostics) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("Record local diagnostics for Create jobs")
-                        Text("Includes prompts, seeds, timings, memory and temperature. Logs stay here unless you export them. Baselines always record logs.").font(.caption).foregroundStyle(.secondary)
+                        Text("Record local diagnostics for MOVD Create jobs")
+                        Text("Includes prompts, seeds, timings, memory and temperature. Logs stay here unless you export them. Baseline tests and experimental Neodragon jobs always keep local logs.").font(.caption).foregroundStyle(.secondary)
                     }
                 }.disabled(model.working)
                 NavigationLink("Benchmark results and comparisons") { BenchmarkView() }
                     .accessibilityIdentifier("openBenchmarks")
-                Text("Run the unchanged 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
+                Text("Run the unchanged MOVD 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Picker("Prompt", selection: $model.benchmarkPromptIndex) {
                     Text("Sailboat").tag(0)

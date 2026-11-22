@@ -1,7 +1,8 @@
 import CoreML
 import Foundation
 
-/// Loads one partition at a time. No model or tensor is cached across generations.
+/// Defaults to loading one partition at a time. Experimental callers may retain
+/// an explicit set of small models for this runner's lifetime only.
 final class ModelRunner {
     let directory: URL
     let benchmark: BenchmarkLog?
@@ -11,14 +12,21 @@ final class ModelRunner {
     var thermalStates = Set<String>()
     var modelLoadSeconds = 0.0
     var modelPredictionSeconds = 0.0
+    private let retainedModelNames: Set<String>
+    private let forceCPUOnly: Bool
+    private var retainedModels: [String: MLModel] = [:]
 
-    init(directory: URL, benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl()) {
+    init(directory: URL, benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl(),
+         retainingSmallModels names: Set<String> = [], forceCPUOnly: Bool = false) {
         self.directory = directory; self.benchmark = benchmark; self.control = control
+        retainedModelNames = names
+        self.forceCPUOnly = forceCPUOnly
     }
 
     func checkpoint() async throws {
         try Task.checkCancellation()
         let thermal = ProcessInfo.processInfo.thermalState
+        if thermal == .serious || thermal == .critical { retainedModels.removeAll() }
         let label: String
         switch thermal {
         case .nominal: label = "nominal"
@@ -50,18 +58,24 @@ final class ModelRunner {
             #if targetEnvironment(simulator)
             config.computeUnits = .cpuOnly
             #else
-            config.computeUnits = cpuOnly ? .cpuOnly : .cpuAndGPU
+            config.computeUnits = (cpuOnly || forceCPUOnly) ? .cpuOnly : .cpuAndGPU
             #endif
             let modelURL = directory.appendingPathComponent(name + ".mlmodelc")
             let unitLabel = config.computeUnits == .cpuOnly ? "cpuOnly" : "cpuAndGPU"
+            let cacheKey = "\(name):\(config.computeUnits.rawValue)"
+            let cached = retainedModels[cacheKey]
             let model: MLModel
             let load = { () throws -> MLModel in
                 let begin = ProcessInfo.processInfo.systemUptime
                 defer { self.modelLoadSeconds += ProcessInfo.processInfo.systemUptime - begin }
-                return try MLModel(contentsOf: modelURL, configuration: config)
+                if let cached { return cached }
+                let loaded = try MLModel(contentsOf: modelURL, configuration: config)
+                if self.retainedModelNames.contains(name) { self.retainedModels[cacheKey] = loaded }
+                return loaded
             }
             if let benchmark {
-                model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel], load)
+                model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel,
+                    "retainedModelHit": String(cached != nil)], load)
             } else { model = try load() }
             let provider = try MLDictionaryFeatureProvider(dictionary: inputs)
             let result: MLFeatureProvider
@@ -86,7 +100,8 @@ final class ModelRunner {
             })
         }
         predictionCompleted?(name, ProcessInfo.processInfo.systemUptime - started)
-        // Release the loaded model before waiting for cooling or foreground access.
+        // The default path releases the model before waiting. Small retained
+        // models are also released at a thermal pause by checkpoint().
         try await checkpoint()
         return output
     }

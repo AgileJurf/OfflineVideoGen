@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "modelID": "neodragon-hybrid-v1",
+  "sourceRepository": "Qualcomm-AI-research/neodragon",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRepository": "Qualcomm-AI-Research/Neodragon",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "format": "pytorch-safetensors",
+  "runtime": "reference-only; Core ML conversion required",
+  "deviceValidated": false,
+  "totalBytes": 12070716392,
+  "files": [
+    {
+      "path": "causal_video_vae/config.json",
+      "bytes": 1026,
+      "sha256": "295b75f9de0fb4277455b62f6ffdec8caafd188686be1ba500c5c7524af82cd4",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/causal_video_vae/config.json"
+    },
+    {
+      "path": "causal_video_vae/diffusion_pytorch_model.safetensors",
+      "bytes": 239107038,
+      "sha256": "413f1e98fe0611bf78853acad28ca653ce2768577cfe9822420f4eafd3cb1cf1",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/causal_video_vae/diffusion_pytorch_model.safetensors"
+    },
+    {
+      "path": "context_adapter/config.json",
+      "bytes": 345,
+      "sha256": "aecfbf90ac128d370b3f5233f37b88e6f75695f3450f51a3700512ad9759811e",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/context_adapter/config.json"
+    },
+    {
+      "path": "context_adapter/diffusion_pytorch_model.safetensors",
+      "bytes": 520166344,
+      "sha256": "4c9e2ccbed009c5fd94856c933ef492a9045f28bf04cb51b74fbe08698229d7f",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/context_adapter/diffusion_pytorch_model.safetensors"
+    },
+    {
+      "path": "diffusion_transformer_320p/config.json",
+      "bytes": 657,
+      "sha256": "b89ba2992c2740da3c23ac93109f3a3d48635008f82419c684267079130fd88e",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/diffusion_transformer_320p/config.json"
+    },
+    {
+      "path": "diffusion_transformer_320p/diffusion_pytorch_model.safetensors",
+      "bytes": 3137624552,
+      "sha256": "ccc929881ee6a0474325998b2b80dcab199a39282ae773abf17a18c7fde0e31d",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/diffusion_transformer_320p/diffusion_pytorch_model.safetensors"
+    },
+    {
+      "path": "ssd_1b_text_encoder/config.json",
+      "bytes": 560,
+      "sha256": "32d8cadf544d77c231efa1381145ac7e8f4cc88f581455c3c5f6369364474c83",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_text_encoder/config.json"
+    },
+    {
+      "path": "ssd_1b_text_encoder/model.safetensors",
+      "bytes": 492265880,
+      "sha256": "8377b1ca9d88fe06ec483dd7b3cfc62e5e8dbf8ddd252f455e79d659fa0553c5",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_text_encoder/model.safetensors"
+    },
+    {
+      "path": "ssd_1b_text_encoder_2/config.json",
+      "bytes": 570,
+      "sha256": "79b0f15ad762cf9c2992d50f9679d08c6cb477a50c88d41e216fc2d886e37abb",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_text_encoder_2/config.json"
+    },
+    {
+      "path": "ssd_1b_text_encoder_2/model.safetensors",
+      "bytes": 2778702976,
+      "sha256": "b84f413eebecbd049b72874c1df533a516510cb5a2489ae58c7e320209cf0ebe",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_text_encoder_2/model.safetensors"
+    },
+    {
+      "path": "ssd_1b_tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer/merges.txt"
+    },
+    {
+      "path": "ssd_1b_tokenizer/special_tokens_map.json",
+      "bytes": 472,
+      "sha256": "c4864a9376a8401918425bed71fc14fc0e81f9b59ec45c1cf96cccb2df508eac",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer/special_tokens_map.json"
+    },
+    {
+      "path": "ssd_1b_tokenizer/tokenizer_config.json",
+      "bytes": 737,
+      "sha256": "19d7b034cb0cc3ce9766c2231373ab8aa8991fc72e2c8f76558bfaae3de0d563",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer/tokenizer_config.json"
+    },
+    {
+      "path": "ssd_1b_tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer/vocab.json"
+    },
+    {
+      "path": "ssd_1b_tokenizer_2/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer_2/merges.txt"
+    },
+    {
+      "path": "ssd_1b_tokenizer_2/special_tokens_map.json",
+      "bytes": 460,
+      "sha256": "f118ab3a983206e4f32583448de6bd6aae4ee21869135cef1f5848a753cdaab6",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer_2/special_tokens_map.json"
+    },
+    {
+      "path": "ssd_1b_tokenizer_2/tokenizer_config.json",
+      "bytes": 725,
+      "sha256": "c9d23941f76a41cbd50eda9290f57be7828f0a7a677939e9ef181f7e12bd1bdf",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer_2/tokenizer_config.json"
+    },
+    {
+      "path": "ssd_1b_tokenizer_2/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_tokenizer_2/vocab.json"
+    },
+    {
+      "path": "ssd_1b_unet/config.json",
+      "bytes": 1913,
+      "sha256": "e5920aaab75bf21bc191a3c7fa031f15abee0c836a73635afb18a3000d82d786",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_unet/config.json"
+    },
+    {
+      "path": "ssd_1b_unet/diffusion_pytorch_model.safetensors",
+      "bytes": 2662791552,
+      "sha256": "62a020501c81355bd616ce9b491458ea632636bd3051dde8d572171b1c46d840",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_unet/diffusion_pytorch_model.safetensors"
+    },
+    {
+      "path": "ssd_1b_vae/config.json",
+      "bytes": 602,
+      "sha256": "2e425cbde02bdb63e43e8d49db7e14a941a76bb7b2058761200c72dc3d6344fd",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_vae/config.json"
+    },
+    {
+      "path": "ssd_1b_vae/diffusion_pytorch_model.safetensors",
+      "bytes": 334643268,
+      "sha256": "78f6189c8492013e3cac81637a1f657f790a237387f8a9dfd6bfa5fee28eb646",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/ssd_1b_vae/diffusion_pytorch_model.safetensors"
+    },
+    {
+      "path": "text_encoder/config.json",
+      "bytes": 575,
+      "sha256": "0a9730db94a5851df438cad1d6898bca471703b548ca91aeaa25763f7cd978b6",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder/config.json"
+    },
+    {
+      "path": "text_encoder/model.safetensors",
+      "bytes": 247324096,
+      "sha256": "b4ddf499861727e83713b525ba1e087202f248a7ebb2268b04d1de09de5b67c2",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder/model.safetensors"
+    },
+    {
+      "path": "text_encoder_2/config.json",
+      "bytes": 571,
+      "sha256": "fd54eaf1b561eacf94854fd5102eca4c74b3a9f0cca20d99d25b2bdf5a0a36b6",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder_2/config.json"
+    },
+    {
+      "path": "text_encoder_2/model.safetensors",
+      "bytes": 1389382688,
+      "sha256": "c4ba596d8c78b5509aafd523f619e13aa129ae1a886a1e92766d7cddd9706f3c",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder_2/model.safetensors"
+    },
+    {
+      "path": "text_encoder_3/config.json",
+      "bytes": 1565,
+      "sha256": "6e6d94225480bf8de5ea51d1c51f65bd226ae79f2d0c3a4b6c7d314d92f3bacf",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder_3/config.json"
+    },
+    {
+      "path": "text_encoder_3/model.safetensors",
+      "bytes": 259117320,
+      "sha256": "604e3fce339b87c4f34a1ab97fc05dee34149438218af1ce1d769d568938ef5c",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/text_encoder_3/model.safetensors"
+    },
+    {
+      "path": "tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer/merges.txt"
+    },
+    {
+      "path": "tokenizer/special_tokens_map.json",
+      "bytes": 588,
+      "sha256": "2cdb3b8331a60c92fc1e55a13e9fd61fd2293c5a51275fdcccd62b780052530e",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer/special_tokens_map.json"
+    },
+    {
+      "path": "tokenizer/tokenizer_config.json",
+      "bytes": 705,
+      "sha256": "6bdcee9ccce2a16ca2b4c0c5ed00b42c50ea225f4472a8c4c1e963a2902c2881",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer/tokenizer_config.json"
+    },
+    {
+      "path": "tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer/vocab.json"
+    },
+    {
+      "path": "tokenizer_2/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_2/merges.txt"
+    },
+    {
+      "path": "tokenizer_2/special_tokens_map.json",
+      "bytes": 576,
+      "sha256": "c4dbb96da703fb38f10ccf0490df2fd476811c5a3e71b7e0189cffeed3224e25",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_2/special_tokens_map.json"
+    },
+    {
+      "path": "tokenizer_2/tokenizer_config.json",
+      "bytes": 856,
+      "sha256": "e70eb3e2b85a508e32bb81c32c13fc3f2b015548ca469b94627c2f32e445cba1",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_2/tokenizer_config.json"
+    },
+    {
+      "path": "tokenizer_2/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_2/vocab.json"
+    },
+    {
+      "path": "tokenizer_3/special_tokens_map.json",
+      "bytes": 2543,
+      "sha256": "7a1985a994c41886db38c719d2a3d2f40606663cc19d7c5d6a85d349320e06d2",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_3/special_tokens_map.json"
+    },
+    {
+      "path": "tokenizer_3/spiece.model",
+      "bytes": 791656,
+      "sha256": "d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_3/spiece.model"
+    },
+    {
+      "path": "tokenizer_3/tokenizer.json",
+      "bytes": 2424035,
+      "sha256": "652ffdfc379606bad8edfb653f92dcf28e2e5dbf1cdfe50d685d29b2cad12dd6",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_3/tokenizer.json"
+    },
+    {
+      "path": "tokenizer_3/tokenizer_config.json",
+      "bytes": 20617,
+      "sha256": "83b3e7737eef754efca607d9f580798cc35457daa96052cc60179f095a375c14",
+      "url": "https://huggingface.co/Qualcomm-AI-Research/Neodragon/resolve/5bdc87a4895a4fd148ca14c03181345d278d1040/tokenizer_3/tokenizer_config.json"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "neodragon/__init__.py",
+      "sha256": "052bf34a7e4237b5895ee3271ca96d509dbbe275928091d99d5879c6fe26e825"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/__init__.py",
+      "sha256": "70a8f520de51f667faef43dfaf90f44794fac2c7a6ea016625df53acd4327d17"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/decoder.py",
+      "sha256": "929e0025127961a902547e2e37119e18d5593c554a7fa3e8276f91db9dd1e771"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/encoder.py",
+      "sha256": "20e73496ee5abd4a5afdff9dcca2c2b9723054285f35e179b9009cfeb0f4ddf9"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/modeling_block.py",
+      "sha256": "16ef72515e09006b838a3cd2bb842296a2f9ac387fb71af728d8466c06e2bf7e"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/modeling_causal_ops.py",
+      "sha256": "bcfdbbeda0efd16e49a9f6cbb7841a45f0627929e6a9d53358bac99bc6fa0fbe"
+    },
+    {
+      "path": "neodragon/asymmetric_causal_video_vae/modeling_resnet.py",
+      "sha256": "65bd735d2a3da58b6c53d47855f08cf6644c00225271ce1ddced24f7448ce642"
+    },
+    {
+      "path": "neodragon/context_adapter.py",
+      "sha256": "afedc38545aad917c726634c31691b27de7d4622787c7421494cff0039393f29"
+    },
+    {
+      "path": "neodragon/distil_t5.py",
+      "sha256": "dede249d3b74b029b3482cc9f914f1aa470ca32246cf115dd86dd0ffb3f2eddd"
+    },
+    {
+      "path": "neodragon/first_frame_gen.py",
+      "sha256": "fafe85c57796b4c9cd5b90c4f993ff5a76a638c5c62ed5824b752ce49b9d108b"
+    },
+    {
+      "path": "neodragon/pyramid_mmdit/__init__.py",
+      "sha256": "25d9df32ec5d36187756e63318b0a7268aae8d0998a6aad9d42b91208ac3a23b"
+    },
+    {
+      "path": "neodragon/pyramid_mmdit/modeling_block.py",
+      "sha256": "70ae2a60c563680d30c362a6812362f533388573c5ac1be61f4abaa64f9af6a5"
+    },
+    {
+      "path": "neodragon/pyramid_mmdit/modeling_embedding.py",
+      "sha256": "696baf990c3def2b86a58069e6930f068507a89d60492dd43842946fd6aa6a03"
+    },
+    {
+      "path": "neodragon/pyramid_mmdit/modeling_normalization.py",
+      "sha256": "be4a1eea80504c883b2b5bd58375043c42261e46f2a6f64f12d35e1db69ff7c9"
+    },
+    {
+      "path": "neodragon/pyramid_scheduler.py",
+      "sha256": "f0edb68b3b01947d243360bae3debd0653d9bfe5ae96c9bb8a2b22f3ebfc9de2"
+    },
+    {
+      "path": "neodragon/safety_checker.py",
+      "sha256": "08bf37e7aced71f1d5b08cf7c8c4db5a566347ac1f82384a23349bbabb1e18a6"
+    },
+    {
+      "path": "neodragon/text_encoder_bundle.py",
+      "sha256": "d00de072e68266c46ef9b59529434e4b79cbd1d13c26cf378f4cab545873e760"
+    },
+    {
+      "path": "neodragon/utils/__init__.py",
+      "sha256": "67d0781eddfe39012a39b95a9bcec559884ad31925825e0e498080b5939895b9"
+    },
+    {
+      "path": "neodragon/utils/generation_utils.py",
+      "sha256": "950fb20a916fd1781679480974de3d189311d7f1ae9936a47d539f190fe6dcbf"
+    },
+    {
+      "path": "neodragon/utils/visualisation_utils.py",
+      "sha256": "9477bfd506df59d4c2bdb2f0dd0ad230698aa88de5803b87f64ab81af5c3271a"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# Separate from MOVD's environment. Tested interpreter: CPython 3.12, Intel macOS.
+# PyTorch 2.2.2 is the last macOS x86_64 wheel in this conversion setup.
+torch==2.2.2
+torchvision==0.17.2
+numpy==1.26.4
+coremltools==8.3.0
+diffusers==0.34.0
+transformers==4.46.3
+accelerate==1.9.0
+einops==0.8.1
+safetensors==0.6.2
+sentencepiece==0.2.1
+protobuf==4.25.8
+setuptools==75.8.2
+timm==1.0.22

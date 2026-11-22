@@ -1,0 +1,25 @@
+{
+  "cases" : [
+    {
+      "finiteSubsetRelativeL2" : 0.0011555483902342988,
+      "index" : 0,
+      "nonFiniteValues" : 0,
+      "passed" : true
+    },
+    {
+      "finiteSubsetRelativeL2" : 0.0011556257771453101,
+      "index" : 1,
+      "nonFiniteValues" : 0,
+      "passed" : true
+    },
+    {
+      "finiteSubsetRelativeL2" : 0.0011556591604128942,
+      "index" : 2,
+      "nonFiniteValues" : 0,
+      "passed" : true
+    }
+  ],
+  "os" : "Version 15.8.3 (Build 24H314)",
+  "package" : "ssd_1b_text_encoder_layers_00_03.mlpackage",
+  "scope" : "Native macOS CPU comparison; not iPhone validation"
+}

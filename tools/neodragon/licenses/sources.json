@@ -1,0 +1,17 @@
+[
+  {
+    "file": "Pyramid-Flow-MIT.txt",
+    "url": "https://raw.githubusercontent.com/jy0205/Pyramid-Flow/main/LICENSE",
+    "sha256": "9432ef9c48fbc5a52f3552718daf170736d89124784d0a2e36e821cb30509aa6"
+  },
+  {
+    "file": "CLIP-MIT.txt",
+    "url": "https://raw.githubusercontent.com/openai/CLIP/main/LICENSE",
+    "sha256": "987e63b32f6c89ff5160e429458a872ff048e6860b590a3912e938f9da8f14db"
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "url": "https://raw.githubusercontent.com/huggingface/diffusers/v0.34.0/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  }
+]

@@ -34,6 +34,7 @@ struct BenchmarkSummary: Identifiable, Sendable {
     var thermalStates = Set<String>()
     var restoredSteps = 0
     var completedSteps = 0
+    var expectedEvaluations = 21
     var lastOperation: String?
     var failure: String?
     var hasIncompleteLines = false
@@ -62,6 +63,7 @@ struct BenchmarkSummary: Identifiable, Sendable {
         defer { try? handle.close() }
         var result = Self(id: url.lastPathComponent)
         var timings: [String: PartitionTiming] = [:]
+        var partitionNames = Set(MOVDModel.requiredNames)
         let decoder = JSONDecoder()
         var sequence = 0, totalBytes = 0
         func consume(_ line: Data) {
@@ -80,6 +82,11 @@ struct BenchmarkSummary: Identifiable, Sendable {
                 result.appVersion = e.fields["appVersion"] ?? "0.0.0"
                 result.osVersion = e.fields["osVersion"] ?? "0.0.0"
                 result.modelRevision = e.fields["modelRevision"] ?? "unknown"
+                if result.modelRevision == NeodragonModel.weightsRevision {
+                    partitionNames = Set((e.fields["expectedPartitions"] ?? "").split(separator: ",").prefix(250)
+                        .map(String.init).filter { !$0.isEmpty && $0.count <= 120 && $0.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_") }) })
+                    result.expectedEvaluations = Int(e.fields["expectedEvaluations"] ?? "") ?? 0
+                }
                 result.configuration = e.fields["configuration"] ?? "unknown"
                 result.prompt = e.fields["prompt"] ?? ""
                 result.effectivePrompt = e.fields["effectiveModelPrompt"] ?? result.prompt
@@ -104,7 +111,7 @@ struct BenchmarkSummary: Identifiable, Sendable {
                 }
             }
             if e.event == "finished" { result.status = e.fields["status"] ?? "unknown"; result.failure = e.fields["error"] }
-            if let name = e.partition, MOVDModel.requiredNames.contains(name), let phase = e.phase {
+            if let name = e.partition, partitionNames.contains(name), let phase = e.phase {
                 if e.event == "begin" { result.lastOperation = name + " / " + phase }
                 if e.event == "end" || e.event == "failure" {
                     result.lastOperation = nil

@@ -1,0 +1,372 @@
+{
+  "status": "passed-component-parity",
+  "component": "text_encoder",
+  "precision": "mixed",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "scope": "Mac component parity for fixed prompts, not iPhone/video validation",
+  "deviceValidated": false,
+  "prompts": [
+    "A small sailboat glides across a calm lake at sunrise.",
+    "A red flag waves gently in the wind against a blue sky.",
+    "A yellow ball rolls slowly across a wooden table."
+  ],
+  "gate": "finite, matching shape, relative L2 <= 0.01",
+  "runtimePositionIDs": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76
+  ],
+  "partitions": [
+    {
+      "name": "text_encoder_embedding",
+      "packageBytes": 76130135,
+      "conversionAndCheckSeconds": 8.17384870100068,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "6b53724aa382a6573b5ad58af5af6c81f585bcd55564e44d3177b615a5ff2d46"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "201bfd8e880a3f9daccdaea18ca9a1ebdbbcfa9deccf4ee6d8e6f4568db715e6"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "4dd22d8314b26f368b282308c1b930c6cc9ddfe4a42677690fb2ef31e1cffd3a"
+        }
+      ]
+    },
+    {
+      "name": "text_encoder_layers_00_03",
+      "packageBytes": 56820157,
+      "conversionAndCheckSeconds": 9.753283168945927,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.00047190912108297466,
+          "maxAbsoluteError": 0.46063232421875,
+          "rmse": 0.0023112150110216577,
+          "outputSHA256": "823ccb634e0c12c9dbf1c238e3fdab518912a499115e623d300ba31f4122d6bc"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0004721547666330638,
+          "maxAbsoluteError": 0.46063232421875,
+          "rmse": 0.002312334148258969,
+          "outputSHA256": "9391f0fe01d496152c048ffe3215add4741a96659ce98c39e736193cf0efd039"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0004719974050947049,
+          "maxAbsoluteError": 0.46063232421875,
+          "rmse": 0.0023115378439078306,
+          "outputSHA256": "89b6c7abe389d00b87af511dae3e80b37c4e80c978f4aa88b92d5c28c3890edd"
+        }
+      ]
+    },
+    {
+      "name": "text_encoder_layers_04_07",
+      "packageBytes": 56820157,
+      "conversionAndCheckSeconds": 8.627320487983525,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0004749553168568766,
+          "maxAbsoluteError": 0.46038818359375,
+          "rmse": 0.002331684082832898,
+          "outputSHA256": "c69bff07847c067eebf5c446c44457c278ff39ec6b0513357b7ade814614d549"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.00047528083606506854,
+          "maxAbsoluteError": 0.46038818359375,
+          "rmse": 0.0023324020012691665,
+          "outputSHA256": "28351e674491346b1de30ddb800f8ff96dec5e260669b16d96fc70df71e50f86"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.000476640750405932,
+          "maxAbsoluteError": 0.46038818359375,
+          "rmse": 0.0023394461687334315,
+          "outputSHA256": "570f7bd183c2b5649d46c32d40036ade83cd4a42979f68a1218a4a5c511a8236"
+        }
+      ]
+    },
+    {
+      "name": "text_encoder_layers_08_10",
+      "packageBytes": 42621313,
+      "conversionAndCheckSeconds": 7.206462581991218,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.00048096093143084803,
+          "maxAbsoluteError": 0.4595947265625,
+          "rmse": 0.002387175397334205,
+          "outputSHA256": "b125d0804d2bff91d77bf36dde952179fff8ba4ea0bb8b043c0d478ea98dcb98"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.00048428364267752666,
+          "maxAbsoluteError": 0.4595947265625,
+          "rmse": 0.002396753021181644,
+          "outputSHA256": "f58f7921adc0ab396999e2099192b67598ac7ef7e916f50608a981473dd861a5"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0004910862874495883,
+          "maxAbsoluteError": 0.4595947265625,
+          "rmse": 0.0024332689078736865,
+          "outputSHA256": "61a43c4c7d7fc1606f23bc0aab4d054307f9177964129522d79693be372c3298"
+        }
+      ]
+    },
+    {
+      "name": "text_encoder_last_layer",
+      "packageBytes": 14223748,
+      "conversionAndCheckSeconds": 3.23175934801111,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.00048803075216036256,
+          "maxAbsoluteError": 0.45965576171875,
+          "rmse": 0.002428819227410493,
+          "outputSHA256": "e1f2d2bd4ea0ce3ed9f781bdeb42189194c65cb34cc99fda3c19e48cdbc8cceb"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0004958392558706824,
+          "maxAbsoluteError": 0.45965576171875,
+          "rmse": 0.0024611355176648313,
+          "outputSHA256": "4d604e23acc8ffd1f2abd70c016da4f40554993eb4aa27797e3d5f808efc9867"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0005062676399380353,
+          "maxAbsoluteError": 0.45965576171875,
+          "rmse": 0.0025141571551728194,
+          "outputSHA256": "154cacbcb3dd5f3511166227e0ed696e35cfbc4af23bae79331dd503fc4ac5c4"
+        }
+      ]
+    },
+    {
+      "name": "text_encoder_pool",
+      "packageBytes": 1192897,
+      "conversionAndCheckSeconds": 1.959747653978411,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 0.000822745021071287,
+          "maxAbsoluteError": 0.00362396240234375,
+          "rmse": 0.000813659335170939,
+          "outputSHA256": "72955d8d2f0dd22415778bac62ca4577c589e12e9a6c3976ed84a00a4b26ab98"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 0.0009404211838046094,
+          "maxAbsoluteError": 0.0035104528069496155,
+          "rmse": 0.0009345106292344671,
+          "outputSHA256": "447ea72d4af49d17da3e4eff312781ec17201d6fbe3525324abd9ef4ebbd64d4"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 0.0012938266362630666,
+          "maxAbsoluteError": 0.004495203495025635,
+          "rmse": 0.0013066505368490324,
+          "outputSHA256": "a26955a5ca7969f49e8e63f85e34b6936088d938fa0d8b45cdf327bf4c2ef2f7"
+        }
+      ]
+    }
+  ],
+  "processLifetimeMaxRSSBytes": 1746567168
+}

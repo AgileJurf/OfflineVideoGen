@@ -1,0 +1,113 @@
+{
+  "scope": "iOS Simulator CPU candidate screening; not iPhone validation",
+  "variants": [
+    {
+      "cases": [
+        {
+          "finiteSubsetRelativeL2": 1.921852963868198e-07,
+          "index": 0,
+          "nonFiniteValues": 0,
+          "passed": true
+        },
+        {
+          "finiteSubsetRelativeL2": 1.9233904073588526e-07,
+          "index": 1,
+          "nonFiniteValues": 0,
+          "passed": true
+        },
+        {
+          "finiteSubsetRelativeL2": 1.9212337467472094e-07,
+          "index": 2,
+          "nonFiniteValues": 0,
+          "passed": true
+        }
+      ],
+      "macPassed": true,
+      "name": "float32",
+      "passed": true
+    },
+    {
+      "cases": [
+        {
+          "finiteSubsetRelativeL2": 372.0425245110766,
+          "index": 0,
+          "nonFiniteValues": 29570,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 380.0237654753719,
+          "index": 1,
+          "nonFiniteValues": 29568,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 379.09505827745,
+          "index": 2,
+          "nonFiniteValues": 29568,
+          "passed": false
+        }
+      ],
+      "macPassed": true,
+      "name": "linear_fp16",
+      "passed": false
+    },
+    {
+      "cases": [
+        {
+          "finiteSubsetRelativeL2": 1151.300585885993,
+          "index": 0,
+          "nonFiniteValues": 15756,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 882.9706687506463,
+          "index": 1,
+          "nonFiniteValues": 15388,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 889.255933372084,
+          "index": 2,
+          "nonFiniteValues": 15336,
+          "passed": false
+        }
+      ],
+      "macPassed": true,
+      "name": "finite_mask",
+      "passed": false
+    },
+    {
+      "cases": [
+        {
+          "finiteSubsetRelativeL2": 357.0612244547401,
+          "index": 0,
+          "nonFiniteValues": 29569,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 380.0237654753719,
+          "index": 1,
+          "nonFiniteValues": 29568,
+          "passed": false
+        },
+        {
+          "finiteSubsetRelativeL2": 379.09505827745,
+          "index": 2,
+          "nonFiniteValues": 29568,
+          "passed": false
+        }
+      ],
+      "macPassed": true,
+      "name": "finite_mask_linear_fp16",
+      "passed": false
+    }
+  ],
+  "deviceValidated": false,
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "component": "ssd_1b_text_encoder_layers_00_03",
+  "selectedCandidate": "float32",
+  "selectionScope": "One four-layer group only; full encoder/video still requires validation",
+  "testBundle": "NativeCLIPPrecisionV2.xcresult",
+  "executedTests": 1
+}

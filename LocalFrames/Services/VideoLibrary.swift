@@ -25,13 +25,17 @@ struct VideoRecord: Codable, Identifiable, Hashable {
     var mediaKind: String? = nil
     var postprocessingSeconds: Double? = nil
     var smoothing: SmoothingProvenance? = nil
+    var modelID: String? = nil
 
     var style: VisualStyle { visualStyle ?? .default }
     var effectivePrompt: String { effectiveModelPrompt ?? prompt }
     var isCrop: Bool { mediaKind == "center-crop-v1" }
     var framing: OutputFraming { outputFraming ?? .square }
+    var isNeodragon: Bool { modelID == NeodragonModel.identifier || metrics.modelRevision == NeodragonModel.weightsRevision }
+    var framingName: String { isNeodragon && !isCrop ? "Native 16:10" : framing.name }
     var canReuseSettings: Bool {
-        (generationMode ?? .textToVideo) == .textToVideo && metrics.modelRevision == MOVDModel.revision
+        (generationMode ?? .textToVideo) == .textToVideo
+            && (metrics.modelRevision == MOVDModel.revision || metrics.modelRevision == NeodragonModel.weightsRevision)
             && (styleConditioningVersion ?? 1) == 1 && effectivePrompt == style.applying(to: prompt)
     }
 
@@ -80,6 +84,16 @@ actor VideoLibrary {
             outputFraming: framing, requestedFraming: framing, sourceImageReference: original.sourceImageReference,
             parentVideoID: original.id, extensionHistory: original.extensionHistory,
             mediaKind: "center-crop-v1", postprocessingSeconds: elapsedSeconds, smoothing: original.smoothing)
+        return try await persist(item, temporaryURL: temporaryURL)
+    }
+
+    func addNeodragon(temporaryURL: URL, request: NeodragonGenerationRequest, metrics: GenerationMetrics) async throws -> VideoRecord {
+        guard metrics.modelRevision == NeodragonModel.weightsRevision else { throw GenerationError.invalidTensor }
+        let item = VideoRecord(id: UUID(), prompt: request.prompt, duration: request.duration,
+            width: NeodragonModel.width, height: NeodragonModel.height, framesPerSecond: NeodragonModel.framesPerSecond,
+            seed: request.seed, createdAt: Date(), metrics: metrics, generationMode: .textToVideo,
+            effectiveModelPrompt: request.effectivePrompt, visualStyle: request.style, styleConditioningVersion: 1,
+            mediaKind: "generated", modelID: NeodragonModel.identifier)
         return try await persist(item, temporaryURL: temporaryURL)
     }
 

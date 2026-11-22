@@ -1,0 +1,203 @@
+{
+  "status": "passed-component-parity",
+  "block": 8,
+  "precision": "mixed",
+  "seed": 42,
+  "maximumSeconds": 2,
+  "maximumLatents": 7,
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "deviceValidated": false,
+  "scope": "Real weights, synthetic activations; Mac component parity only",
+  "gate": "portable PyTorch relative L2 <= 1e-5; Core ML relative L2 <= 0.01; finite and matching shapes",
+  "portabilityParity": [
+    [
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          80,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "3193517ddd9a538e8933139924e40c25f053a3e6829147a9c364ee473428095b"
+      },
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "4cfc86b55bc597b5051c8748ce8aa9d2839ad0f03126e765209d70cfa2f05b13"
+      }
+    ],
+    [
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "662c64f59eff7c5be28768262b19001d28abd15760d0a10a30a39f63412c6eef"
+      },
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "1d149c94ea7680b64bfa8765b292809e6e77565d2714b6b053a3d5b19e79d9e5"
+      }
+    ],
+    [
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1600,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "2cde94c6886295e6acd3bbe658bc6286c057783c53c04a1cca4494384a79ed72"
+      },
+      {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          128,
+          1536
+        ],
+        "relativeL2": 0.0,
+        "maxAbsoluteError": 0.0,
+        "rmse": 0.0,
+        "outputSHA256": "e376c5810756b401acb6b3c628895e2e240328c17d180099d5f3fdde1b563699"
+      }
+    ]
+  ],
+  "conversionSeconds": 40.19124236400239,
+  "packageBytes": 170007199,
+  "cases": [
+    {
+      "imageTokens": 80,
+      "outputs": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            80,
+            1536
+          ],
+          "relativeL2": 0.001154169638933914,
+          "maxAbsoluteError": 0.312469482421875,
+          "rmse": 0.004008549475622908,
+          "outputSHA256": "13ebd547bb34117371495e1b10d4f03cd603d859140c8d36497480b987d71805"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            128,
+            1536
+          ],
+          "relativeL2": 0.0009105941197169788,
+          "maxAbsoluteError": 0.3533477783203125,
+          "rmse": 0.004583907636095641,
+          "outputSHA256": "e8e5e1fdd48de6e8fd8dab4ebcb422625227398b32774c42344e81f4cb22cbc5"
+        }
+      ],
+      "macPredictionSeconds": 1.4365281889913604
+    },
+    {
+      "imageTokens": 320,
+      "outputs": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            320,
+            1536
+          ],
+          "relativeL2": 0.0010235266630816715,
+          "maxAbsoluteError": 0.2953033447265625,
+          "rmse": 0.0027525083736844795,
+          "outputSHA256": "1305d1b0d276be5e41817bd29121860263584e107930c22149b3c530a0ef9bc9"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            128,
+            1536
+          ],
+          "relativeL2": 0.0008670168389091333,
+          "maxAbsoluteError": 0.5799560546875,
+          "rmse": 0.007938373488414497,
+          "outputSHA256": "18f862307bdd41509fafd5e1893f54b297da394e0e0d860bf5135cf773cd7c4f"
+        }
+      ],
+      "macPredictionSeconds": 0.7526190670323558
+    },
+    {
+      "imageTokens": 1600,
+      "outputs": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            1600,
+            1536
+          ],
+          "relativeL2": 0.0009314142202558203,
+          "maxAbsoluteError": 1.39288330078125,
+          "rmse": 0.007957766052825546,
+          "outputSHA256": "ca50e17059b051cdc74a5d270dde6d8b14a6d5c1212acca749ef8dd3fa3b0bc5"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            128,
+            1536
+          ],
+          "relativeL2": 0.0008912445871246938,
+          "maxAbsoluteError": 0.74468994140625,
+          "rmse": 0.008898756107662211,
+          "outputSHA256": "be56cae982c766a0af0b5eaa5eb7e4ce470296d7a15cf561fb9d353e0f771c1c"
+        }
+      ],
+      "macPredictionSeconds": 5.091141176992096
+    }
+  ],
+  "processLifetimeMaxRSSBytes": 1790054400
+}

@@ -1,0 +1,372 @@
+{
+  "status": "passed-component-parity",
+  "component": "ssd_1b_text_encoder",
+  "precision": "float32",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "scope": "Mac component parity for fixed prompts, not iPhone/video validation",
+  "deviceValidated": false,
+  "prompts": [
+    "A small sailboat glides across a calm lake at sunrise.",
+    "A red flag waves gently in the wind against a blue sky.",
+    "A yellow ball rolls slowly across a wooden table."
+  ],
+  "gate": "finite, matching shape, relative L2 <= 0.01",
+  "runtimePositionIDs": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76
+  ],
+  "partitions": [
+    {
+      "name": "ssd_1b_text_encoder_embedding",
+      "packageBytes": 152020422,
+      "conversionAndCheckSeconds": 7.244623572973069,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "e56f1ad8df6d75a7d02f51257d3b5a320168a4f758cf8ab04354285ea08c193e"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "39f3ca104227985e81500dba4b732adbd2ae379709b6b6e690dd3a8b6d9d9cf8"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 0.0,
+          "maxAbsoluteError": 0.0,
+          "rmse": 0.0,
+          "outputSHA256": "16fe74df4df81f0d446431f764225d287fec7248af90aac8686f0b967ca9bde9"
+        }
+      ]
+    },
+    {
+      "name": "ssd_1b_text_encoder_layers_00_03",
+      "packageBytes": 113476684,
+      "conversionAndCheckSeconds": 5.455498974013608,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.8975675871523696e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.3800633426620945e-06,
+          "outputSHA256": "12e7bc57984d835b3f4331116c8b8283cbfff6f88727f7dd2124f5ba524dc2e8"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.8979156431564176e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.3801769410961506e-06,
+          "outputSHA256": "2d999019ac56ba9383e1c46e9d4208deea53c8e4b9a95a8f8057541f3cd1b700"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.897802757359683e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.3801041708134335e-06,
+          "outputSHA256": "215741e2a718d3aa07f2fde25e8dc639d9e1d80ae4eafec91ddfe737c8dc217a"
+        }
+      ]
+    },
+    {
+      "name": "ssd_1b_text_encoder_layers_04_07",
+      "packageBytes": 113476684,
+      "conversionAndCheckSeconds": 5.031749934016261,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.9195670951511705e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.394431035126174e-06,
+          "outputSHA256": "00983b041fc7ef1af89287b499e86710ac63158f7855e38cc863221be616fda0"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.9166148916657036e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.3922727098422722e-06,
+          "outputSHA256": "1c9a46946dc3d09b206dd1be572e5ba59f9460b834b2fc566341e5679653c928"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.928433097804047e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.3982842017443478e-06,
+          "outputSHA256": "c3b860b5ef95a162fb96bc89d03fdf418246874f8c0a699ce0a59e67bac3f595"
+        }
+      ]
+    },
+    {
+      "name": "ssd_1b_text_encoder_layers_08_10",
+      "packageBytes": 85113754,
+      "conversionAndCheckSeconds": 3.9835001280298457,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.9826069924195784e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.4436178449208908e-06,
+          "outputSHA256": "40bef84c8a695a908ba0aec6eab74184cef055ed0580db414b8e926825525107"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 2.993600212455952e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.4438018758850018e-06,
+          "outputSHA256": "39d67519b92981ce6a4f71daa093dc478e67614cc4cf7d0cd14293dc2ab63072"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 3.025558916245031e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.4607136142798663e-06,
+          "outputSHA256": "1c2c6286cab1c24542cbe93620c2440b11a72ba197817d23d74eed1752c20bad"
+        }
+      ]
+    },
+    {
+      "name": "ssd_1b_text_encoder_last_layer",
+      "packageBytes": 28387955,
+      "conversionAndCheckSeconds": 1.405298647005111,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 3.0405595488869757e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.4767119870317239e-06,
+          "outputSHA256": "78e841611796ea282e86071c8aa3321b0d4dec0f4d9adce0d9d93bca01fb7fd8"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 3.052407381162418e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.4775727648087434e-06,
+          "outputSHA256": "c29a60e8b0cc875fb78a38d996552c67d0885eca46ad14804d703b4ce36e54d2"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            77,
+            768
+          ],
+          "relativeL2": 3.1025995003852454e-07,
+          "maxAbsoluteError": 0.00030517578125,
+          "rmse": 1.502977776027516e-06,
+          "outputSHA256": "6182bd61f029ce4eab2059afc70ca76e0798c370a81812758662e233a8fd8f1f"
+        }
+      ]
+    },
+    {
+      "name": "ssd_1b_text_encoder_pool",
+      "packageBytes": 10402,
+      "conversionAndCheckSeconds": 0.49956718395696953,
+      "cases": [
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 5.795979131422969e-07,
+          "maxAbsoluteError": 2.205371856689453e-06,
+          "rmse": 5.738883445331354e-07,
+          "outputSHA256": "7e37058615d016a8b624da139b1a0ed64ad7e9faaf4d134ed7e52a8cdb0aae7e"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 5.894017502588315e-07,
+          "maxAbsoluteError": 3.5762786865234375e-06,
+          "rmse": 5.859654611441822e-07,
+          "outputSHA256": "09d6ca42640c27b4cda9d6b8b635d6830586b03535a5e88bdc4e66c60c4a43f8"
+        },
+        {
+          "passed": true,
+          "finite": true,
+          "shape": [
+            1,
+            768
+          ],
+          "relativeL2": 6.444351989110885e-07,
+          "maxAbsoluteError": 2.384185791015625e-06,
+          "rmse": 6.518733842656095e-07,
+          "outputSHA256": "54d3e3cfdb6af66dcc055d3b34f69fc268c8f7d1523995bec295cbec296d45d6"
+        }
+      ]
+    }
+  ],
+  "processLifetimeMaxRSSBytes": 1024438272
+}

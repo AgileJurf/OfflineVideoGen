@@ -33,6 +33,7 @@ struct PreviewView: View {
                     }
                     Text(video.prompt).font(.headline)
                     LabeledContent("Style", value: video.style.name)
+                    if video.isNeodragon { LabeledContent("Model", value: "Neodragon · native 24 FPS"); LabeledContent("Framing", value: video.framingName) }
                     LabeledContent("Seed", value: String(video.seed)).font(.caption)
                     if let smoothing = video.smoothing {
                         Label("24 FPS interpolated copy", systemImage: "sparkles.tv").font(.caption).foregroundStyle(.mint)
@@ -59,7 +60,7 @@ struct PreviewView: View {
                     Text("Restores the original prompt, style, duration and seed in Create. Choose another style there to compare results.").font(.caption).foregroundStyle(.secondary)
                     NavigationLink("Compare saved outputs") { VideoComparisonView() }.disabled(model.videos.count < 2)
                     Button("Extend Video · unavailable", systemImage: "lock") { showExtensionInfo = true }
-                    if !video.isCrop && video.smoothing == nil {
+                    if !video.isCrop && video.smoothing == nil && video.width == 256 && video.height == 256 {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("SAVE A CROPPED COPY").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                             Text("Center crop only. The square original remains unchanged.").font(.caption)

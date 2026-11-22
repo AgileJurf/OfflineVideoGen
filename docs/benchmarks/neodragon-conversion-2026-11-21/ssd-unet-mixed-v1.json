@@ -1,0 +1,1458 @@
+{
+  "status": "passed-chained-parity",
+  "deviceValidated": false,
+  "precision": "mixed",
+  "scope": "Synthetic conditioning, Mac component and chained UNet parity; not image/video generation",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "torch": "2.2.2",
+  "coremltools": "8.3.0",
+  "host": "macOS-15.8.3-x86_64-i386-64bit",
+  "partitions": [
+    {
+      "name": "ssd_unet_time",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280
+        ],
+        "relativeL2": 8.156549777439993e-07,
+        "maxAbsoluteError": 1.862645149230957e-06,
+        "rmse": 4.961135534884324e-07,
+        "outputSHA256": "3495159881c2e40afe0dfa6b1d650efc6aaa906f92fde7db7afbfc051d3c80f6"
+      },
+      "packageBytes": 14605509,
+      "conversionAndCheckSeconds": 30.683626925980207
+    },
+    {
+      "name": "ssd_unet_conv_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.000288557334481474,
+        "maxAbsoluteError": 0.0014088153839111328,
+        "rmse": 0.00013832927769770126,
+        "outputSHA256": "6b47b6739fea29e7e468d4672b1ba162912565f801e2f9e1d3c4bc77d20ae9b8"
+      },
+      "packageBytes": 26834,
+      "conversionAndCheckSeconds": 5.3326432289904915
+    },
+    {
+      "name": "ssd_unet_down_blocks_0_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.0003953553785932314,
+        "maxAbsoluteError": 0.0020530223846435547,
+        "rmse": 0.00019305398049913826,
+        "outputSHA256": "2070ee95acecd50da0f14d18df49750ddcf04f739be1df35f858bbfa91bf3027"
+      },
+      "packageBytes": 4529611,
+      "conversionAndCheckSeconds": 10.087747100973502
+    },
+    {
+      "name": "ssd_unet_down_blocks_0_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.0006548457760867622,
+        "maxAbsoluteError": 0.002085447311401367,
+        "rmse": 0.00022497763140782252,
+        "outputSHA256": "b051b502d268a1b88847062b87b6a8cd634472c51d8b15ca105399cc4d47e411"
+      },
+      "packageBytes": 4529611,
+      "conversionAndCheckSeconds": 7.521809687023051
+    },
+    {
+      "name": "ssd_unet_down_blocks_0_downsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          40,
+          64
+        ],
+        "relativeL2": 0.0005114120302032313,
+        "maxAbsoluteError": 0.003329753875732422,
+        "rmse": 0.00044027849064732166,
+        "outputSHA256": "4be7703e294bf2acbf7446ff4a8a8f832df106811de4dfede83216eb63487df5"
+      },
+      "packageBytes": 1847026,
+      "conversionAndCheckSeconds": 4.862900781037752
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0003915123939172247,
+        "maxAbsoluteError": 0.0065555572509765625,
+        "rmse": 0.0004072681216414203,
+        "outputSHA256": "6cdeffe7ee000ee6ec4fb6b972c55130db2fdf84828c02cc011f5fdab103a4e0"
+      },
+      "packageBytes": 13144671,
+      "conversionAndCheckSeconds": 10.697280181979295
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_0_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0006895655829264701,
+        "maxAbsoluteError": 0.0052547454833984375,
+        "rmse": 0.0003270842133259834,
+        "outputSHA256": "ed0990999be653410dfaa49b6237efe6c11552f63d6c8d024978fa355cbbe732"
+      },
+      "packageBytes": 836900,
+      "conversionAndCheckSeconds": 2.8934114369913004
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_0_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0008047906133322784,
+        "maxAbsoluteError": 0.006098270416259766,
+        "rmse": 0.00045645332484325126,
+        "outputSHA256": "f2c6a4b1515f014714909fb51883b0357acce59a51844db691427e967f84db2c"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 10.923056125000585
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_0_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0010642037230665373,
+        "maxAbsoluteError": 0.018774032592773438,
+        "rmse": 0.0007535530537468166,
+        "outputSHA256": "2773eaf8687b64116d5015b84bd57d066a1caf5ebd08ed824374573559d095a0"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 9.373432171007153
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_0_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0005923313284688584,
+        "maxAbsoluteError": 0.006268501281738281,
+        "rmse": 0.0006062898649403187,
+        "outputSHA256": "444ddbae30e45f25bb61d6b8164960dfe8f0d403ddb27c4e215687b3fdc04b4c"
+      },
+      "packageBytes": 823636,
+      "conversionAndCheckSeconds": 1.0747903949813917
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0007250747901638085,
+        "maxAbsoluteError": 0.006504058837890625,
+        "rmse": 0.0006804429461616397,
+        "outputSHA256": "891d357f4ef7a0324759e24527bb0b79937690531d7fed4cb155ed578b2b7167"
+      },
+      "packageBytes": 16417583,
+      "conversionAndCheckSeconds": 6.035689848999027
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_1_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0008871987316988821,
+        "maxAbsoluteError": 0.007627964019775391,
+        "rmse": 0.0005224689961855871,
+        "outputSHA256": "d7f1728884dfea7881b4e0dcbbeb373604c545259f061d5e4fdd3d111838e6df"
+      },
+      "packageBytes": 836900,
+      "conversionAndCheckSeconds": 1.4756487519480288
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_1_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.000778147485447293,
+        "maxAbsoluteError": 0.007645606994628906,
+        "rmse": 0.0006027822372564663,
+        "outputSHA256": "eec58ee6e7f2099e83b3f81e694f06bf2d3e5596eb2672f6d31374a95c9b6be2"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 6.29657332203351
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_1_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0008376266579359234,
+        "maxAbsoluteError": 0.014068603515625,
+        "rmse": 0.0007339860734639124,
+        "outputSHA256": "0b773fb647bedffce4433284f35d79fe2bff738ee1863e052fd5d799fe75175b"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 6.337971587956417
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_attentions_1_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0007838014262040258,
+        "maxAbsoluteError": 0.0111541748046875,
+        "rmse": 0.0008208310704474782,
+        "outputSHA256": "1e4e6435d195e01efbe53f05fca14a08040434f7b73f5fca88e9f739611ecf8b"
+      },
+      "packageBytes": 823636,
+      "conversionAndCheckSeconds": 1.233386123960372
+    },
+    {
+      "name": "ssd_unet_down_blocks_1_downsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          20,
+          32
+        ],
+        "relativeL2": 0.0007830021237293132,
+        "maxAbsoluteError": 0.009198188781738281,
+        "rmse": 0.0013047718967300447,
+        "outputSHA256": "b4206ad3b18e61e691c48c6d6d25e0b33c6c7c7dd2c65890ff2847e00601594a"
+      },
+      "packageBytes": 7377264,
+      "conversionAndCheckSeconds": 6.564180887013208
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0005395871581009683,
+        "maxAbsoluteError": 0.008465766906738281,
+        "rmse": 0.000984507363598405,
+        "outputSHA256": "f5771e3c5e5252033a31455523702f73d9f7476bd1d4cac63225458764a28b5a"
+      },
+      "packageBytes": 49209951,
+      "conversionAndCheckSeconds": 18.780186037998646
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0007185560075952103,
+        "maxAbsoluteError": 0.017919540405273438,
+        "rmse": 0.0008009983861024468,
+        "outputSHA256": "a48aa979e60eb458dcc197e196fbc7a9aeccaa4565cb4d3f828e852cae7cfb8f"
+      },
+      "packageBytes": 3306022,
+      "conversionAndCheckSeconds": 1.2141715960460715
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0008137868316097379,
+        "maxAbsoluteError": 0.017665863037109375,
+        "rmse": 0.0010034640922297296,
+        "outputSHA256": "c93aa9f50a2aa69c5d9edf844333a79277c5c5c00127343340cc3fa77f03e17e"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 11.239870976016391
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0008509355109111898,
+        "maxAbsoluteError": 0.019641876220703125,
+        "rmse": 0.001111959560970949,
+        "outputSHA256": "f939fc8a4b40c77905fadc94680d6be473fbae0c98357bb01c56dbdc3614a301"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.090579885989428
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_transformer_blocks_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0008893042755183941,
+        "maxAbsoluteError": 0.023555755615234375,
+        "rmse": 0.0012807758782274904,
+        "outputSHA256": "6709c01751a786e6225acdc953d7526032d9a75260428bbf8c74013fd200f0e1"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 26.203619033971336
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_transformer_blocks_3",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0009619834533548063,
+        "maxAbsoluteError": 0.028980255126953125,
+        "rmse": 0.0014317621710077722,
+        "outputSHA256": "10e3de7b352162be23916451230018ce300cbf6265269f7568824a4611b7d450"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 10.264299443981145
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_0_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0006958005983888125,
+        "maxAbsoluteError": 0.011556625366210938,
+        "rmse": 0.0014282759100309435,
+        "outputSHA256": "74e361fb0256469f19821cef31d7e7c8950e063680c41824807c2ea84591f289"
+      },
+      "packageBytes": 3282517,
+      "conversionAndCheckSeconds": 0.9654902830370702
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0006259120551413908,
+        "maxAbsoluteError": 0.009998321533203125,
+        "rmse": 0.0015238949471874615,
+        "outputSHA256": "b4bdf138b1e691f402fed15128942b9ae18423cc0ddab7ca65313a886ccebba1"
+      },
+      "packageBytes": 62311984,
+      "conversionAndCheckSeconds": 8.887486586987507
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0006468387044317966,
+        "maxAbsoluteError": 0.024770736694335938,
+        "rmse": 0.0006476999605209451,
+        "outputSHA256": "fd98137952591554fc263df8780ff33963520481daf54e420da022d556e0ca7e"
+      },
+      "packageBytes": 3306022,
+      "conversionAndCheckSeconds": 1.140638791024685
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0007111646895697611,
+        "maxAbsoluteError": 0.02672576904296875,
+        "rmse": 0.0007773252441045088,
+        "outputSHA256": "b6e1ea931f103b217157ae881f9a86d5a1958213364bdf5d9893207c413a6fdd"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 8.160036359971855
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0008351433313839475,
+        "maxAbsoluteError": 0.030687332153320312,
+        "rmse": 0.0009341439669452682,
+        "outputSHA256": "ca4a3d5879c668792925cc8d6a63418aeed87824570084089229311f26bf6ee6"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.038097575015854
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_transformer_blocks_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0009462109987013667,
+        "maxAbsoluteError": 0.030040740966796875,
+        "rmse": 0.0012134862458464486,
+        "outputSHA256": "4403d31697c624ed3231143db35f203ee4da339cfb6d5e412a7a018cf58dcef9"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 8.688874533982016
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_transformer_blocks_3",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.001131365479508854,
+        "maxAbsoluteError": 0.033405303955078125,
+        "rmse": 0.0024631564448747674,
+        "outputSHA256": "bde75de92185eeec39763d219ab5bfdcd4ad96bd7eddeee4face8fb0c41eaa68"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 31.930531577032525
+    },
+    {
+      "name": "ssd_unet_down_blocks_2_attentions_1_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0007770619116846879,
+        "maxAbsoluteError": 0.015026092529296875,
+        "rmse": 0.002116772229083618,
+        "outputSHA256": "6424ea41ac023d2de22c2cc437317ff53c034af77906d16c3cecd1c52f96b2e5"
+      },
+      "packageBytes": 3282517,
+      "conversionAndCheckSeconds": 19.88700513803633
+    },
+    {
+      "name": "ssd_unet_mid_block_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0008704686152616207,
+        "maxAbsoluteError": 0.027656078338623047,
+        "rmse": 0.002893502958717675,
+        "outputSHA256": "1a9d1b4fc057a62b3e0190f0a98a01d9735dec2f4430ea9a150cd87cc64f9767"
+      },
+      "packageBytes": 62311984,
+      "conversionAndCheckSeconds": 17.40166048100218
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0006073255831568865,
+        "maxAbsoluteError": 0.024394989013671875,
+        "rmse": 0.0025328368951133737,
+        "outputSHA256": "f62b67dec3c4bca9133bdc112000d405253911cec2915982504f8ea56c49ab03"
+      },
+      "packageBytes": 98392674,
+      "conversionAndCheckSeconds": 21.54416808701353
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0007683993714084626,
+        "maxAbsoluteError": 0.010364532470703125,
+        "rmse": 0.00045735970358910403,
+        "outputSHA256": "64962ba249d55c4e09d88ebcbf5c66d62bb5f7e828ec36ebce164cf790d0643b"
+      },
+      "packageBytes": 3306022,
+      "conversionAndCheckSeconds": 1.7881741750170477
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0008935983469051079,
+        "maxAbsoluteError": 0.03130340576171875,
+        "rmse": 0.0007766837924916755,
+        "outputSHA256": "8dd557ca75db154660e677e34b971f9b852f71ab21f166b8b1eeb74492b78b73"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 12.385430359980091
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0010131878293847324,
+        "maxAbsoluteError": 0.07113265991210938,
+        "rmse": 0.001162133229734391,
+        "outputSHA256": "2132aa4beea6414babc5fd095f5d9ed3e68981d267b6c97d3129cecd1607bc89"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.158429463976063
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_transformer_blocks_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0011493890093499932,
+        "maxAbsoluteError": 0.0601043701171875,
+        "rmse": 0.0019637018703080444,
+        "outputSHA256": "9053cf14c3c0c8382ae639e3ebd1d72a1d4a5810a0d7da1005ad1263fd24f923"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 11.349197580013424
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_transformer_blocks_3",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0012459608820605162,
+        "maxAbsoluteError": 0.06304168701171875,
+        "rmse": 0.003615104757966553,
+        "outputSHA256": "65524124d3d1c7754d1b37850f0b1badb232c4fc8442bc284fbe28de12f71c68"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 11.008253900974523
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_0_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0011876517873877779,
+        "maxAbsoluteError": 0.04065370559692383,
+        "rmse": 0.004648006450752618,
+        "outputSHA256": "7a5f9160f688a0545e0ade95821421f8c57655a94ff956fc79a8a0e5de127c65"
+      },
+      "packageBytes": 3282517,
+      "conversionAndCheckSeconds": 1.6594237589742988
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.000966891390759914,
+        "maxAbsoluteError": 0.029142379760742188,
+        "rmse": 0.003108891611226567,
+        "outputSHA256": "0c76e4de5795acc035a67892b52efc52e389f26f604584cf031b62b5129c0597"
+      },
+      "packageBytes": 98392674,
+      "conversionAndCheckSeconds": 18.694656099018175
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0009410389401446562,
+        "maxAbsoluteError": 0.0181732177734375,
+        "rmse": 0.0008193669970081721,
+        "outputSHA256": "c999cf204e3bf557eecb6b5ed96d87219e968021563d6ad2e4b19513fcf87620"
+      },
+      "packageBytes": 3306022,
+      "conversionAndCheckSeconds": 1.5517416839720681
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0011536659351878249,
+        "maxAbsoluteError": 0.017320632934570312,
+        "rmse": 0.001120075122809793,
+        "outputSHA256": "37c41baea9887a207546af8491e1b42731296a20eba20ee2bdaab1cb959ef394"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 10.470152681984473
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0013026513288852454,
+        "maxAbsoluteError": 0.02170562744140625,
+        "rmse": 0.0014813330250254295,
+        "outputSHA256": "683a939e93c4db1fa5bf78f5dac3f30486dadfc5e359d2e53ccd3ebd2830d938"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.43603735405486
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_transformer_blocks_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0014396410318562932,
+        "maxAbsoluteError": 0.03842926025390625,
+        "rmse": 0.0021296517053248495,
+        "outputSHA256": "6a421ff4df564da0d5fa7910d28befcefef59f8968ac13c60fc5bf150ae86e38"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.053355666983407
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_transformer_blocks_3",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0014384290536728682,
+        "maxAbsoluteError": 0.04561614990234375,
+        "rmse": 0.0036167002118398205,
+        "outputSHA256": "ed2ba66a47f8201d6b3aa356acbd6b998bd85f9a2faafbf86a710140f72ca7df"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.741611503006425
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_1_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0012829405681363934,
+        "maxAbsoluteError": 0.05648714303970337,
+        "rmse": 0.004655111372617237,
+        "outputSHA256": "a50f9a4d2d9483ca46dc6dbe2e7c542001bfb2c8102983e109180dad48ecccfc"
+      },
+      "packageBytes": 3282517,
+      "conversionAndCheckSeconds": 1.39397320500575
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.0011460522002257239,
+        "maxAbsoluteError": 0.04140186309814453,
+        "rmse": 0.0024441442909042756,
+        "outputSHA256": "bfa2016381b4d27a3f4a0432d864b11f6747f81d43fcbc570f8d31e2e960a7a7"
+      },
+      "packageBytes": 81998433,
+      "conversionAndCheckSeconds": 13.569065671996213
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0012232393723281443,
+        "maxAbsoluteError": 0.01607036590576172,
+        "rmse": 0.0010524905266792895,
+        "outputSHA256": "5634c6b65c19358e615041a3a4b826192f3ff532b6c895d93b70787f54b1cbcf"
+      },
+      "packageBytes": 3306022,
+      "conversionAndCheckSeconds": 1.3443055269890465
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0013247604492205621,
+        "maxAbsoluteError": 0.02082061767578125,
+        "rmse": 0.0014155617811200756,
+        "outputSHA256": "20dd4ba7a47dff87e79514d799ea7da42184049f1ecaf1c7ea716260e17ee016"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 12.519404491002206
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0013613021914278879,
+        "maxAbsoluteError": 0.024871826171875,
+        "rmse": 0.0017361680490032944,
+        "outputSHA256": "242605b565214175c9ec20a43e4d89d71b76c4f1eb9f8bccfdd3650cdc0e3550"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 7.352099399955478
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0014008057613051862,
+        "maxAbsoluteError": 0.030059814453125,
+        "rmse": 0.0021148251599079552,
+        "outputSHA256": "acf89cb20a077355d20404ea0aa5a3c1a70798077779258b3be622f779d3bfcc"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 8.082246761012357
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_3",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0013856834300051645,
+        "maxAbsoluteError": 0.03499603271484375,
+        "rmse": 0.0026027708081296265,
+        "outputSHA256": "c6cef92a5731ff12fb398c2c4653d241875e8076f14e0770c023d0b9b1a74996"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.88752640603343
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_4",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0014423598975950123,
+        "maxAbsoluteError": 0.037761688232421875,
+        "rmse": 0.0030471803944479153,
+        "outputSHA256": "ae17a71749e216d961ba4399cf6bcc05ed9b1ddd7a2543ba7c5b5ec540cef9af"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 8.771512567007449
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_5",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0014895955730737584,
+        "maxAbsoluteError": 0.040424346923828125,
+        "rmse": 0.0035755586382486782,
+        "outputSHA256": "d1a538fa5b2606e7ff8a1f6c1f225b8c258fdc4481935fb2d30a355107dff179"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 8.868244073993992
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_6",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0012441912711764849,
+        "maxAbsoluteError": 0.0599822998046875,
+        "rmse": 0.00372976258420925,
+        "outputSHA256": "4dcb361b90a9a2c58bb8bb308a2e7a4557fa94f5d314240cb674d843f107577d"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 9.674772639991716
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_7",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0005641623594549232,
+        "maxAbsoluteError": 0.12896728515625,
+        "rmse": 0.004225369095047254,
+        "outputSHA256": "2dac791cc2e4172754cef040f4fb8e2a1a2f03095d8fd410e978893675eea2e2"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 26.67156759201316
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_8",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0024056743399168564,
+        "maxAbsoluteError": 0.23791885375976562,
+        "rmse": 0.00607344042735667,
+        "outputSHA256": "a1268d981ef8cc1f2723f9272cd449dcc2dc4768266a8168f78fcd14c5b2d786"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 10.186178222007584
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_transformer_blocks_9",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          1280
+        ],
+        "relativeL2": 0.0032277295287032274,
+        "maxAbsoluteError": 0.4179267883300781,
+        "rmse": 0.008215252420454794,
+        "outputSHA256": "dac18a7b4310170362e41b6b3afc7c49a7055a575abf2e8b128254b24b22bc93"
+      },
+      "packageBytes": 69550182,
+      "conversionAndCheckSeconds": 11.936674214026425
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_attentions_2_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          20,
+          32
+        ],
+        "relativeL2": 0.002401907683311595,
+        "maxAbsoluteError": 0.07940959930419922,
+        "rmse": 0.006639125948677591,
+        "outputSHA256": "d92f2a43f2662675761dd915abf16feecfc0738c5257f571b92da5a30bb61d52"
+      },
+      "packageBytes": 3282517,
+      "conversionAndCheckSeconds": 1.1425922469934449
+    },
+    {
+      "name": "ssd_unet_up_blocks_0_upsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          1280,
+          40,
+          64
+        ],
+        "relativeL2": 0.0023221632978205277,
+        "maxAbsoluteError": 0.21037054061889648,
+        "rmse": 0.013740860556257098,
+        "outputSHA256": "6a158d9f64e3d2cb906f705446a296df4dfab93206c69c905396b3d35adba677"
+      },
+      "packageBytes": 29497412,
+      "conversionAndCheckSeconds": 11.919497142953333
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0018815995310448364,
+        "maxAbsoluteError": 0.07041031122207642,
+        "rmse": 0.004306807406904867,
+        "outputSHA256": "9929066888f514d8fb0f31f6d180603899ce402ef504081bce91fc68c3118733"
+      },
+      "packageBytes": 33650273,
+      "conversionAndCheckSeconds": 13.654311294027139
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_0_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.001985503391612129,
+        "maxAbsoluteError": 0.01909017562866211,
+        "rmse": 0.0012210998665256186,
+        "outputSHA256": "85a083023fb110efebdbacca2365295990e0043d1a65429e820a9787001b2d4d"
+      },
+      "packageBytes": 836900,
+      "conversionAndCheckSeconds": 2.327210474992171
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_0_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0021613512944306944,
+        "maxAbsoluteError": 0.04029738903045654,
+        "rmse": 0.002483196864402102,
+        "outputSHA256": "df99d0ae94dc249255aa04e8037df20dd7b4c90bbc51f18f679d1cd193c6497c"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 8.159168674028479
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_0_transformer_blocks_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.003402200288312448,
+        "maxAbsoluteError": 0.13306140899658203,
+        "rmse": 0.005543108613857833,
+        "outputSHA256": "a1b3d8ebdf3739338702ab0ffc0cd7410d560687c75e194c9be68720668add2c"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 6.8241919000283815
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_0_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.002953683440258298,
+        "maxAbsoluteError": 0.1763017177581787,
+        "rmse": 0.008993483453511305,
+        "outputSHA256": "d70617054c219b6689e9b0c9d02621bd00bd0e27ce54079cdbc8336daaf63af6"
+      },
+      "packageBytes": 823636,
+      "conversionAndCheckSeconds": 1.2355974479578435
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.002220332403118284,
+        "maxAbsoluteError": 0.06425261497497559,
+        "rmse": 0.003042431986954107,
+        "outputSHA256": "8e4fa66f8d2e3af3cda54bcb630a1c1d657080cedddab2f8ccb7a2f95de36bf2"
+      },
+      "packageBytes": 25448032,
+      "conversionAndCheckSeconds": 10.334598935965914
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_1_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0007970887079911503,
+        "maxAbsoluteError": 0.02404177188873291,
+        "rmse": 0.0014753560782717196,
+        "outputSHA256": "628794a1473c85d8e8f6ff715fa6d741b84f70b2ffd673f7dfd6e57035b8d573"
+      },
+      "packageBytes": 836900,
+      "conversionAndCheckSeconds": 1.2830813669716008
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_1_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0032331036197510636,
+        "maxAbsoluteError": 0.06123828887939453,
+        "rmse": 0.0028454404469372085,
+        "outputSHA256": "575e409e265c3e89ce09a1d78fab44420d6e310139d2501898db5e784dd5f5b4"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 39.735459741030354
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_1_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0030177370788074492,
+        "maxAbsoluteError": 0.07977926731109619,
+        "rmse": 0.004201526980454178,
+        "outputSHA256": "8a87ffc8fd4b0f1c394f68223929fdc52b613cf3653e064156a7f20992e73b74"
+      },
+      "packageBytes": 823636,
+      "conversionAndCheckSeconds": 1.3099234330002218
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0021405594460545715,
+        "maxAbsoluteError": 0.03750205039978027,
+        "rmse": 0.0018581239675174094,
+        "outputSHA256": "449c7f66e0ab1962d23f29f0e27fcc274cbce0c010e7e0fd81916bf351fda216"
+      },
+      "packageBytes": 21346911,
+      "conversionAndCheckSeconds": 26.95893981901463
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_2_in",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0008863655154952321,
+        "maxAbsoluteError": 0.018795162439346313,
+        "rmse": 0.0012780975186459697,
+        "outputSHA256": "4f09a2d90027afd665cb0f907f6c6f5772ad69f33898855c42bd4ca433044d75"
+      },
+      "packageBytes": 836900,
+      "conversionAndCheckSeconds": 3.6377370109548792
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_2_transformer_blocks_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          2560,
+          640
+        ],
+        "relativeL2": 0.0021839214045175385,
+        "maxAbsoluteError": 0.04761219024658203,
+        "rmse": 0.002044009297833094,
+        "outputSHA256": "3e602de0108c0a253ba8c473ccfd162ddaca3da2fb2c46a56883461023ee613e"
+      },
+      "packageBytes": 20039776,
+      "conversionAndCheckSeconds": 37.90332112001488
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_attentions_2_out",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          40,
+          64
+        ],
+        "relativeL2": 0.0023808436295578157,
+        "maxAbsoluteError": 0.03601408004760742,
+        "rmse": 0.002041065075430504,
+        "outputSHA256": "6c214efb3f20dd0a0ace193c9f7c0a8b8d77dc56d72c4f7b60681b625602c0ef"
+      },
+      "packageBytes": 823636,
+      "conversionAndCheckSeconds": 1.362043810018804
+    },
+    {
+      "name": "ssd_unet_up_blocks_1_upsamplers_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          640,
+          80,
+          128
+        ],
+        "relativeL2": 0.0020685250612966426,
+        "maxAbsoluteError": 0.07802867889404297,
+        "rmse": 0.0034911449293079733,
+        "outputSHA256": "2654a018f4955233e7d81430964a444b8ad4288a987a2914d7ad8ea1ba637c53"
+      },
+      "packageBytes": 7377737,
+      "conversionAndCheckSeconds": 6.919422324979678
+    },
+    {
+      "name": "ssd_unet_up_blocks_2_resnets_0",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.0016162271237293146,
+        "maxAbsoluteError": 0.047943949699401855,
+        "rmse": 0.0016118503467501526,
+        "outputSHA256": "2d5f7d4d730914d68f6837ee72f1f510865ec9ee61e2391a5c52e9bb1ebc1313"
+      },
+      "packageBytes": 8846464,
+      "conversionAndCheckSeconds": 9.585157479974441
+    },
+    {
+      "name": "ssd_unet_up_blocks_2_resnets_1",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.0013544472884393416,
+        "maxAbsoluteError": 0.05712604522705078,
+        "rmse": 0.0010984884106096926,
+        "outputSHA256": "293de9ae13620153a3e13c0dd3c5bcb9e665901c2a8a5d55067e089ef3db414b"
+      },
+      "packageBytes": 6793344,
+      "conversionAndCheckSeconds": 7.488118122972082
+    },
+    {
+      "name": "ssd_unet_up_blocks_2_resnets_2",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          320,
+          80,
+          128
+        ],
+        "relativeL2": 0.0003021067256600312,
+        "maxAbsoluteError": 0.05340617895126343,
+        "rmse": 0.0010149025740392125,
+        "outputSHA256": "8b622443cc73ab63f5c979363405c2892da4d6319850bd092cbd0cb117074103"
+      },
+      "packageBytes": 6793344,
+      "conversionAndCheckSeconds": 6.370886087999679
+    },
+    {
+      "name": "ssd_unet_output",
+      "accumulatedParity": {
+        "passed": true,
+        "finite": true,
+        "shape": [
+          1,
+          4,
+          80,
+          128
+        ],
+        "relativeL2": 0.00033620573010302346,
+        "maxAbsoluteError": 0.004737375304102898,
+        "rmse": 0.00033256553697399006,
+        "outputSHA256": "58176d79cbca5ffa2f7f7b0f1fde6c84233e86b401dd31f0613d17996784aedf"
+      },
+      "packageBytes": 34628,
+      "conversionAndCheckSeconds": 1.3802342389826663
+    }
+  ],
+  "partitioningParity": {
+    "passed": true,
+    "finite": true,
+    "shape": [
+      1,
+      4,
+      80,
+      128
+    ],
+    "relativeL2": 3.4419527852973784e-07,
+    "maxAbsoluteError": 5.2675604820251465e-06,
+    "rmse": 3.404685777418763e-07,
+    "outputSHA256": "875659ad8ebbdb925f5c31085128a9bb5d29600b3f275619fee235add89290a4"
+  },
+  "coreMLChainedParity": {
+    "passed": true,
+    "finite": true,
+    "shape": [
+      1,
+      4,
+      80,
+      128
+    ],
+    "relativeL2": 0.0003362370290738795,
+    "maxAbsoluteError": 0.004742642864584923,
+    "rmse": 0.0003325964945304936,
+    "outputSHA256": "58176d79cbca5ffa2f7f7b0f1fde6c84233e86b401dd31f0613d17996784aedf"
+  },
+  "processLifetimeMaxRSSBytes": 2326728704
+}
