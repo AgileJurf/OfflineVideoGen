@@ -1,15 +1,15 @@
 # Neodragon attention and detail comparisons
 
-Status: local conversion, complete two-second native generation and Xcode Cloud
-Build 48 passed. Build 48 is available to the existing internal TestFlight group.
-The physical iPhone trial remains pending. The original package and working
-profile remain the default. This document does not establish a five-second
-iPhone fix or a visual-quality improvement.
+Status: local conversion and complete two-second native generation passed.
+Xcode Cloud Build 49 is available to the existing internal TestFlight group.
+Five-second physical acceptance remains pending. The original package and
+working profile remain the default. This document does not establish a
+five-second iPhone fix or a visual-quality improvement.
 
 The subsequent app-only correction bounds motion output readback and transfer
 lifetimes. It reuses the same installed packages; no model redownload is needed.
 Its native five-second and physical-device acceptance checks remain in progress.
-Build 48 does not contain that correction.
+Build 49 contains that correction; Build 48 does not.
 
 All 18 converted blocks passed the minimum and maximum shape checks on the
 Intel Mac. Grouped PyTorch attention matched the original outputs exactly for
@@ -110,8 +110,18 @@ work was not controlled, so the probe does not establish a speed improvement.
 Local simulator validation passed 39 unit tests with five intentional full-model
 skips. The three added tests verify source-storage release, logical strided
 values, half-to-Float32 correctness, missing/invalid shapes, and nonfinite-value
-rejection. A complete native five-second generation is running. Cloud validation
-and the corrected physical five-second trial remain pending.
+rejection. A complete native five-second generation is running. The corrected
+physical five-second trial remains pending.
+
+Xcode Cloud Build 49 validated source
+`c31d1b807ec6bfe47f806d2782321c84c64f5fc5` with Xcode 27.2 (27B52)
+and macOS 27.2.1 (26B131). Analysis, the required tests, signed archive and
+internal TestFlight delivery all succeeded. The test results show 39 unit tests
+and six UI tests passed, five full-model tests intentionally skipped, and no
+failures. Version **0.1.0 (49)** is Testing in the existing internal group;
+the two-/five-second retry instructions were saved. Routine Cloud tests do not
+execute the downloaded video model or establish device inference success.
+The source remains on the development branch, without a production merge.
 
 The progress label now identifies the block about to execute while its fraction
 counts completed predictions. Previously an interruption could display the
@@ -219,15 +229,19 @@ videos, account usage and private inspection reports stay outside public Git.
 
 ## Physical acceptance
 
-Install LocalFrames 0.1.0 (48) from TestFlight over the current app. In Models,
-choose **Download optional update**; do not reinstall or remove the base model.
-Allow 2.36 GB for the download and at least 12.9 GB free during installation.
-After installation, enable Airplane Mode and disable Wi-Fi.
+Install LocalFrames 0.1.0 (49) from TestFlight over the current app. If the optional
+attention package from Build 48 is already installed, no model download is
+needed. Otherwise, in Models choose **Download optional update**; do not
+reinstall or remove the base model. Allow 2.36 GB for that optional download and
+at least 12.9 GB free during installation. After installation, enable Airplane
+Mode and disable Wi-Fi.
 
-In Settings → Frame Lab → Run a reproducible baseline, use the same scene and
-seed for the original two-second baseline and two-second attention comparison.
-Keep the app foreground and starting thermal, power and charging conditions
-comparable. Preserve both clips and journals. Then run the five-second trial.
+In Settings → Frame Lab → Run a reproducible baseline, use Sailboat and seed 42
+for the two-second attention comparison, followed by the five-second attention
+trial. Leave upstream detail conditioning off. For a separate original-versus-
+attention comparison, use the original two-second baseline with the same scene
+and seed. Keep the app foreground and starting thermal, power and charging
+conditions comparable. Preserve the clips and journals.
 Report completion or the exact final stage/error and export the benchmark files.
 
 For blur, reuse an existing video's settings, leave the attention selection
