@@ -36,11 +36,13 @@ The job log displays actual engine/partition events in a 200-entry memory-bounde
 
 Local Intel validation uses Xcode 16.4 / iOS 18.5 SDK and the iPhone 16 Pro Max iOS 18.6 simulator. This validates the fallback UI. Native glass validation uses the new manual workflow `LOCAL FRAMES — Liquid Glass Development` (`b5b2a923-f100-49b0-9146-75def1f7df6d`), Xcode 27.2 (27B52), one iPhone 17 Pro Max / iOS 27.2 simulator, required analyze/test actions and an internal-only archive. The existing `com.agilejurf.localframes` identity, team `35TTQQ785M` and App Store Connect app are retained.
 
-Compute usage is recorded only in the private local validation report. The workflow is manual to avoid builds on minor commits. No upgrade or extra compute is authorized. Cloud results, final screenshots and device acceptance must be added after execution; configuration alone is not a passing build.
+Compute usage is recorded only in the private local validation report. The workflow is manual to avoid builds on minor commits. No upgrade or extra compute is authorized. Physical-device acceptance remains separate from the simulator results below.
 
-Local validation executed 36 unit tests (31 passed, 5 model-fixture skips) and all 5 UI tests passed. Cloud Build 45 compiled the native glass implementation and passed Analyze and Archive; one of the 5 UI tests failed because XCTest tapped a style control underneath the floating Generate button. The UI scrolling helper now verifies the target's visible bounds. All 5 local UI tests passed again with that correction. Cloud distribution remains gated on the corrected suite passing there. Simulator tests use normal signing because migration removes a specifically scoped obsolete keychain credential.
+Local validation executed 36 unit tests (31 passed, 5 model-fixture skips) and all 5 UI tests passed. Cloud Build 45 compiled the native glass implementation and passed Analyze and Archive; one of the 5 UI tests failed because XCTest tapped a style control underneath the floating Generate button. The UI scrolling helper now verifies the target's visible bounds. All 5 local UI tests passed again with that correction. Simulator tests use normal signing because migration removes a specifically scoped obsolete keychain credential.
 
-Cloud Build 46 passed style search/custom persistence and the other three primary UI tests, but the Frame Lab test queried a lazy Settings row's frame before it existed. The helper now checks existence before reading geometry. The affected Frame Lab/storage test passed locally after this correction; a complete Cloud rerun remains required.
+Cloud Build 46 passed style search/custom persistence and the other three primary UI tests, but the Frame Lab test queried a lazy Settings row's frame before it existed. The helper now checks existence before reading geometry. The affected Frame Lab/storage test passed locally after this correction.
+
+Cloud Build **47**, source `afe1ea9f94ba9a4cabd7d71ee5782df6335070b6`, passed Analyze, the signed Archive and the complete required test suite on the iPhone 17 Pro Max / iOS 27.2 simulator. The downloaded XCResult confirms **36 passed, 5 skipped, 0 failed**: 31 unit tests and all 5 UI tests passed; the skips require full production model fixtures that are intentionally absent from routine CI. Internal TestFlight distribution succeeded, and version **0.1.0 (47)** is available to the existing internal testing group. Testing notes were saved and verified. No external distribution, public App Store submission or production-branch merge was performed.
 
 The optional grouped-attention conversion experiment in `tools/neodragon/` does not change this app's model manifest or inference implementation. Component parity and Mac process measurements are insufficient to make it a device-validated replacement.
 
@@ -48,13 +50,13 @@ Unit coverage includes original scheduler/numerical guards, cancellation, therma
 
 ## Device acceptance checklist
 
-1. Install the internal build over Build 44 without uninstalling. Confirm existing videos/metadata and the Neodragon installation remain present.
+1. Install **0.1.0 (47)** over Build 44 without uninstalling. Confirm existing videos/metadata and the Neodragon installation remain present. If another model download is requested, report that before downloading.
 2. In Settings → Storage, capture the measured retired-file bytes and verify the report stays unchanged after another launch.
-3. With the installed model, enable Airplane Mode. Generate a two-second Default video using seed 42 and the recorded baseline prompt; export its MP4 and journal.
+3. With the installed model, enable Airplane Mode and turn Wi-Fi off. In Create, generate a two-second Default / Original video with fixed seed 42 and exactly `A small sailboat glides across a calm lake at sunrise` (no final period). Keep it foreground for the comparison; record charging/Low Power Mode status and battery before/after. Export its MP4 and journal using Settings → Export Benchmark Files.
 4. Check playback, Photos export, Files/Videos and Files/Benchmarks; move an export and confirm the private original still works.
 5. Check actual Liquid Glass in light/dark modes, keyboard dismissal, Dynamic Type, VoiceOver, Reduce Motion and Reduce Transparency.
 6. Test prompt-style selection, custom create/edit/duplicate/delete, favorites, recent styles and saved metadata. Compare styles visually without claiming a trained adapter.
 7. Test cancellation and thermal/background pause/resume. A terminated Neodragon process does not yet support disk checkpoint recovery.
-8. Treat five-second generation as an open memory-pressure case. Capture the exact journal from each trial. Do not infer longer-duration reliability from the two-second baseline.
+8. Hold off on repeating the known five-second memory-pressure case until a separately tested memory candidate is available. Build 47 does not contain that candidate. Do not infer longer-duration reliability from the two-second baseline.
 
 Physical-device memory, thermal behavior, battery impact, visual quality and UI overhead have not yet been measured for this redesign. No speed or quality improvement is claimed. The source checkpoint and Build 44 remain the rollback until validation completes. Production merge requires the user's approval.
