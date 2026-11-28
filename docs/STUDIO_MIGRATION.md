@@ -40,6 +40,8 @@ Compute usage is recorded only in the private local validation report. The workf
 
 Local validation executed 36 unit tests (31 passed, 5 model-fixture skips) and all 5 UI tests passed. Cloud Build 45 compiled the native glass implementation and passed Analyze and Archive; one of the 5 UI tests failed because XCTest tapped a style control underneath the floating Generate button. The UI scrolling helper now verifies the target's visible bounds. All 5 local UI tests passed again with that correction. Cloud distribution remains gated on the corrected suite passing there. Simulator tests use normal signing because migration removes a specifically scoped obsolete keychain credential.
 
+Cloud Build 46 passed style search/custom persistence and the other three primary UI tests, but the Frame Lab test queried a lazy Settings row's frame before it existed. The helper now checks existence before reading geometry. The affected Frame Lab/storage test passed locally after this correction; a complete Cloud rerun remains required.
+
 The optional grouped-attention conversion experiment in `tools/neodragon/` does not change this app's model manifest or inference implementation. Component parity and Mac process measurements are insufficient to make it a device-validated replacement.
 
 Unit coverage includes original scheduler/numerical guards, cancellation, thermal waits, verified downloads, migration preservation/interruption/symlink handling, export collisions/deleted copies, style persistence and bounded job logging. UI coverage includes all four tabs, keyboard dismissal, expanded prompt editing, style search/custom save, appearance, export placement, Frame Lab and cleanup status. Test fixtures never act as a production generation engine.

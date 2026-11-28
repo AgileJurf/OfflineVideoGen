@@ -21,13 +21,17 @@ final class LocalFramesUITests: XCTestCase {
             return (top, bottom)
         }
         for _ in 0..<8 {
-            let bounds = visibleBounds(), frame = item.frame
-            if item.isHittable && frame.minY >= bounds.top && frame.maxY <= bounds.bottom { break }
-            if item.exists && frame.maxY > bounds.bottom { app.swipeUp() }
-            else if item.exists && frame.minY < bounds.top { app.swipeDown() }
+            // Native Form rows are lazy on newer iOS releases. Querying frame
+            // before a row exists fails XCTest instead of returning an empty rect.
+            let bounds = visibleBounds(), present = item.exists
+            let frame = present ? item.frame : .zero
+            if present && item.isHittable && frame.minY >= bounds.top && frame.maxY <= bounds.bottom { break }
+            if present && frame.maxY > bounds.bottom { app.swipeUp() }
+            else if present && frame.minY < bounds.top { app.swipeDown() }
             else if upward { app.swipeUp() } else { app.swipeDown() }
         }
-        XCTAssertTrue(item.waitForExistence(timeout: 5)); XCTAssertTrue(item.isHittable)
+        guard item.waitForExistence(timeout: 5) else { XCTFail("Control was not revealed: \(item)"); return }
+        XCTAssertTrue(item.isHittable)
         let bounds = visibleBounds()
         XCTAssertGreaterThanOrEqual(item.frame.minY, bounds.top)
         XCTAssertLessThanOrEqual(item.frame.maxY, bounds.bottom)
