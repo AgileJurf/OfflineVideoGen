@@ -38,6 +38,10 @@ Local Intel validation uses Xcode 16.4 / iOS 18.5 SDK and the iPhone 16 Pro Max 
 
 Compute usage is recorded only in the private local validation report. The workflow is manual to avoid builds on minor commits. No upgrade or extra compute is authorized. Cloud results, final screenshots and device acceptance must be added after execution; configuration alone is not a passing build.
 
+Local validation executed 36 unit tests (31 passed, 5 model-fixture skips) and all 5 UI tests passed. Cloud Build 45 compiled the native glass implementation and passed Analyze and Archive; one of the 5 UI tests failed because XCTest tapped a style control underneath the floating Generate button. The UI scrolling helper now verifies the target's visible bounds. All 5 local UI tests passed again with that correction. Cloud distribution remains gated on the corrected suite passing there. Simulator tests use normal signing because migration removes a specifically scoped obsolete keychain credential.
+
+The optional grouped-attention conversion experiment in `tools/neodragon/` does not change this app's model manifest or inference implementation. Component parity and Mac process measurements are insufficient to make it a device-validated replacement.
+
 Unit coverage includes original scheduler/numerical guards, cancellation, thermal waits, verified downloads, migration preservation/interruption/symlink handling, export collisions/deleted copies, style persistence and bounded job logging. UI coverage includes all four tabs, keyboard dismissal, expanded prompt editing, style search/custom save, appearance, export placement, Frame Lab and cleanup status. Test fixtures never act as a production generation engine.
 
 ## Device acceptance checklist

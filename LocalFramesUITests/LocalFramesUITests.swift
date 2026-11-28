@@ -9,8 +9,28 @@ final class LocalFramesUITests: XCTestCase {
         app.launch(); return app
     }
     @MainActor private func reveal(_ item: XCUIElement, in app: XCUIApplication, upward: Bool = true) {
-        for _ in 0..<8 where !item.isHittable { if upward { app.swipeUp() } else { app.swipeDown() } }
+        // iOS 26+ may report scroll content under a floating control as hittable.
+        // Reveal the entire target above the Generate control and native tab bar.
+        func visibleBounds() -> (top: CGFloat, bottom: CGFloat) {
+            let navigation = app.navigationBars.firstMatch
+            let tabs = app.tabBars.firstMatch
+            let generate = app.buttons["generateButton"]
+            let top = navigation.exists ? navigation.frame.maxY + 8 : app.frame.minY + 60
+            var bottom = tabs.exists ? tabs.frame.minY - 12 : app.frame.maxY - 24
+            if generate.exists { bottom = min(bottom, generate.frame.minY - 12) }
+            return (top, bottom)
+        }
+        for _ in 0..<8 {
+            let bounds = visibleBounds(), frame = item.frame
+            if item.isHittable && frame.minY >= bounds.top && frame.maxY <= bounds.bottom { break }
+            if item.exists && frame.maxY > bounds.bottom { app.swipeUp() }
+            else if item.exists && frame.minY < bounds.top { app.swipeDown() }
+            else if upward { app.swipeUp() } else { app.swipeDown() }
+        }
         XCTAssertTrue(item.waitForExistence(timeout: 5)); XCTAssertTrue(item.isHittable)
+        let bounds = visibleBounds()
+        XCTAssertGreaterThanOrEqual(item.frame.minY, bounds.top)
+        XCTAssertLessThanOrEqual(item.frame.maxY, bounds.bottom)
     }
     @MainActor private func capture(_ app: XCUIApplication, _ name: String) {
         let image = XCTAttachment(screenshot: app.screenshot()); image.name = name; image.lifetime = .keepAlways; add(image)

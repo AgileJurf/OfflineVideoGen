@@ -14,9 +14,13 @@ import torch
 
 
 class PortableJointBlock(torch.nn.Module):
-    def __init__(self, block):
+    def __init__(self, block, attention_head_group_size=0):
         super().__init__()
         self.block = block
+        heads = block.attn.heads
+        if attention_head_group_size < 0 or (attention_head_group_size and heads % attention_head_group_size):
+            raise ValueError("Attention head group size must divide the checkpoint's head count")
+        self.attention_head_group_size = attention_head_group_size or heads
 
     @staticmethod
     def rotate(value, cosine, sine):
@@ -50,9 +54,23 @@ class PortableJointBlock(torch.nn.Module):
         query = self.rotate(torch.cat((context_query, query), dim=1), rope_cos, rope_sin)
         key = self.rotate(torch.cat((context_key, key), dim=1), rope_cos, rope_sin)
         value = torch.cat((context_value, value), dim=1)
-        attended = torch.nn.functional.scaled_dot_product_attention(
-            query.transpose(1, 2), key.transpose(1, 2), value.transpose(1, 2),
-            attn_mask=attention_mask > 0, dropout_p=0.0, is_causal=False).transpose(1, 2).flatten(2, 3)
+        query, key, value = query.transpose(1, 2), key.transpose(1, 2), value.transpose(1, 2)
+        mask = attention_mask > 0
+        if self.attention_head_group_size == attention.heads:
+            attended = torch.nn.functional.scaled_dot_product_attention(
+                query, key, value, attn_mask=mask, dropout_p=0.0, is_causal=False)
+        else:
+            # Heads are independent. Keep every token, trained projection, RoPE
+            # position and causal mask; only bound each attention workspace.
+            # This is an opt-in conversion experiment, never a default update.
+            size = self.attention_head_group_size
+            attended = torch.cat([
+                torch.nn.functional.scaled_dot_product_attention(
+                    query[:, start:start + size], key[:, start:start + size], value[:, start:start + size],
+                    attn_mask=mask, dropout_p=0.0, is_causal=False)
+                for start in range(0, attention.heads, size)
+            ], dim=1)
+        attended = attended.transpose(1, 2).flatten(2, 3)
         context_attention = attended[:, :128]
         hidden_attention = attention.to_out[1](attention.to_out[0](attended[:, 128:]))
         hidden = hidden + gate[:, None] * hidden_attention

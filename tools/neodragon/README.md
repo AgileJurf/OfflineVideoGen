@@ -12,7 +12,7 @@ python3 tools/neodragon/fetch_weights.py
 
 Check out `Qualcomm-AI-research/neodragon` at `d2abbe99f46577c4e1db682ad3c26832ec0c23b9` into `build/Neodragon/upstream`. Conversion checks source hashes before executing the model. Keep development weights under the ignored `.model-cache/neodragon-source` directory and generated models under ignored `build/Neodragon`.
 
-Create a separate Python 3.12 environment and install `requirements-conversion.txt`. `requirements-lock-macos-x86_64.txt` records the exact Intel Mac environment used for the reported checks. This environment is separate from MOVD. Use local `HF_HOME` and `HF_HUB_OFFLINE=1` for conversion. The pinned original CLIP path uses BasicTokenizer, without optional `ftfy`. Native T5 is compared to the original slow SentencePiece tokenizer, not the fast tokenizer's approximate normalization.
+Create a separate Python 3.12 environment and install `requirements-conversion.txt`. `requirements-lock-macos-x86_64.txt` records the exact Intel Mac environment used for the reported checks. Use local `HF_HOME` and `HF_HUB_OFFLINE=1` for conversion. The pinned original CLIP path uses BasicTokenizer, without optional `ftfy`. Native T5 is compared to the original slow SentencePiece tokenizer, not the fast tokenizer's approximate normalization.
 
 ## Stages and gates
 
@@ -55,7 +55,7 @@ For nine seconds, separately re-export all motion blocks with maximum duration 9
 
 ## Native tests
 
-`LocalFramesTests` contains opt-in tests. Ordinary CI skips model-dependent tests and never downloads multi-gigabyte assets or uploads a clip. Configure a copy of the clean generated `.xctestrun`, without live smoothing/upload flags:
+`LocalFramesTests` contains opt-in tests. Ordinary CI skips model-dependent tests and never downloads multi-gigabyte assets or uploads a clip. Configure a copy of the clean generated `.xctestrun`:
 
 | Environment value | Meaning |
 | --- | --- |
@@ -75,4 +75,14 @@ The complete-generation test compiles each indexed package, caches compiled mode
 
 ## Publishing a candidate
 
-The packager prepares files locally. It requires a passing complete motion-chain report at the package's maximum duration. Before publication also require a successful complete native generation and inspection of the actual clip. Include complete notices and an explicit experimental/device-validation status in the release notes. After uploading, verify the real asset URLs and hashes before releasing the app with that manifest. No model files are committed into Git or Git LFS. Keep MOVD and the previous TestFlight rollback available.
+The packager prepares files locally. It requires a passing complete motion-chain report at the package's maximum duration. Before publication also require a successful complete native generation and inspection of the actual clip. Include complete notices and an explicit experimental/device-validation status in the release notes. After uploading, verify the real asset URLs and hashes before releasing the app with that manifest. No model files are committed into Git or Git LFS. Keep the working Neodragon package and previous TestFlight rollback available.
+
+## Experimental attention workspace reduction
+
+`convert_transformer_block.py --attention-head-group-size 8` evaluates the 24 independent attention heads in three groups. It preserves the trained weights, full temporal context, causal mask and rotary positions. Zero (the default) retains the original attention graph. This is a conversion experiment, not a new checkpoint or released optimization.
+
+```sh
+HF_HOME=.model-cache/huggingface HF_HUB_OFFLINE=1 build/Neodragon/convert-env/bin/python tools/neodragon/convert_transformer_block.py --block 0 --precision mixed --maximum-seconds 9 --attention-head-group-size 8 --boundary-only --output build/Neodragon/attention-head8-block0-candidate
+```
+
+Compare every block against its original output, including the final block that returns only image features, then execute the complete chain and genuine generation. Memory comparisons must use identical input shapes, declared shape ranges, compute units and instrumentation in separate processes. A passing single-block Mac test does not validate iPhone memory use, video quality or five-second completion. The app manifest and runtime are unchanged until a separately retained candidate passes device acceptance.

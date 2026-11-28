@@ -56,6 +56,8 @@ def main():
     parser.add_argument("--weights", type=Path, default=Path(".model-cache/neodragon-source"))
     parser.add_argument("--block", type=int, default=0, choices=range(18))
     parser.add_argument("--precision", choices=["float16", "float32", "mixed"], default="mixed")
+    parser.add_argument("--attention-head-group-size", type=int, choices=[0, 1, 2, 3, 4, 6, 8, 12, 24], default=0,
+                        help="Experimental bounded attention workspace; 0 preserves the original graph. Requires device validation before release")
     parser.add_argument("--maximum-seconds", type=int, choices=range(2, 10), default=2,
                         help="Screen the largest attention shape for this duration; not a validated device preset")
     parser.add_argument("--boundary-only", action="store_true",
@@ -74,6 +76,7 @@ def main():
     report = {"status": "started", "block": args.block, "precision": args.precision, "seed": 42,
               "maximumSeconds": args.maximum_seconds, "maximumLatents": maximum_latents,
               "boundaryOnly": args.boundary_only,
+              "attentionHeadGroupSize": args.attention_head_group_size or 24,
               "torch": torch.__version__, "coremltools": ct.__version__, "host": platform.platform(),
               "sourceRevision": lock["sourceRevision"], "weightsRevision": lock["weightsRevision"],
               "deviceValidated": False, "scope": "Real weights, synthetic activations; Mac component parity only",
@@ -91,7 +94,7 @@ def main():
         prefix = f"transformer_blocks.{args.block}."
         with safe_open(args.weights / "diffusion_transformer_320p/diffusion_pytorch_model.safetensors", framework="pt") as weights:
             block.load_state_dict({k.removeprefix(prefix): weights.get_tensor(k).float() for k in weights.keys() if k.startswith(prefix)}, strict=True)
-        portable = PortableJointBlock(block).eval()
+        portable = PortableJointBlock(block, attention_head_group_size=args.attention_head_group_size).eval()
         inputs, references, portability = [], [], []
         lengths_to_test = [[40, 40], [160, 160], [40, 40, 40, 40, 160, 640, 640]]
         if args.maximum_seconds > 2:
