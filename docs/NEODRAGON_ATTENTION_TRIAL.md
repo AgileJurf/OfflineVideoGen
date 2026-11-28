@@ -1,9 +1,10 @@
 # Neodragon attention and detail comparisons
 
-Status: local conversion and complete two-second native generation passed.
-Cloud validation and the physical iPhone trial remain pending. The original
-package and working profile remain the default. This document does not establish
-a five-second iPhone fix or a visual-quality improvement.
+Status: local conversion, complete two-second native generation and Xcode Cloud
+Build 48 passed. Build 48 is available to the existing internal TestFlight group.
+The physical iPhone trial remains pending. The original package and working
+profile remain the default. This document does not establish a five-second
+iPhone fix or a visual-quality improvement.
 
 All 18 converted blocks passed the minimum and maximum shape checks on the
 Intel Mac. Grouped PyTorch attention matched the original outputs exactly for
@@ -114,10 +115,45 @@ CPU/GPU policy for shared components on the phone.
 Local app validation passed 42 tests with five intentional skips. After the
 saved-style comparison correction, the final unit rerun passed 36 tests with
 five skips. The six UI tests include the optional controls and persistence.
-Xcode Cloud will run the complete suite on the final development commit.
 
-The separate whole-video comparison with upstream detail conditioning is still
-in progress. No reduction in model blur or subject deformation is claimed.
+Xcode Cloud Build 48 validated commit
+`3fcf1f879e331731e5bcfe286c5be3b4de726b02` on
+`feature/snapdragon-studio` with Xcode 27.2 (27B52), the iOS 27.2 simulator
+destination and macOS 27.2.1 (26B131). Analysis, tests, signed archive and internal
+TestFlight distribution succeeded. All 36 unit and six UI tests passed; five
+full-model/device tests were intentionally skipped. The cloud tests do not
+download production weights or establish successful physical-device inference.
+The branch has not been merged into the production branch.
+
+The second complete native run, with only upstream detail conditioning enabled,
+also passed. Both runs used "A small sailboat glides across a calm lake at
+sunrise.", seed 42, the attention candidate, the same mixed precision, and 22
+diffusion evaluations. The second run executed all 168 partitions, with 849
+loads, 849 predictions and no recorded partition failures. Its MP4 also decoded
+to 48 unique frames at 512 × 320, 24 FPS and two seconds.
+
+| Native Mac functional run | Original prompt | Upstream detail prompt |
+| --- | ---: | ---: |
+| Generation elapsed time | 1,579.236 s | 1,587.339 s |
+| Model loading | 423.583 s | 320.295 s |
+| Model prediction | 957.972 s | 1,056.885 s |
+| Peak sampled process footprint | 3,161,071,616 B | 3,157,409,792 B |
+| Recorded thermal state | Fair | Fair |
+
+These sequential Intel-Mac runs are functional checks and a prompt comparison,
+not a speed benchmark: prompt inputs differ, cache conditions were not reset,
+and other host work was not controlled. The MP4 SHA-256 values are
+`10ff4d1901479bcf0239d1c1dee2729c0434a04a7c1db7984e28bd3c80cbc773`
+and `ac96c42c2b79ed356a9d70b5b72744a25f7dcac827b09a0d8b03b875d164a67c`,
+respectively.
+
+Subjective frame inspection: both retain a recognizable sailboat silhouette
+between their first and last frames. The detail-conditioned clip has more
+visible water-ripple texture and a different, softer mountain/shore composition,
+but also bright speckles that were not requested. This is a tradeoff on one
+simple scene, not a general reduction in blur, subject deformation or flicker.
+It does not validate the previously reported complex-scene quality problem.
+No perceptual quality score or physical-device visual improvement is claimed.
 
 ## Validation gates
 
@@ -139,9 +175,10 @@ videos, account usage and private inspection reports stay outside public Git.
 
 ## Physical acceptance
 
-Install the new TestFlight build over the current app. In Models, explicitly
-download the optional attention update; do not reinstall or remove the base
-model. After installation, enable Airplane Mode and disable Wi-Fi.
+Install LocalFrames 0.1.0 (48) from TestFlight over the current app. In Models,
+choose **Download optional update**; do not reinstall or remove the base model.
+Allow 2.36 GB for the download and at least 12.9 GB free during installation.
+After installation, enable Airplane Mode and disable Wi-Fi.
 
 In Settings → Frame Lab → Run a reproducible baseline, use the same scene and
 seed for the original two-second baseline and two-second attention comparison.
