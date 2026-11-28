@@ -1,8 +1,9 @@
 # Neodragon attention and detail comparisons
 
-Status: implementation and local validation in progress. The original package
-and working profile remain the default. This document does not establish a
-five-second iPhone fix or a visual-quality improvement.
+Status: local conversion and complete two-second native generation passed.
+Cloud validation and the physical iPhone trial remain pending. The original
+package and working profile remain the default. This document does not establish
+a five-second iPhone fix or a visual-quality improvement.
 
 All 18 converted blocks passed the minimum and maximum shape checks on the
 Intel Mac. Grouped PyTorch attention matched the original outputs exactly for
@@ -80,6 +81,9 @@ natural colors to both its first-image and motion prompts. The app's optional
 The original user prompt remains separate from the effective model input;
 all encoders still reject overlong input instead of silently truncating it.
 The setting and exact effective prompt are preserved in saved-video metadata.
+Reusing an older video retains its exact saved style instructions when toggling
+only the detail option. Editing the scene or style invalidates that restored
+conditioning instead of silently reusing stale text.
 
 This is neither a trained adapter nor a sharpening filter. Its effect on blur,
 subject identity and temporal stability requires a matched output comparison.
@@ -91,6 +95,29 @@ The upstream multi-step model uses different transformer and context-adapter
 weights plus classifier-free guidance. Increasing the current loop count is
 not a checkpoint-compatible quality upgrade. No replacement weights, arbitrary
 guidance setting or new sampler are installed by this change.
+
+## Complete native Mac check
+
+The current candidate completed a real two-second generation with the fixed
+sailboat prompt and seed 42. All 168 distinct partitions executed, including all
+18 optional motion blocks: 849 loads and 849 predictions, with no recorded
+partition failures. AVFoundation decoded the resulting MP4 successfully:
+48 frames, 512 × 320, 24 FPS, and exactly two seconds.
+
+The CPU-only functional run took 1,579.236 seconds, with 423.583 seconds in model
+loading and 957.972 seconds in prediction. Sampled peak process footprint was
+3,161,071,616 bytes; the recorded thermal state was fair, with no pauses. These
+are observations from an Intel Mac running other validation work, not an iPhone
+benchmark or a matched speed comparison. The app still uses its established
+CPU/GPU policy for shared components on the phone.
+
+Local app validation passed 42 tests with five intentional skips. After the
+saved-style comparison correction, the final unit rerun passed 36 tests with
+five skips. The six UI tests include the optional controls and persistence.
+Xcode Cloud will run the complete suite on the final development commit.
+
+The separate whole-video comparison with upstream detail conditioning is still
+in progress. No reduction in model blur or subject deformation is claimed.
 
 ## Validation gates
 
