@@ -6,6 +6,11 @@ The physical iPhone trial remains pending. The original package and working
 profile remain the default. This document does not establish a five-second
 iPhone fix or a visual-quality improvement.
 
+The subsequent app-only correction bounds motion output readback and transfer
+lifetimes. It reuses the same installed packages; no model redownload is needed.
+Its native five-second and physical-device acceptance checks remain in progress.
+Build 48 does not contain that correction.
+
 All 18 converted blocks passed the minimum and maximum shape checks on the
 Intel Mac. Grouped PyTorch attention matched the original outputs exactly for
 those fixtures. Core ML's largest relative L2 error against Float32 PyTorch was
@@ -72,6 +77,45 @@ end-to-end speedup, the iPhone's whole-process memory peak, five-second completi
 or improved visual quality. Host thermal state was not recorded by this probe.
 The repeated single-block outputs and full-chain parity provide numerical checks;
 physical-device runs remain the acceptance gate for the application.
+
+## Motion output lifetime correction
+
+The prediction autorelease pool ended before the caller read, validated and
+rewrapped its outputs. Temporary objects created during that later conversion
+could therefore retain earlier output buffers across the long motion loop.
+The correction encloses the entire readback/validation/transfer in a local pool
+and returns independent Float32 inputs to the next block. It applies only to
+the small recurrent motion outputs; large first-image and VAE activations keep
+their existing handling. Weights, token history, masks, precision, sampling,
+duration and safety cutoffs are unchanged. The journal records
+`motionTensorTransfer: independent-float32-v1`.
+
+A fresh-process Intel-Mac CPU probe ran the same real attention block 24 times
+at 1,600 image tokens, feeding its outputs into the next invocation. Each final
+hidden/context array was bit-identical to the original transfer's output.
+
+| Transfer mode | Footprint after first transfer | Footprint after transfer 24 |
+| --- | ---: | ---: |
+| Original readback outside the pool | 49,922,048 B | 298,004,480 B |
+| Copy without bounding readback | 51,359,744 B | 303,865,856 B |
+| Complete scoped readback and independent copy | 28,848,128 B | 41,254,912 B |
+| Complete scoped readback without extra copy | 34,136,064 B | 41,627,648 B |
+
+The bounded conversion scope is essential; copying alone did not remove the
+retention. The app also uses an independent input buffer to give each transfer
+explicit storage ownership. These are operation-boundary process footprints,
+not prediction peaks or a whole-generation memory measurement. Concurrent host
+work was not controlled, so the probe does not establish a speed improvement.
+
+Local simulator validation passed 39 unit tests with five intentional full-model
+skips. The three added tests verify source-storage release, logical strided
+values, half-to-Float32 correctness, missing/invalid shapes, and nonfinite-value
+rejection. A complete native five-second generation is running. Cloud validation
+and the corrected physical five-second trial remain pending.
+
+The progress label now identifies the block about to execute while its fraction
+counts completed predictions. Previously an interruption could display the
+previous block or stage even though the journal identified the next operation.
 
 ## Detail conditioning and blur
 

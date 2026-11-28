@@ -121,6 +121,21 @@ func tensor(_ values: [String: MLFeatureValue], _ key: String) throws -> MLShape
     return MLShapedArray<Float32>(converting: array)
 }
 
+/// Bound temporary Core ML wrappers created by output readback and validation,
+/// then give the next block independent Float32 storage. A pool around model
+/// prediction alone does not cover these later conversions. Copy only the small
+/// motion boundary tensors, not the much larger image/VAE activations.
+func independentMotionFeature(_ values: [String: MLFeatureValue], _ key: String,
+                              shape: [Int]) throws -> MLFeatureValue {
+    try autoreleasepool {
+        let array = try tensor(values, key)
+        guard array.shape == shape else { throw GenerationError.invalidTensor }
+        let scalars = array.scalars
+        guard scalars.allSatisfy(\.isFinite) else { throw GenerationError.invalidTensor }
+        return feature(MLShapedArray<Float32>(scalars: scalars, shape: shape))
+    }
+}
+
 func value(_ values: [String: MLFeatureValue], _ key: String) throws -> MLFeatureValue {
     guard let result = values[key] else { throw GenerationError.incompatibleModel("Missing output \(key)") }
     return result

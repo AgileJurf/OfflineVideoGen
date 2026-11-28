@@ -119,6 +119,7 @@ public actor NeodragonEngine {
                                  modelOverrides: overrides)
         benchmark?.record("neodragon_execution_policy", fields: ["motionComputePolicy": motionComputePolicy.rawValue,
             "forceAllComponentsCPUOnly": String(computeOnCPUOnly), "profileID": profileID,
+            "motionTensorTransfer": "independent-float32-v1",
             "attentionVariant": variantDirectory == nil ? "original-24-heads" : NeodragonAttentionVariant.identifier])
         try await runner.checkpoint()
         // Validate every tokenizer before expensive work, with no truncation.

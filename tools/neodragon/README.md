@@ -126,3 +126,31 @@ blur correction. Keep it off when comparing attention implementations. Preserve
 original/effective prompts and use the same seed and duration for quality tests.
 Do not publish a candidate download before a complete native generation passes;
 do not make it the app default before the physical iPhone checks pass.
+
+## Motion output lifetime regression
+
+`measure_motion_lifetime.swift` isolates the recurrent Core ML output boundary.
+It loads the same real motion block 24 times with synthetic activations at
+1,600 image tokens, passing each prediction into the next call. Run each mode
+in a fresh process against the same compiled model, using new output directories:
+
+```sh
+swiftc -O -parse-as-library tools/neodragon/measure_motion_lifetime.swift -o build/motion-lifetime
+build/motion-lifetime /path/to/transformer_block_00.mlmodelc borrowed build/lifetime-borrowed
+build/motion-lifetime /path/to/transformer_block_00.mlmodelc owned build/lifetime-owned
+build/motion-lifetime /path/to/transformer_block_00.mlmodelc scoped-owned build/lifetime-scoped-owned
+build/motion-lifetime /path/to/transformer_block_00.mlmodelc scoped-borrowed build/lifetime-scoped-borrowed
+```
+
+`borrowed` mirrors the original conversion outside the prediction autorelease
+pool. `owned` adds a copy without bounding the preceding readback. The two
+`scoped-` modes enclose readback, finite validation and transfer in a local pool;
+`scoped-owned` also detaches the next input's storage. Compare the final
+`hidden_out.bin` and `context_out.bin` byte-for-byte across runs. The app uses
+the complete scoped, independent transfer only for recurrent motion outputs.
+
+The report records process footprint at operation boundaries, not a continuous
+inference peak. This repeated-block probe is not a complete video, an iPhone
+benchmark, or a quality score. Native full generation and physical-device
+acceptance remain separate checks. The general rationale for scoped cleanup is
+documented in Apple's [autorelease-pool guidance](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/MemoryMgmt/Articles/mmAutoreleasePools.html).

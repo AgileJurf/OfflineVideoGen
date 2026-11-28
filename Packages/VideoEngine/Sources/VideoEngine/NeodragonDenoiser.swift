@@ -69,21 +69,10 @@ struct NeodragonDenoiser {
                     "imageTokens": String(layout.imageTokens), "totalTokens": String(layout.totalTokens),
                     "motionComputePolicy": motionComputePolicy.rawValue])
                 for block in 0..<18 {
-                    // The compatibility policy selects CPU before model loading;
-                    // Swift catch cannot recover a process-aborting native assert.
-                    let result = try await runner.predict(String(format: "transformer_block_%02d", block), [
-                        "hidden": hidden, "context": context, "time_embedding": timeEmbeddings[stage],
-                        "attention_mask": mask, "rope_cos": cosine, "rope_sin": sine],
-                        cpuOnly: motionComputePolicy == .cpuCompatibility)
-                    let next = try tensor(result, "hidden_out")
-                    guard next.shape == [1, layout.imageTokens, 1536], next.scalars.allSatisfy(\.isFinite) else { throw GenerationError.invalidTensor }
-                    hidden = feature(next)
-                    if block < 17 {
-                        let nextContext = try tensor(result, "context_out")
-                        guard nextContext.shape == [1, 128, 1536], nextContext.scalars.allSatisfy(\.isFinite) else { throw GenerationError.invalidTensor }
-                        context = feature(nextContext)
-                    }
-                    let completed = Double((unit - 1) * 54 + stage * 18 + block + 1)
+                    // Report the operation about to run, with the count of
+                    // predictions already completed. A memory warning during
+                    // this prediction must not display the previous stage.
+                    let completed = Double((unit - 1) * 54 + stage * 18 + block)
                     let elapsed = ProcessInfo.processInfo.systemUptime - unitStart - (runner.control.totalPausedSeconds - pausedAtStart)
                     let estimate: GenerationEstimate? = recentUnitSeconds.isEmpty ? nil : .init(
                         seconds: max(0, recentUnitSeconds.reduce(0, +) / Double(recentUnitSeconds.count) * Double(latentFrames - unit) - elapsed),
@@ -91,6 +80,16 @@ struct NeodragonDenoiser {
                     let execution = motionComputePolicy == .cpuCompatibility ? " · CPU compatibility" : ""
                     progress(.init(0.2 + 0.64 * completed / Double((latentFrames - 1) * 54),
                                    "Generating Neodragon motion\(execution) · unit \(unit) of \(latentFrames - 1) · stage \(stage + 1) · block \(block + 1) of 18", estimate: estimate))
+                    // The compatibility policy selects CPU before model loading;
+                    // Swift catch cannot recover a process-aborting native assert.
+                    let result = try await runner.predict(String(format: "transformer_block_%02d", block), [
+                        "hidden": hidden, "context": context, "time_embedding": timeEmbeddings[stage],
+                        "attention_mask": mask, "rope_cos": cosine, "rope_sin": sine],
+                        cpuOnly: motionComputePolicy == .cpuCompatibility)
+                    hidden = try independentMotionFeature(result, "hidden_out", shape: [1, layout.imageTokens, 1536])
+                    if block < 17 {
+                        context = try independentMotionFeature(result, "context_out", shape: [1, 128, 1536])
+                    }
                 }
                 guard let array = hidden.multiArrayValue else { throw GenerationError.invalidTensor }
                 let currentTokens = latent.height * latent.width / 4

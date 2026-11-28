@@ -298,6 +298,50 @@ final class LocalFramesTests: XCTestCase {
         XCTAssertThrowsError(try NeodragonImageGraph.validate(array, shape: [3, 2]))
     }
 
+    func testMotionTransferReleasesSourceStorageAndPreservesStridedValues() throws {
+        let released = LockedValue(0)
+        let copied: MLFeatureValue = try autoreleasepool {
+            let pointer = UnsafeMutablePointer<Float32>.allocate(capacity: 8)
+            pointer.initialize(repeating: .nan, count: 8)
+            for i in [0, 1, 2, 4, 5, 6] { pointer[i] = Float32(i) }
+            let source = try MLMultiArray(dataPointer: pointer, shape: [2, 3], dataType: .float32, strides: [4, 1]) { raw in
+                raw.assumingMemoryBound(to: Float32.self).deinitialize(count: 8)
+                raw.deallocate(); released.modify { $0 += 1 }
+            }
+            let copy = try independentMotionFeature(["hidden_out": MLFeatureValue(multiArray: source)], "hidden_out", shape: [2, 3])
+            XCTAssertNotEqual(copy.multiArrayValue?.dataPointer, source.dataPointer)
+            source[[0, 0]] = 99
+            return copy
+        }
+        // Keeping the next input alive must not keep prediction-owned storage.
+        XCTAssertEqual(released.read(), 1)
+        let array = try XCTUnwrap(copied.multiArrayValue)
+        XCTAssertEqual(array.dataType, .float32)
+        XCTAssertEqual(MLShapedArray<Float32>(converting: array).scalars, [0, 1, 2, 4, 5, 6])
+    }
+
+    func testMotionTransferConvertsHalfPrecisionWithoutChangingRepresentableValues() throws {
+        let source = try MLMultiArray(shape: [1, 4], dataType: .float16)
+        let values: [Float32] = [-1, 0.125, 1.5, 65504]
+        for (i, value) in values.enumerated() { source[i] = NSNumber(value: value) }
+        let result = try independentMotionFeature(["context_out": MLFeatureValue(multiArray: source)], "context_out", shape: [1, 4])
+        let copied = try XCTUnwrap(result.multiArrayValue)
+        XCTAssertEqual(copied.dataType, .float32)
+        XCTAssertEqual(MLShapedArray<Float32>(converting: copied).scalars, values)
+    }
+
+    func testMotionTransferRejectsMissingInvalidShapeAndNonfiniteOutput() throws {
+        let source = try MLMultiArray(shape: [1, 2], dataType: .float32)
+        source[0] = 1; source[1] = 2
+        let outputs = ["hidden_out": MLFeatureValue(multiArray: source)]
+        XCTAssertThrowsError(try independentMotionFeature(outputs, "missing", shape: [1, 2]))
+        XCTAssertThrowsError(try independentMotionFeature(outputs, "hidden_out", shape: [2, 1]))
+        source[1] = NSNumber(value: Float32.nan)
+        XCTAssertThrowsError(try independentMotionFeature(outputs, "hidden_out", shape: [1, 2]))
+        source[1] = NSNumber(value: Float32.infinity)
+        XCTAssertThrowsError(try independentMotionFeature(outputs, "hidden_out", shape: [1, 2]))
+    }
+
     func testNeodragonImageSchedulerMatchesOriginalLCMSteps() throws {
         let scheduler = NeodragonImageScheduler()
         let sample: [Float32] = [0.5, -0.5, 2, -1], prediction: [Float32] = [0.25, -0.75, 3, 0.1]
