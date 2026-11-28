@@ -47,6 +47,7 @@ actor VideoLibrary {
     let root: URL
     init(root: URL) { self.root = root }
     nonisolated func videoURL(_ id: UUID) -> URL { root.appendingPathComponent(id.uuidString + ".mp4") }
+    nonisolated func metadataURL(_ id: UUID) -> URL { root.appendingPathComponent(id.uuidString + ".json") }
     nonisolated func thumbnailURL(_ id: UUID) -> URL { root.appendingPathComponent(id.uuidString + ".jpg") }
 
     func list() throws -> [VideoRecord] {

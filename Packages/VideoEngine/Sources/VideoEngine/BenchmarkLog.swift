@@ -5,6 +5,10 @@ import os
 /// Append-only local measurements. A missing `finished` event means incomplete, never success.
 /// Sampling and file I/O have overhead; compare runs with identical instrumentation settings.
 public final class BenchmarkLog: @unchecked Sendable {
+    public struct Activity: Sendable {
+        public let elapsedSeconds: Double
+        public let message: String
+    }
     public struct Snapshot: Codable, Sendable {
         public let footprintBytes: UInt64?
         public let processLifetimePeakBytes: UInt64?
@@ -37,13 +41,16 @@ public final class BenchmarkLog: @unchecked Sendable {
     private var activePhase: String?
     private var timer: DispatchSourceTimer?
     private var sampledPeak: UInt64 = 0
+    private let activity: (@Sendable (Activity) -> Void)?
     public var peakSampledMemoryBytes: UInt64 {
         lock.lock(); defer { lock.unlock() }; return sampledPeak
     }
     private let signpostLog = OSLog(subsystem: "com.agilejurf.localframes", category: .pointsOfInterest)
 
-    public init(url: URL, kind: String, metadata: [String: String] = [:], sampleInterval: Double = 0.25) throws {
+    public init(url: URL, kind: String, metadata: [String: String] = [:], sampleInterval: Double = 0.25,
+                activity: (@Sendable (Activity) -> Void)? = nil) throws {
         self.url = url
+        self.activity = activity
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard FileManager.default.createFile(atPath: url.path, contents: nil) else { throw CocoaError(.fileWriteUnknown) }
         handle = try FileHandle(forWritingTo: url)
@@ -95,12 +102,37 @@ public final class BenchmarkLog: @unchecked Sendable {
                           event: event, partition: partition ?? activePartition, phase: phase ?? activePhase,
                           durationSeconds: duration, snapshot: snapshot, fields: fields)
         sequence += 1
+        if let activity, let message = Self.activityMessage(event, partition: partition, phase: phase,
+                                                            duration: duration, fields: fields) {
+            // This sink must only enqueue; it must never call back into the log.
+            activity(Activity(elapsedSeconds: entry.elapsedSeconds, message: message))
+        }
         do {
             var data = try encoder.encode(entry)
             data.append(0x0A)
             try handle.write(contentsOf: data)
         } catch { writeFailure = error.localizedDescription }
         if event == "end" || event == "failure" { activePartition = nil; activePhase = nil }
+    }
+
+    private static func activityMessage(_ event: String, partition: String?, phase: String?,
+                                        duration: Double?, fields: [String: String]) -> String? {
+        switch event {
+        case "begin":
+            guard let partition else { return nil }
+            return "\(phase == "load" ? "Loading" : "Running") \(partition)"
+        case "end":
+            guard let partition, let duration else { return nil }
+            return "\(phase == "load" ? "Loaded" : "Finished") \(partition) · \(String(format: "%.2f s", duration))"
+        case "diffusion_step_completed": return "Diffusion step \(fields["completedSteps"] ?? "") completed"
+        case "pause_begin", "pause_reason_changed":
+            return fields["reason"] == "cooling" ? "Paused to cool down" : "Paused — return to Local Frames to continue"
+        case "pause_end": return fields["resumed"] == "true" ? "Generation resumed" : "Paused job ended"
+        case "memory_warning": return "iOS reported memory pressure"
+        case "failure": return "Error in \(partition ?? "generation"): \(fields["error"] ?? "operation failed")"
+        case "finished": return "Job \(fields["status"] ?? "finished")"
+        default: return nil // No sampling, prompts, credentials or tensor payloads in the live view.
+        }
     }
 
     public func begin(_ partition: String, phase: String, fields: [String: String] = [:]) -> Double {
