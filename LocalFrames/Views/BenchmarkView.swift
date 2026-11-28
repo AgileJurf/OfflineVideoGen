@@ -14,7 +14,7 @@ struct BenchmarkView: View {
                 LabeledContent("Active model", value: "Neodragon")
                 LabeledContent("Backend", value: "Core ML · CPU motion compatibility")
                 LabeledContent("Precision", value: "Mixed FP16/FP32; T5 FP32")
-                LabeledContent("Preset", value: "Working baseline").accessibilityIdentifier("benchmarkBaselinePreset")
+                LabeledContent("Preset", value: model.inferenceProfileName).accessibilityIdentifier("benchmarkBaselinePreset")
                 LabeledContent("Two-second schedule", value: "4 image + 18 motion evaluations")
                 LabeledContent("Native output", value: "512 × 320 · 24 FPS")
                 Text("Fast, Balanced and Cinema presets require matched on-device comparisons. GPU/Neural Engine utilization is unavailable without device profiling; requested compute units are not utilization measurements.").font(.caption).foregroundStyle(.secondary)
@@ -72,6 +72,18 @@ struct DeviceBenchmarkToolsView: View {
                     .disabled(!model.installed || model.working || model.exportingFiles || UInt64(model.benchmarkSeed) == nil).accessibilityIdentifier("runBaselineBenchmark")
                 Text("Prompt, seed, model load/prediction times, sampled process memory and thermal state are recorded locally. Export only when you choose.").font(.caption).foregroundStyle(.secondary)
             }
+            Section("Five-second memory trial") {
+                Text("First run the two-second baseline above, then its two-second attention comparison with the same scene and seed. Compare the outputs before trying five seconds. Detail conditioning is off for these memory tests.").font(.subheadline)
+                if model.attentionTrialInstalled {
+                    Button("Run 2-second attention comparison", systemImage: "play.circle") { focused = false; model.runAttentionBenchmark(seconds: 2) }
+                        .accessibilityIdentifier("runAttentionComparison")
+                    Button("Run 5-second attention trial", systemImage: "play.circle") { focused = false; model.runAttentionBenchmark(seconds: 5) }
+                        .accessibilityIdentifier("runFiveSecondTrial")
+                    Text("This candidate keeps every attention token and all trained weights. Actual five-second completion and memory use still require the iPhone test.").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Install the optional update in Models to run these comparisons.").foregroundStyle(.secondary)
+                }
+            }.disabled(!model.installed || model.working || model.exportingFiles || UInt64(model.benchmarkSeed) == nil)
             if model.working { Section { GenerationJobCard(log: model.jobLog) } }
             ExportFilesSection()
         }.studioBackground().navigationTitle("Baseline test").scrollDismissesKeyboard(.immediately)
@@ -182,6 +194,7 @@ struct VideoComparisonView: View {
             Text(label).font(.headline)
             Text(video.prompt)
             Text("Style: " + video.styleName)
+            Text("Reference detail prompt: " + ((video.upstreamDetailPrompt ?? false) ? "On" : "Off"))
             Text(video.isCrop ? "Center-cropped copy" : (video.smoothing == nil ? video.framingName + " output" : "RIFE interpolated copy"))
             if let smoothing = video.smoothing { Text("Smoothing + transfer: \(smoothing.elapsedSeconds, specifier: "%.2f") s") }
             Text("Seed \(video.seed)")

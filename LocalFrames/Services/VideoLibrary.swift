@@ -27,6 +27,7 @@ struct VideoRecord: Codable, Identifiable, Hashable {
     var smoothing: SmoothingProvenance? = nil
     var modelID: String? = nil
     var styleConditioning: StyleConditioning? = nil
+    var upstreamDetailPrompt: Bool? = nil
 
     var style: VisualStyle { visualStyle ?? .default }
     var effectivePrompt: String { effectiveModelPrompt ?? prompt }
@@ -60,13 +61,14 @@ actor VideoLibrary {
         }.sorted { $0.createdAt > $1.createdAt }
     }
 
-    func addNeodragon(temporaryURL: URL, request: NeodragonGenerationRequest, metrics: GenerationMetrics, conditioning: StyleConditioning? = nil) async throws -> VideoRecord {
+    func addNeodragon(temporaryURL: URL, request: NeodragonGenerationRequest, metrics: GenerationMetrics, conditioning: StyleConditioning? = nil,
+                     upstreamDetailPrompt: Bool = false) async throws -> VideoRecord {
         guard metrics.modelRevision == NeodragonModel.weightsRevision else { throw GenerationError.invalidTensor }
         let item = VideoRecord(id: UUID(), prompt: request.prompt, duration: request.duration,
             width: NeodragonModel.width, height: NeodragonModel.height, framesPerSecond: NeodragonModel.framesPerSecond,
             seed: request.seed, createdAt: Date(), metrics: metrics, generationMode: .textToVideo,
             effectiveModelPrompt: request.effectivePrompt, visualStyle: request.style, styleConditioningVersion: conditioning?.version ?? 1,
-            mediaKind: "generated", modelID: NeodragonModel.identifier, styleConditioning: conditioning)
+            mediaKind: "generated", modelID: NeodragonModel.identifier, styleConditioning: conditioning, upstreamDetailPrompt: upstreamDetailPrompt)
         return try await persist(item, temporaryURL: temporaryURL)
     }
 

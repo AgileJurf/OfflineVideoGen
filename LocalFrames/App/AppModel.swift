@@ -18,6 +18,19 @@ final class AppModel: ObservableObject {
     @Published private(set) var ready = false
     @Published private(set) var working = false { didSet { UIApplication.shared.isIdleTimerDisabled = working } }
     @Published private(set) var installing = false
+    @Published private(set) var installingAttentionTrial = false
+    @Published private(set) var attentionTrialInstalled = false
+    @Published var useAttentionTrial = false {
+        didSet {
+            if useAttentionTrial, duration > NeodragonAttentionVariant.deviceTrialMaximumSeconds {
+                duration = NeodragonAttentionVariant.deviceTrialMaximumSeconds
+            }
+            savePreferences()
+        }
+    }
+    @Published var useUpstreamDetailPrompt = false {
+        didSet { savePreferences() }
+    }
     @Published private(set) var exportingFiles = false
     @Published private(set) var progress = GenerationProgress(0, "Ready") {
         didSet { jobLog.append(progress.message) }
@@ -39,6 +52,9 @@ final class AppModel: ObservableObject {
     let library: VideoLibrary
     let installer: NeodragonInstaller
     let manifest = try? NeodragonManifest.bundled()
+    let attentionManifest = try? NeodragonManifest.bundled(attentionTrial: true)
+    let attentionInstaller: NeodragonInstaller
+    let attentionDirectory: URL
     let modelDirectory: URL
     let temporaryDirectory: URL
     let benchmarkDirectory: URL
@@ -57,12 +73,15 @@ final class AppModel: ObservableObject {
     private let engine = NeodragonEngine()
     private var restoredPrompt: String?
     private var restoredScene: String?
-    private var restoredStyleID: String?
+    private var restoredStyle: StyleConditioning?
+    private var restoredUsesUpstreamDetail = false
     private struct Preferences: Codable {
         var useFixedSeed: Bool?
         var seed: String?
         var duration: Int?
         var style: VisualStyle?
+        var useAttentionTrial: Bool?
+        var useUpstreamDetailPrompt: Bool?
     }
     static let benchmarkPrompts = [
         "A small sailboat glides across a calm lake at sunrise.",
@@ -76,11 +95,21 @@ final class AppModel: ObservableObject {
         "An animated astronaut waves while floating in space.",
         "A hand gently rolls a yellow ball across a table."
     ]
-    var supportedDurations: ClosedRange<Int> { 2...maximumSeconds }
+    var supportedDurations: ClosedRange<Int> { 2...(useAttentionTrial ? min(maximumSeconds, NeodragonAttentionVariant.deviceTrialMaximumSeconds) : maximumSeconds) }
+    var inferenceProfileID: String { useAttentionTrial ? NeodragonAttentionVariant.profileID : NeodragonMotionComputePolicy.cpuCompatibility.profileID }
+    var inferenceProfileName: String { useAttentionTrial ? "Lower-memory attention · device trial" : "Working baseline" }
     var isGenerating: Bool { generationControl != nil }
     var effectivePrompt: String {
-        if restoredScene == prompt, restoredStyleID == styles.selected.id, let restoredPrompt { return restoredPrompt }
-        return styles.selected.applying(to: prompt)
+        if restoredScene == prompt, restoredStyle == styles.selected, let restoredPrompt {
+            // Preserve the exact older style template when changing only the
+            // optional detail setting for a saved video's comparison.
+            if useUpstreamDetailPrompt == restoredUsesUpstreamDetail { return restoredPrompt }
+            if useUpstreamDetailPrompt { return NeodragonPromptConditioning.upstreamDetail(restoredPrompt) }
+            let suffix = NeodragonPromptConditioning.upstreamDetailSuffix
+            return restoredPrompt.hasSuffix(suffix) ? String(restoredPrompt.dropLast(suffix.count)) : restoredPrompt
+        }
+        let styled = styles.selected.applying(to: prompt)
+        return useUpstreamDetailPrompt ? NeodragonPromptConditioning.upstreamDetail(styled) : styled
     }
     var progressMessage: String {
         switch pauseReason {
@@ -101,12 +130,17 @@ final class AppModel: ObservableObject {
         let modelRoot = support.appendingPathComponent("OptionalModels/Neodragon", isDirectory: true)
         modelDirectory = modelRoot.appendingPathComponent("Installed", isDirectory: true)
         installer = NeodragonInstaller(root: modelRoot)
+        let attentionRoot = modelRoot.appendingPathComponent("Variants/Head8-v1", isDirectory: true)
+        attentionDirectory = attentionRoot.appendingPathComponent("Installed", isDirectory: true)
+        attentionInstaller = NeodragonInstaller(root: attentionRoot)
         temporaryDirectory = support.appendingPathComponent("Temporary", isDirectory: true)
         benchmarkDirectory = support.appendingPathComponent("Benchmarks", isDirectory: true)
         preferencesURL = support.appendingPathComponent("creation-preferences.json")
         let old = (try? Data(contentsOf: preferencesURL)).flatMap { try? JSONDecoder().decode(Preferences.self, from: $0) }
         useFixedSeed = old?.useFixedSeed ?? false; generationSeed = old?.seed ?? "42"
-        duration = min(9, max(2, old?.duration ?? 2))
+        duration = min((old?.useAttentionTrial ?? false) ? NeodragonAttentionVariant.deviceTrialMaximumSeconds : 9, max(2, old?.duration ?? 2))
+        useAttentionTrial = old?.useAttentionTrial ?? false
+        useUpstreamDetailPrompt = old?.useUpstreamDetailPrompt ?? false
         styles = StyleStore(url: support.appendingPathComponent("visual-styles-v2.json"), legacyStyle: old?.style ?? .default)
         let documents = root?.appendingPathComponent("Exports", isDirectory: true)
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -121,6 +155,8 @@ final class AppModel: ObservableObject {
             // Preserve unknown legacy user preferences rather than replacing their file.
             var values = (try? Data(contentsOf: preferencesURL)).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
             values["useFixedSeed"] = useFixedSeed; values["seed"] = generationSeed; values["duration"] = duration
+            values["useAttentionTrial"] = useAttentionTrial
+            values["useUpstreamDetailPrompt"] = useUpstreamDetailPrompt
             try JSONSerialization.data(withJSONObject: values, options: [.sortedKeys]).write(to: preferencesURL, options: .atomic)
         } catch { notice = "These settings could not be saved: " + error.localizedDescription }
     }
@@ -139,25 +175,45 @@ final class AppModel: ObservableObject {
     }
     private func refreshInstallation() async {
         installed = await installer.isInstalled()
+        attentionTrialInstalled = await attentionInstaller.isAttentionVariantInstalled()
+        if !installed || !attentionTrialInstalled { useAttentionTrial = false }
         if installed, let info = try? NeodragonEngine.validateInstallation(at: modelDirectory) { maximumSeconds = info.maximumSeconds }
         else { maximumSeconds = manifest?.maximumSeconds ?? 2 }
         if duration > maximumSeconds { duration = maximumSeconds }
     }
     func reuseSettings(_ video: VideoRecord) {
         guard !working, video.canReuseSettings else { return }
+        let usedTrial = video.metrics.profileID == NeodragonAttentionVariant.profileID
+        guard !usedTrial || attentionTrialInstalled else {
+            errorMessage = "Install the optional attention trial in Models to reuse this video’s inference settings."
+            return
+        }
+        useAttentionTrial = usedTrial
+        useUpstreamDetailPrompt = video.upstreamDetailPrompt ?? false
         prompt = video.prompt; duration = min(maximumSeconds, video.duration); useFixedSeed = true; generationSeed = String(video.seed)
         if let condition = video.styleConditioning {
             if condition.isCustom { try? styles.upsert(condition) }
             styles.select(condition)
         } else { styles.select(StyleCatalog.definition(video.style)) }
-        restoredScene = prompt; restoredStyleID = styles.selected.id; restoredPrompt = video.effectivePrompt
+        restoredScene = prompt; restoredStyle = styles.selected; restoredPrompt = video.effectivePrompt
+        restoredUsesUpstreamDetail = video.upstreamDetailPrompt ?? false
         selectedVideo = nil; creationRequestID = UUID()
         notice = "Original prompt, model input and seed restored. Editing the scene or style creates new conditioning."
     }
-    func clearRestoredConditioning() { restoredPrompt = nil; restoredScene = nil; restoredStyleID = nil }
+    func clearRestoredConditioning() { restoredPrompt = nil; restoredScene = nil; restoredStyle = nil }
     func runBaselineBenchmark() {
         guard installed, ready, !working, !exportingFiles else { return }
+        useAttentionTrial = false
+        useUpstreamDetailPrompt = false
         prompt = Self.benchmarkPrompts[benchmarkPromptIndex]; duration = 2
+        useFixedSeed = true; generationSeed = benchmarkSeed; styles.select(StyleCatalog.definition(.default))
+        clearRestoredConditioning(); generate()
+    }
+    func runAttentionBenchmark(seconds: Int) {
+        guard installed, attentionTrialInstalled, ready, !working, !exportingFiles, [2, 5].contains(seconds) else { return }
+        useAttentionTrial = true
+        useUpstreamDetailPrompt = false
+        prompt = Self.benchmarkPrompts[benchmarkPromptIndex]; duration = seconds
         useFixedSeed = true; generationSeed = benchmarkSeed; styles.select(StyleCatalog.definition(.default))
         clearRestoredConditioning(); generate()
     }
@@ -170,20 +226,29 @@ final class AppModel: ObservableObject {
                 seed = value
             } else { seed = UInt64.random(in: 0...UInt64.max) }
             let condition = styles.selected
+            let detailConditioning = useUpstreamDetailPrompt
             try condition.validate()
             let style = VisualStyle(rawValue: condition.id) ?? .default
             let request = try NeodragonGenerationRequest(prompt: prompt, duration: duration, seed: seed, style: style, modelPrompt: effectivePrompt)
             let installation = try NeodragonEngine.validateInstallation(at: modelDirectory)
             let geometry = try NeodragonModel.geometry(seconds: duration)
             let policy = NeodragonMotionComputePolicy.cpuCompatibility
+            let variantDirectory: URL? = useAttentionTrial ? attentionDirectory : nil
+            if let variantDirectory {
+                _ = try NeodragonAttentionVariant.validateInstallation(at: variantDirectory)
+                guard duration <= NeodragonAttentionVariant.deviceTrialMaximumSeconds else {
+                    throw GenerationError.incompatibleModel("The attention device trial currently supports up to five seconds.")
+                }
+            }
             jobLog.start(); jobStartedAt = Date()
             let log = try makeLog(kind: "generation", fields: [
                 "prompt": request.prompt, "effectiveModelPrompt": request.effectivePrompt, "visualStyle": condition.id,
                 "styleName": condition.name, "styleConditioningVersion": "2", "styleMethod": "local-prompt-conditioning",
+                "detailConditioning": useUpstreamDetailPrompt ? "upstream-default-modifier-v1" : "original-or-restored-input",
                 "seed": String(seed), "durationSeconds": String(duration), "width": "512", "height": "320", "fps": "24",
                 "generationMode": GenerationMode.textToVideo.rawValue, "requestedFraming": "native-16:10",
-                "profileID": policy.profileID, "precision": "Mixed FP16/FP32; T5 Float32", "motionComputePolicy": policy.rawValue,
-                "configuration": "Neodragon CPU motion compatibility · mixed precision · native 24 FPS",
+                "profileID": inferenceProfileID, "precision": "Mixed FP16/FP32; T5 Float32", "motionComputePolicy": policy.rawValue,
+                "configuration": "Neodragon · \(inferenceProfileName) · mixed precision · native 24 FPS",
                 "expectedPartitions": installation.modelNames.joined(separator: ","),
                 "expectedEvaluations": String(4 + (geometry.latentFrames - 1) * 3),
                 "schedule": "SSD-1B LCM 4 steps, then 3 flow evaluations per subsequent latent unit",
@@ -209,12 +274,13 @@ final class AppModel: ObservableObject {
                     do {
                         let free = try temporaryDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage ?? 0
                         guard free > 1024 * 1024 * 1024 else { throw GenerationError.insufficientStorage }
-                        let metrics = try await engine.generate(request, modelsAt: modelDirectory, output: output, benchmark: log, control: control, motionComputePolicy: policy) { progress in
+                        let metrics = try await engine.generate(request, modelsAt: modelDirectory, output: output, benchmark: log, control: control, motionComputePolicy: policy, attentionVariantAt: variantDirectory) { progress in
                             Task { @MainActor in self.progress = progress; BackgroundGeneration.shared.report(progress, paused: self.pauseReason == nil ? nil : self.progressMessage) }
                         }
                         try Task.checkCancellation()
                         progress = .init(1, "Saving output")
-                        let item = try await library.addNeodragon(temporaryURL: output, request: request, metrics: metrics, conditioning: condition)
+                        let item = try await library.addNeodragon(temporaryURL: output, request: request, metrics: metrics, conditioning: condition,
+                                                                upstreamDetailPrompt: detailConditioning)
                         videos = try await library.list(); selectedVideo = item
                         try log.finish(status: "succeeded", fields: ["videoID": item.id.uuidString])
                         succeeded = true
@@ -228,19 +294,30 @@ final class AppModel: ObservableObject {
             }
         } catch { jobLog.finish("Could not start: " + error.localizedDescription); errorMessage = error.localizedDescription }
     }
-    func install() {
-        guard ready, !working, !exportingFiles, let manifest else { return }
+    func install() { startInstallation(attentionTrial: false) }
+    func installAttentionTrial() { startInstallation(attentionTrial: true) }
+    private func startInstallation(attentionTrial: Bool) {
+        guard ready, !working, !exportingFiles, let manifest = attentionTrial ? attentionManifest : self.manifest,
+              !attentionTrial || installed else { return }
+        let target = attentionTrial ? attentionInstaller : installer
         do {
-            let log = try makeLog(kind: "installation")
+            var fields = ["packageVersion": manifest.modelVersion]
+            if attentionTrial, let file = Bundle.main.url(forResource: "neodragon-attention-manifest", withExtension: "json") {
+                fields["attentionManifestSHA256"] = try FileIntegrity.sha256(file)
+            }
+            let log = try makeLog(kind: "installation", fields: fields)
             working = true; installing = true; notice = nil; activeBenchmarkLog = log
+            installingAttentionTrial = attentionTrial
+            installationStage = .preparing
             progress = .init(0, "Preparing model installation")
             operation = Task {
                 defer { finish() }
                 do {
-                    try await installer.install(manifest, benchmark: log, stage: { stage in
+                    try await target.install(manifest, baseAt: attentionTrial ? modelDirectory : nil, benchmark: log, stage: { stage in
                         Task { @MainActor in self.installationStage = stage }
                     }) { progress in Task { @MainActor in self.progress = progress } }
-                    await refreshInstallation(); try log.finish(status: installed ? "succeeded" : "failed")
+                    await refreshInstallation()
+                    try log.finish(status: (attentionTrial ? attentionTrialInstalled : installed) ? "succeeded" : "failed")
                 } catch is CancellationError {
                     try? log.finish(status: "cancelled"); notice = "Installation paused. Verified downloads are kept for the next attempt."
                 } catch {
@@ -252,7 +329,12 @@ final class AppModel: ObservableObject {
     }
     func removeModel() async {
         guard !working, !exportingFiles else { return }
-        do { try await installer.remove(); installed = false; await refreshStorage() }
+        do { try await installer.remove(); await refreshInstallation(); await refreshStorage() }
+        catch { errorMessage = error.localizedDescription }
+    }
+    func removeAttentionTrial() async {
+        guard !working, !exportingFiles else { return }
+        do { try await attentionInstaller.remove(); useAttentionTrial = false; await refreshInstallation(); await refreshStorage() }
         catch { errorMessage = error.localizedDescription }
     }
     func cancel() {
@@ -278,7 +360,7 @@ final class AppModel: ObservableObject {
     private func finish(success: Bool = false) {
         jobLog.finish(success ? "Video saved to Library" : (errorMessage == nil ? "Job stopped" : "Job ended with an error"))
         BackgroundGeneration.shared.finish(success: success)
-        working = false; installing = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
+        working = false; installing = false; installingAttentionTrial = false; operation = nil; activeBenchmarkLog = nil; generationControl = nil; pauseReason = nil
         refreshBenchmarkFiles()
         Task { await publishExports(); await refreshStorage() }
     }
@@ -288,6 +370,9 @@ final class AppModel: ObservableObject {
         metadata["appBuild"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
         metadata["modelID"] = NeodragonModel.identifier; metadata["modelRevision"] = NeodragonModel.weightsRevision
         if let file = Bundle.main.url(forResource: "neodragon-manifest", withExtension: "json") { metadata["manifestSHA256"] = try FileIntegrity.sha256(file) }
+        if useAttentionTrial || installingAttentionTrial, let file = Bundle.main.url(forResource: "neodragon-attention-manifest", withExtension: "json") {
+            metadata["attentionManifestSHA256"] = try FileIntegrity.sha256(file)
+        }
         if let file = Bundle.main.url(forResource: "build-revision", withExtension: "txt") { metadata["sourceRevision"] = try String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) }
         let buffer = jobLog.buffer
         let activity: (@Sendable (BenchmarkLog.Activity) -> Void)?

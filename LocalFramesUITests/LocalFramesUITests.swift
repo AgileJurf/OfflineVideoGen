@@ -123,4 +123,26 @@ final class LocalFramesUITests: XCTestCase {
         XCTAssertEqual(reduce.value as? String, "1")
         app.tabBars.buttons["Create"].tap(); capture(app, "Studio reduced effects Create")
     }
+
+    @MainActor func testDetailComparisonAndUnavailableMemoryTrial() throws {
+        let app = launch()
+        let settings = app.buttons["advancedGenerationSettings"]
+        reveal(settings, in: app); settings.tap()
+        let detail = app.switches["upstreamDetailToggle"]
+        reveal(detail, in: app)
+        XCTAssertEqual(detail.value as? String, "0")
+        detail.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(detail.value as? String, "1")
+        XCTAssertFalse(app.switches["attentionTrialToggle"].exists)
+        capture(app, "Optional upstream detail conditioning")
+        app.navigationBars.buttons["Done"].tap()
+        app.terminate(); app.launch()
+        reveal(settings, in: app); settings.tap(); reveal(detail, in: app)
+        XCTAssertEqual(detail.value as? String, "1")
+        app.navigationBars.buttons["Done"].tap(); app.tabBars.buttons["Models"].tap()
+        let download = app.buttons["installAttentionTrialButton"]
+        reveal(download, in: app)
+        XCTAssertFalse(download.isEnabled, "The optional update needs the original installed model")
+        capture(app, "Optional five-second attention update")
+    }
 }

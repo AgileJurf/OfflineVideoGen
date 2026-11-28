@@ -131,7 +131,6 @@ struct CreateView: View {
         .sheet(isPresented: $advanced) { GenerationSettingsSheet().environmentObject(model) }
         .sheet(isPresented: $expandedPrompt) { PromptEditor().environmentObject(model) }
         .sheet(isPresented: $styleBrowser) { StyleBrowser(store: styles) }
-        .onChange(of: styles.selected) { model.clearRestoredConditioning() }
         .sheet(isPresented: $logSheet) { JobLogView(log: model.jobLog) }
         .onChange(of: model.working) { if model.working { promptFocused = false; dismissNativeKeyboard() } }
         .onDisappear { promptFocused = false; dismissNativeKeyboard() }

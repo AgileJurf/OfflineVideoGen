@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "modelID": "neodragon-hybrid-v1",
+  "modelVersion": "neodragon-attention-head8-v1",
+  "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+  "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+  "maximumSeconds": 9,
+  "minimumAppVersion": "0.1.0",
+  "minimumFreeBytes": 12884901888,
+  "archives": [
+    {
+      "name": "neodragon-01.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-attention-head8-v1/neodragon-01.zip",
+      "bytes": 1069506331,
+      "expandedBytes": 1360125693,
+      "sha256": "eba9f9790172699075665635e4a2cef0d70d58468c74992ae8dfbeaf66169976",
+      "models": [
+        "transformer_block_00",
+        "transformer_block_01",
+        "transformer_block_02",
+        "transformer_block_03",
+        "transformer_block_04",
+        "transformer_block_05",
+        "transformer_block_06",
+        "transformer_block_07"
+      ],
+      "supportFiles": [
+        "THIRD-PARTY-NOTICES.txt",
+        "neodragon-attention.json"
+      ]
+    },
+    {
+      "name": "neodragon-02.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-attention-head8-v1/neodragon-02.zip",
+      "bytes": 1067847727,
+      "expandedBytes": 1360102296,
+      "sha256": "bf85139cb59834e8f4bdc996cae1058293a270083797da6da75365dffa7178ff",
+      "models": [
+        "transformer_block_08",
+        "transformer_block_09",
+        "transformer_block_10",
+        "transformer_block_11",
+        "transformer_block_12",
+        "transformer_block_13",
+        "transformer_block_14",
+        "transformer_block_15"
+      ],
+      "supportFiles": []
+    },
+    {
+      "name": "neodragon-03.zip",
+      "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-attention-head8-v1/neodragon-03.zip",
+      "bytes": 218153674,
+      "expandedBytes": 278645207,
+      "sha256": "5b0cd55e921a20356b75315e485bd7d301956400c1c55e00386edfcebc7e02ad",
+      "models": [
+        "transformer_block_16",
+        "transformer_block_17"
+      ],
+      "supportFiles": []
+    }
+  ],
+  "attentionVariant": {
+    "schemaVersion": 1,
+    "variantID": "neodragon-attention-head8-v1",
+    "baseModelID": "neodragon-hybrid-v1",
+    "sourceRevision": "d2abbe99f46577c4e1db682ad3c26832ec0c23b9",
+    "weightsRevision": "5bdc87a4895a4fd148ca14c03181345d278d1040",
+    "attentionHeadGroupSize": 8,
+    "maximumSeconds": 9,
+    "modelNames": [
+      "transformer_block_00",
+      "transformer_block_01",
+      "transformer_block_02",
+      "transformer_block_03",
+      "transformer_block_04",
+      "transformer_block_05",
+      "transformer_block_06",
+      "transformer_block_07",
+      "transformer_block_08",
+      "transformer_block_09",
+      "transformer_block_10",
+      "transformer_block_11",
+      "transformer_block_12",
+      "transformer_block_13",
+      "transformer_block_14",
+      "transformer_block_15",
+      "transformer_block_16",
+      "transformer_block_17"
+    ]
+  }
+}

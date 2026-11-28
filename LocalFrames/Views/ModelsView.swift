@@ -5,6 +5,8 @@ struct ModelsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var download = false
     @State private var remove = false
+    @State private var downloadAttention = false
+    @State private var removeAttention = false
     private func size(_ bytes: Int64) -> String { ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
     var body: some View {
         ScrollView {
@@ -28,7 +30,7 @@ struct ModelsView: View {
                         LabeledContent("Download", value: size(manifest.downloadBytes))
                         if let bytes = model.modelStorageBytes { LabeledContent("Installed + cached", value: size(bytes)) }
                         Text("Allow \(size(manifest.minimumFreeBytes)) free for installation. Downloads resume where supported and pass SHA-256 verification before use.").font(.caption).foregroundStyle(.secondary)
-                        if model.installing {
+                        if model.installing && !model.installingAttentionTrial {
                             ProgressView(value: model.progress.fraction)
                             Text(model.progressMessage).font(.caption)
                             Button("Pause installation", action: model.cancel).studioButton()
@@ -39,6 +41,29 @@ struct ModelsView: View {
                                 .studioButton(prominent: true).disabled(!model.ready || model.working || model.exportingFiles).accessibilityIdentifier("installModelButton")
                         }
                     } else { Text("The verified download manifest is unavailable in this build.").foregroundStyle(.orange) }
+                }
+                if let manifest = model.attentionManifest {
+                    StudioSection(title: "Five-second memory trial", subtitle: "Optional attention update · original model preserved") {
+                        Text("Evaluates motion attention in smaller groups with the same trained weights and sampling schedule. The five-second iPhone test is pending.").font(.subheadline)
+                        LabeledContent("Additional download", value: size(manifest.downloadBytes))
+                        Text("Reuses your existing encoders and decoder. Allow \(size(manifest.minimumFreeBytes)) free during installation. This update is a memory candidate; it does not claim to fix blur.").font(.caption).foregroundStyle(.secondary)
+                        if model.installingAttentionTrial {
+                            ProgressView(value: model.progress.fraction)
+                            Text(model.progressMessage).font(.caption)
+                            Button("Pause installation", action: model.cancel).studioButton()
+                        } else if model.attentionTrialInstalled {
+                            Toggle("Use attention trial", isOn: $model.useAttentionTrial).disabled(model.working || model.exportingFiles)
+                                .accessibilityIdentifier("modelsAttentionTrialToggle")
+                            Text("Turn off for the original model. Both versions work offline after installation.").font(.caption).foregroundStyle(.secondary)
+                            NavigationLink("Run matched tests in Frame Lab") { DeviceBenchmarkToolsView() }
+                            Button("Remove optional update", role: .destructive) { removeAttention = true }.disabled(model.working || model.exportingFiles)
+                        } else {
+                            Button("Download optional update", systemImage: "arrow.down.circle") { downloadAttention = true }
+                                .studioButton().disabled(!model.ready || !model.installed || model.working || model.exportingFiles)
+                                .accessibilityIdentifier("installAttentionTrialButton")
+                            if !model.installed { Text("Install the core model first.").font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }
                 }
                 StudioSection(title: "Capabilities & validation") {
                     Text("The working two-second path is preserved. Longer clips and each new prompt style still need device comparisons.")
@@ -55,6 +80,12 @@ struct ModelsView: View {
             .confirmationDialog("Remove the installed model and its download cache?", isPresented: $remove, titleVisibility: .visible) {
                 Button("Remove model", role: .destructive) { Task { await model.removeModel() } }
             } message: { Text("Your videos, styles and history remain. A new model download will be needed before generating again.") }
+            .confirmationDialog("Download the optional attention update?", isPresented: $downloadAttention, titleVisibility: .visible) {
+                Button("Download update", action: model.installAttentionTrial)
+            } message: { if let manifest = model.attentionManifest { Text("\(size(manifest.downloadBytes)) over Wi-Fi. Your original model stays installed and selected. Enable the trial after installation when ready to compare.") } }
+            .confirmationDialog("Remove only the attention update?", isPresented: $removeAttention, titleVisibility: .visible) {
+                Button("Remove optional update", role: .destructive) { Task { await model.removeAttentionTrial() } }
+            } message: { Text("The original model, all videos and benchmark files remain.") }
     }
 }
 struct ModelLicensesView: View {

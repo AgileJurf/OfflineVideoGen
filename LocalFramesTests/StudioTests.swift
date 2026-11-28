@@ -144,4 +144,131 @@ final class StudioTests: XCTestCase {
         XCTAssertFalse(log.recording); XCTAssertEqual(log.entries, finished)
         log.start(); log.flush(); XCTAssertFalse(log.entries.contains { $0.message == "Cancelled" }); log.finish("Stopped")
     }
+
+    private func attentionMetadata() -> [String: Any] {
+        ["schemaVersion": 1, "variantID": NeodragonAttentionVariant.identifier,
+         "baseModelID": NeodragonModel.identifier, "sourceRevision": NeodragonModel.sourceRevision,
+         "weightsRevision": NeodragonModel.weightsRevision, "attentionHeadGroupSize": 8,
+         "maximumSeconds": 9, "modelNames": NeodragonAttentionVariant.modelNames]
+    }
+
+    func testAttentionVariantRejectsWrongWeightsPartialSetsAndSymlinkComponents() throws {
+        let root = try temporaryRoot(), metadata = attentionMetadata()
+        func decode(_ value: [String: Any]) throws -> NeodragonAttentionVariant {
+            try JSONDecoder().decode(NeodragonAttentionVariant.self, from: JSONSerialization.data(withJSONObject: value))
+        }
+        try decode(metadata).validate()
+        for (key, value) in [("weightsRevision", "other-checkpoint" as Any), ("attentionHeadGroupSize", 12 as Any),
+                             ("modelNames", Array(NeodragonAttentionVariant.modelNames.dropLast()) as Any),
+                             ("maximumSeconds", 5 as Any)] {
+            var invalid = metadata; invalid[key] = value
+            XCTAssertThrowsError(try decode(invalid).validate())
+        }
+        try write(root, NeodragonAttentionVariant.metadataFilename, JSONSerialization.data(withJSONObject: metadata))
+        for name in NeodragonAttentionVariant.modelNames { try write(root, name + ".mlmodelc/fixture.bin") }
+        _ = try NeodragonAttentionVariant.validateInstallation(at: root)
+        let part = root.appendingPathComponent(NeodragonAttentionVariant.modelNames[0] + ".mlmodelc")
+        try FileManager.default.removeItem(at: part)
+        XCTAssertThrowsError(try NeodragonAttentionVariant.validateInstallation(at: root))
+        let outside = try temporaryRoot(); try write(outside, "fixture.bin")
+        try FileManager.default.createSymbolicLink(at: part, withDestinationURL: outside)
+        XCTAssertThrowsError(try NeodragonAttentionVariant.validateInstallation(at: root))
+    }
+
+    func testAttentionManifestCannotReplaceSharedComponentsOrBaseMetadata() throws {
+        var archive: [String: Any] = ["name": "neodragon-01.zip", "bytes": 1000, "expandedBytes": 2000,
+            "url": "https://github.com/AgileJurf/OfflineVideoGen/releases/download/neodragon-attention-head8-v1/neodragon-01.zip",
+            "sha256": String(repeating: "a", count: 64), "models": NeodragonAttentionVariant.modelNames,
+            "supportFiles": [NeodragonAttentionVariant.metadataFilename, "THIRD-PARTY-NOTICES.txt"]]
+        var manifest: [String: Any] = ["schemaVersion": 1, "modelID": NeodragonModel.identifier,
+            "modelVersion": NeodragonAttentionVariant.identifier, "weightsRevision": NeodragonModel.weightsRevision,
+            "sourceRevision": NeodragonModel.sourceRevision, "maximumSeconds": 9,
+            "minimumAppVersion": "0.1.0", "minimumFreeBytes": 1000,
+            "attentionVariant": attentionMetadata(), "archives": [archive]]
+        func validate(_ value: [String: Any]) throws {
+            try JSONDecoder().decode(NeodragonManifest.self, from: JSONSerialization.data(withJSONObject: value)).validate()
+        }
+        try validate(manifest)
+        archive["models"] = NeodragonAttentionVariant.modelNames + ["image_encoder"]
+        manifest["archives"] = [archive]; XCTAssertThrowsError(try validate(manifest))
+        archive["models"] = NeodragonAttentionVariant.modelNames
+        archive["supportFiles"] = [NeodragonAttentionVariant.metadataFilename, "THIRD-PARTY-NOTICES.txt", "neodragon-runtime.json"]
+        manifest["archives"] = [archive]; XCTAssertThrowsError(try validate(manifest))
+    }
+
+    func testRemovingAttentionUpdatePreservesBaseModelAndVideos() async throws {
+        let root = try temporaryRoot()
+        let original = try write(root, "OptionalModels/Neodragon/Installed/transformer_block_00.mlmodelc/weights.bin")
+        let video = try write(root, "Library/clip.mp4")
+        let variantRoot = root.appendingPathComponent("OptionalModels/Neodragon/Variants/Head8-v1")
+        try write(variantRoot, "Installed/transformer_block_00.mlmodelc/weights.bin")
+        try write(variantRoot, "neodragon-01.zip.resume")
+        let installer = NeodragonInstaller(root: variantRoot)
+        try await installer.remove(); try await installer.remove()
+        XCTAssertEqual(try Data(contentsOf: original), Data(repeating: 42, count: 64))
+        XCTAssertEqual(try Data(contentsOf: video), Data(repeating: 42, count: 64))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: variantRoot.path))
+    }
+
+    @MainActor func testReferenceDetailConditioningIsOptionalPersistentAndPreservesScene() throws {
+        let root = try temporaryRoot(), model = AppModel(root: root)
+        let scene = "A small sailboat glides across a calm lake at sunrise."
+        model.prompt = scene
+        XCTAssertEqual(model.effectivePrompt, scene); XCTAssertFalse(model.useAttentionTrial)
+        model.useUpstreamDetailPrompt = true
+        XCTAssertEqual(model.prompt, scene)
+        XCTAssertEqual(model.effectivePrompt, scene + NeodragonPromptConditioning.upstreamDetailSuffix)
+        XCTAssertTrue(AppModel(root: root).useUpstreamDetailPrompt)
+        model.useUpstreamDetailPrompt = false
+        XCTAssertEqual(model.effectivePrompt, scene)
+        XCTAssertEqual(NeodragonPromptConditioning.upstreamDetail("  "), "")
+        XCTAssertEqual(NeodragonPromptConditioning.upstreamDetail(NeodragonPromptConditioning.upstreamDetail(scene)), scene + NeodragonPromptConditioning.upstreamDetailSuffix)
+        let request = try NeodragonGenerationRequest(prompt: scene, duration: 5, seed: 42,
+            modelPrompt: NeodragonPromptConditioning.upstreamDetail(scene))
+        XCTAssertEqual(request.prompt, scene); XCTAssertEqual(request.effectivePrompt, scene + NeodragonPromptConditioning.upstreamDetailSuffix)
+    }
+
+    @MainActor func testOldVideoMetadataAndDetailSettingsReuseRemainCompatible() throws {
+        let scene = "A sailboat on a lake."
+        var metadata: [String: Any] = ["id": UUID().uuidString, "prompt": scene, "duration": 2,
+            "width": 512, "height": 320, "framesPerSecond": 24, "seed": 42, "createdAt": 0,
+            "modelID": NeodragonModel.identifier,
+            "metrics": ["elapsedSeconds": 1, "peakSampledMemoryBytes": 1, "thermalStates": ["nominal"],
+                "environment": "test-fixture", "modelRevision": NeodragonModel.weightsRevision]]
+        func read() throws -> VideoRecord { try JSONDecoder().decode(VideoRecord.self, from: JSONSerialization.data(withJSONObject: metadata)) }
+        let old = try read()
+        XCTAssertNil(old.upstreamDetailPrompt); XCTAssertEqual(old.effectivePrompt, scene)
+        metadata["upstreamDetailPrompt"] = true
+        metadata["effectiveModelPrompt"] = NeodragonPromptConditioning.upstreamDetail(scene)
+        let new = try read(), model = AppModel(root: try temporaryRoot())
+        model.reuseSettings(new)
+        XCTAssertTrue(model.useUpstreamDetailPrompt); XCTAssertEqual(model.prompt, scene)
+        XCTAssertEqual(model.effectivePrompt, new.effectivePrompt)
+        model.useUpstreamDetailPrompt = false
+        XCTAssertEqual(model.effectivePrompt, scene)
+        model.reuseSettings(old)
+        XCTAssertFalse(model.useUpstreamDetailPrompt); XCTAssertEqual(model.prompt, scene)
+
+        // Earlier builds used different style templates. Comparing only the
+        // detail option must not silently replace those saved instructions.
+        metadata["upstreamDetailPrompt"] = false
+        metadata["visualStyle"] = "anime"
+        let earlierModelPrompt = scene + ", earlier hand-drawn anime conditioning"
+        metadata["effectiveModelPrompt"] = earlierModelPrompt
+        model.reuseSettings(try read())
+        XCTAssertEqual(model.effectivePrompt, earlierModelPrompt)
+        model.useUpstreamDetailPrompt = true
+        XCTAssertEqual(model.effectivePrompt, NeodragonPromptConditioning.upstreamDetail(earlierModelPrompt))
+        model.useUpstreamDetailPrompt = false
+        XCTAssertEqual(model.effectivePrompt, earlierModelPrompt)
+
+        var custom = StyleConditioning(id: "custom-reuse", name: "Saved style", aesthetic: "silver ink", isCustom: true)
+        metadata["styleConditioning"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(custom))
+        metadata["effectiveModelPrompt"] = "Exact saved custom conditioning"
+        model.reuseSettings(try read())
+        XCTAssertEqual(model.effectivePrompt, "Exact saved custom conditioning")
+        custom.aesthetic = "charcoal illustration"
+        try model.styles.upsert(custom)
+        XCTAssertEqual(model.effectivePrompt, custom.applying(to: scene), "Editing the same style ID must invalidate saved conditioning")
+    }
 }

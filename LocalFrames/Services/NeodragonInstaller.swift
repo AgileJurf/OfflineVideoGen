@@ -22,10 +22,11 @@ struct NeodragonManifest: Codable, Sendable {
     let minimumAppVersion: String
     let minimumFreeBytes: Int64
     let archives: [Archive]
+    let attentionVariant: NeodragonAttentionVariant?
     var downloadBytes: Int64 { archives.reduce(0) { $0 + $1.bytes } }
 
-    static func bundled() throws -> Self {
-        guard let url = Bundle.main.url(forResource: "neodragon-manifest", withExtension: "json") else {
+    static func bundled(attentionTrial: Bool = false) throws -> Self {
+        guard let url = Bundle.main.url(forResource: attentionTrial ? "neodragon-attention-manifest" : "neodragon-manifest", withExtension: "json") else {
             throw GenerationError.incompatibleModel("The optional Neodragon package is still being validated. No download is enabled in this build.")
         }
         let manifest = try JSONDecoder().decode(Self.self, from: Data(contentsOf: url))
@@ -61,7 +62,16 @@ struct NeodragonManifest: Codable, Sendable {
                       files.insert(path).inserted else { throw ModelInstallError.invalidArchive }
             }
         }
-        guard (60...250).contains(models.count), files.contains("neodragon-runtime.json") else { throw ModelInstallError.invalidArchive }
+        if let attentionVariant {
+            try attentionVariant.validate()
+            guard modelVersion == attentionVariant.variantID, maximumSeconds == attentionVariant.maximumSeconds,
+                  models == Set(NeodragonAttentionVariant.modelNames),
+                  files == Set([NeodragonAttentionVariant.metadataFilename, "THIRD-PARTY-NOTICES.txt"]) else {
+                throw ModelInstallError.invalidArchive
+            }
+        } else {
+            guard (60...250).contains(models.count), files.contains("neodragon-runtime.json") else { throw ModelInstallError.invalidArchive }
+        }
     }
 }
 
@@ -72,15 +82,23 @@ actor NeodragonInstaller {
     init(root: URL) { self.root = root }
 
     func isInstalled() -> Bool { (try? NeodragonEngine.validateInstallation(at: installed)) != nil }
+    func isAttentionVariantInstalled() -> Bool { (try? NeodragonAttentionVariant.validateInstallation(at: installed)) != nil }
 
     func remove() throws {
         if FileManager.default.fileExists(atPath: root.path) { try FileManager.default.removeItem(at: root) }
     }
 
-    func install(_ manifest: NeodragonManifest, benchmark: BenchmarkLog?,
+    func install(_ manifest: NeodragonManifest, baseAt baseDirectory: URL? = nil, benchmark: BenchmarkLog?,
                  stage: @escaping @Sendable (ModelInstallationStage) -> Void,
                  progress: @escaping @Sendable (GenerationProgress) -> Void) async throws {
         try manifest.validate()
+        if let variant = manifest.attentionVariant {
+            guard let baseDirectory, let base = try? NeodragonEngine.validateInstallation(at: baseDirectory),
+                  base.maximumSeconds == variant.maximumSeconds,
+                  Set(variant.modelNames).isSubset(of: Set(base.modelNames)) else {
+                throw GenerationError.incompatibleModel("Install the original Neodragon model before its optional attention update.")
+            }
+        }
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         var excludedRoot = root, resources = URLResourceValues()
@@ -169,14 +187,20 @@ actor NeodragonInstaller {
             completed += archive.bytes
         }
         try Task.checkCancellation()
-        let installedMetadata = try NeodragonEngine.validateInstallation(at: staging)
-        guard installedMetadata.maximumSeconds == manifest.maximumSeconds,
-              Set(installedMetadata.modelNames) == Set(manifest.archives.flatMap(\.models)) else { throw ModelInstallError.invalidArchive }
+        if manifest.attentionVariant != nil {
+            let metadata = try NeodragonAttentionVariant.validateInstallation(at: staging)
+            guard metadata.maximumSeconds == manifest.maximumSeconds,
+                  Set(metadata.modelNames) == Set(manifest.archives.flatMap(\.models)) else { throw ModelInstallError.invalidArchive }
+        } else {
+            let installedMetadata = try NeodragonEngine.validateInstallation(at: staging)
+            guard installedMetadata.maximumSeconds == manifest.maximumSeconds,
+                  Set(installedMetadata.modelNames) == Set(manifest.archives.flatMap(\.models)) else { throw ModelInstallError.invalidArchive }
+        }
         try ModelActivation.activate(staging: staging, installed: installed)
         for archive in manifest.archives {
             for suffix in ["", ".resume", ".resume.source"] { try? fm.removeItem(at: root.appendingPathComponent(archive.name + suffix)) }
         }
         stage(.complete)
-        progress(.init(1, "Neodragon installed for offline use"))
+        progress(.init(1, manifest.attentionVariant == nil ? "Neodragon installed for offline use" : "Attention trial installed; the original model is preserved"))
     }
 }

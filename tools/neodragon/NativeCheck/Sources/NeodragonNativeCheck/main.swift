@@ -21,12 +21,72 @@ struct NativeGenerationCheck {
             print(String(decoding: data, as: UTF8.self))
             return
         }
-        guard CommandLine.arguments.count == 3, let seconds = Int(CommandLine.arguments[2]) else {
-            fatalError("Usage: NeodragonNativeCheck runtime-fixture seconds OR --verify-existing video.mp4 seconds")
+        guard CommandLine.arguments.count >= 3, let seconds = Int(CommandLine.arguments[2]) else {
+            fatalError("Usage: NeodragonNativeCheck runtime-fixture seconds [--attention-runtime path] [--prompt text] [--upstream-detail] OR --verify-existing video.mp4 seconds")
+        }
+        var attentionFixture: URL?
+        var prompt = "A small sailboat glides across a calm lake at sunrise."
+        var upstreamDetail = false
+        var compileOnly = false
+        var position = 3
+        while position < CommandLine.arguments.count {
+            let argument = CommandLine.arguments[position]
+            if argument == "--upstream-detail" { upstreamDetail = true; position += 1; continue }
+            if argument == "--compile-only" { compileOnly = true; position += 1; continue }
+            guard position + 1 < CommandLine.arguments.count else { fatalError("Missing option value") }
+            switch argument {
+            case "--attention-runtime": attentionFixture = URL(fileURLWithPath: CommandLine.arguments[position + 1], isDirectory: true)
+            case "--prompt": prompt = CommandLine.arguments[position + 1]
+            default: fatalError("Unknown option")
+            }
+            position += 2
         }
         let fixture = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: fixture.appendingPathComponent("package-index.json")))
         guard (2...index.maximumSeconds).contains(seconds) else { fatalError("Duration exceeds this package's range") }
+        let fm = FileManager.default
+        let compiled = try await compile(fixture)
+        var attentionCompiled: URL?
+        if let attentionFixture {
+            attentionCompiled = try await compile(attentionFixture)
+            _ = try NeodragonAttentionVariant.validateInstallation(at: attentionCompiled!)
+        }
+        let installed = try NeodragonEngine.validateInstallation(at: compiled)
+        if compileOnly { print("NEODRAGON_MAC_COMPILE_VALIDATED \(installed.modelNames.count) base components"); return }
+        let run = (attentionFixture ?? fixture).appendingPathComponent("generation-\(seconds)s-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: run, withIntermediateDirectories: true)
+        let output = run.appendingPathComponent("sailboat-seed42.mp4")
+        let geometry = try NeodragonModel.geometry(seconds: seconds)
+        let log = try BenchmarkLog(url: run.appendingPathComponent("generation.jsonl"), kind: "generation", metadata: [
+            "modelID": NeodragonModel.identifier, "modelRevision": NeodragonModel.weightsRevision,
+            "expectedPartitions": installed.modelNames.joined(separator: ","),
+            "expectedEvaluations": String(4 + (geometry.latentFrames - 1) * 3),
+            "durationSeconds": String(seconds), "width": "512", "height": "320", "fps": "24", "seed": "42",
+            "prompt": prompt, "upstreamDetail": String(upstreamDetail),
+            "profileID": attentionFixture == nil ? NeodragonMotionComputePolicy.cpuCompatibility.profileID : NeodragonAttentionVariant.profileID,
+            "scope": "Native macOS CPU full-pipeline functional check; not an iPhone benchmark"])
+        print("NEODRAGON_MAC_OUTPUT \(run.path)")
+        do {
+            let request = try NeodragonGenerationRequest(prompt: prompt, duration: seconds, seed: 42,
+                modelPrompt: upstreamDetail ? NeodragonPromptConditioning.upstreamDetail(prompt) : nil)
+            let metrics = try await NeodragonEngine().generate(request, modelsAt: compiled, output: output, benchmark: log, computeOnCPUOnly: true,
+                motionComputePolicy: .cpuCompatibility, attentionVariantAt: attentionCompiled) {
+                print("NEODRAGON_MAC_PROGRESS \($0.fraction) \($0.message)")
+            }
+            try JSONEncoder().encode(metrics).write(to: run.appendingPathComponent("metrics.json"))
+            let validation = try await verifyExport(output, seconds: seconds)
+            try JSONSerialization.data(withJSONObject: validation, options: [.prettyPrinted, .sortedKeys]).write(to: run.appendingPathComponent("export-validation.json"))
+            let frames = validation["decodedFrames"] as! Int
+            try log.finish(status: "completed", fields: ["exportedFrames": String(frames)])
+            print("NEODRAGON_MAC_COMPLETED \(seconds)s \(frames) frames; physical iPhone acceptance still required")
+        } catch {
+            try? log.finish(status: "failed", fields: ["error": String(describing: error)])
+            throw error
+        }
+    }
+
+    static func compile(_ fixture: URL) async throws -> URL {
+        let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: fixture.appendingPathComponent("package-index.json")))
         let fm = FileManager.default
         let compiled = fixture.appendingPathComponent("Compiled-macos-cpu", isDirectory: true)
         try fm.createDirectory(at: compiled, withIntermediateDirectories: true)
@@ -46,32 +106,7 @@ struct NativeGenerationCheck {
             if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
             try fm.copyItem(at: source, to: destination)
         }
-        let installed = try NeodragonEngine.validateInstallation(at: compiled)
-        let run = fixture.appendingPathComponent("generation-\(seconds)s-\(UUID().uuidString)", isDirectory: true)
-        try fm.createDirectory(at: run, withIntermediateDirectories: true)
-        let output = run.appendingPathComponent("sailboat-seed42.mp4")
-        let geometry = try NeodragonModel.geometry(seconds: seconds)
-        let log = try BenchmarkLog(url: run.appendingPathComponent("generation.jsonl"), kind: "generation", metadata: [
-            "modelID": NeodragonModel.identifier, "modelRevision": NeodragonModel.weightsRevision,
-            "expectedPartitions": installed.modelNames.joined(separator: ","),
-            "expectedEvaluations": String(4 + (geometry.latentFrames - 1) * 3),
-            "durationSeconds": String(seconds), "width": "512", "height": "320", "fps": "24", "seed": "42",
-            "scope": "Native macOS CPU full-pipeline functional check; not an iPhone benchmark"])
-        print("NEODRAGON_MAC_OUTPUT \(run.path)")
-        do {
-            let request = try NeodragonGenerationRequest(prompt: "A small sailboat glides across a calm lake at sunrise.", duration: seconds, seed: 42)
-            let metrics = try await NeodragonEngine().generate(request, modelsAt: compiled, output: output, benchmark: log, computeOnCPUOnly: true) {
-                print("NEODRAGON_MAC_PROGRESS \($0.fraction) \($0.message)")
-            }
-            try JSONEncoder().encode(metrics).write(to: run.appendingPathComponent("metrics.json"))
-            let validation = try await verifyExport(output, seconds: seconds)
-            let frames = validation["decodedFrames"] as! Int
-            try log.finish(status: "completed", fields: ["exportedFrames": String(frames)])
-            print("NEODRAGON_MAC_COMPLETED \(seconds)s \(frames) frames; physical iPhone acceptance still required")
-        } catch {
-            try? log.finish(status: "failed", fields: ["error": String(describing: error)])
-            throw error
-        }
+        return compiled
     }
 
     static func verifyExport(_ output: URL, seconds: Int) async throws -> [String: Any] {

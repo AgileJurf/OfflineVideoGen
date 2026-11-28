@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A19000000000000000000004 /* neodragon-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000003 /* neodragon-manifest.json */; };
+		A48000000000000000000002 /* neodragon-attention-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A48000000000000000000001 /* neodragon-attention-manifest.json */; };
 		A19000000000000000000002 /* NeodragonInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000001 /* NeodragonInstaller.swift */; };
 		A12000000000000000000003 /* GenerationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* GenerationOptionsView.swift */; };
 		A11000000000000000000001 /* BenchmarkSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000003 /* BenchmarkSummary.swift */; };
@@ -59,6 +60,7 @@
 
 /* Begin PBXFileReference section */
 		A19000000000000000000003 /* neodragon-manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/neodragon-manifest.json"; sourceTree = "<group>"; };
+		A48000000000000000000001 /* neodragon-attention-manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/neodragon-attention-manifest.json"; sourceTree = "<group>"; };
 		A19000000000000000000001 /* NeodragonInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/NeodragonInstaller.swift; sourceTree = "<group>"; };
 		A12000000000000000000004 /* GenerationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationOptionsView.swift; sourceTree = "<group>"; };
 		A11000000000000000000003 /* BenchmarkSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BenchmarkSummary.swift; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 				39B12CF3A348F16708961C4B /* LocalFrames/Services/ModelInstaller.swift */,
 				A19000000000000000000001 /* NeodragonInstaller.swift */,
 				A19000000000000000000003 /* neodragon-manifest.json */,
+				A48000000000000000000001 /* neodragon-attention-manifest.json */,
 				DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */,
 				70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */,
 				70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */,
@@ -291,6 +294,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A19000000000000000000004 /* neodragon-manifest.json in Resources */,
+				A48000000000000000000002 /* neodragon-attention-manifest.json in Resources */,
 				2463BF9F68A03EAAA7001AC5 /* LocalFrames/Resources/PrivacyInfo.xcprivacy in Resources */,
 				F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */,
 				70DD95CE5C1A4A1EB33E1001 /* ThirdPartyNotices.txt in Resources */,

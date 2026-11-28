@@ -94,17 +94,32 @@ public actor NeodragonEngine {
                          benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl(),
                          computeOnCPUOnly: Bool = false,
                          motionComputePolicy: NeodragonMotionComputePolicy = .originalCPUAndGPU,
+                         attentionVariantAt variantDirectory: URL? = nil,
                          progress: @escaping @Sendable (GenerationProgress) -> Void) async throws -> GenerationMetrics {
         let installed = try Self.validateInstallation(at: directory)
+        var overrides: [String: URL] = [:]
+        if let variantDirectory {
+            let variant = try NeodragonAttentionVariant.validateInstallation(at: variantDirectory)
+            guard motionComputePolicy == .cpuCompatibility,
+                  request.duration <= NeodragonAttentionVariant.deviceTrialMaximumSeconds,
+                  installed.maximumSeconds == variant.maximumSeconds,
+                  Set(variant.modelNames).isSubset(of: Set(installed.modelNames)) else {
+                throw GenerationError.incompatibleModel("This attention trial requires the nine-second base package, CPU motion compatibility, and a duration of at most five seconds.")
+            }
+            overrides = Dictionary(uniqueKeysWithValues: variant.modelNames.map { ($0, variantDirectory.appendingPathComponent($0 + ".mlmodelc")) })
+        }
+        let profileID = variantDirectory == nil ? motionComputePolicy.profileID : NeodragonAttentionVariant.profileID
         guard request.duration <= installed.maximumSeconds else {
             throw GenerationError.incompatibleModel("This Neodragon package supports up to \(installed.maximumSeconds) seconds. Install the verified longer-duration package first.")
         }
         let geometry = try NeodragonModel.geometry(seconds: request.duration)
         let started = ProcessInfo.processInfo.systemUptime
         let runner = ModelRunner(directory: directory, benchmark: benchmark, control: control,
-                                 retainingSmallModels: Set(NeodragonModel.decoderNames), forceCPUOnly: computeOnCPUOnly)
+                                 retainingSmallModels: Set(NeodragonModel.decoderNames), forceCPUOnly: computeOnCPUOnly,
+                                 modelOverrides: overrides)
         benchmark?.record("neodragon_execution_policy", fields: ["motionComputePolicy": motionComputePolicy.rawValue,
-            "forceAllComponentsCPUOnly": String(computeOnCPUOnly), "profileID": motionComputePolicy.profileID])
+            "forceAllComponentsCPUOnly": String(computeOnCPUOnly), "profileID": profileID,
+            "attentionVariant": variantDirectory == nil ? "original-24-heads" : NeodragonAttentionVariant.identifier])
         try await runner.checkpoint()
         // Validate every tokenizer before expensive work, with no truncation.
         _ = try Self.promptTokenCount(request.effectivePrompt, modelsAt: directory)
@@ -137,6 +152,6 @@ public actor NeodragonEngine {
             decoderExecutionPolicy: "neodragon-streaming-causal-v1", modelLoadSeconds: runner.modelLoadSeconds,
             modelPredictionSeconds: runner.modelPredictionSeconds,
             diffusionEvaluations: 4 + (geometry.latentFrames - 1) * 3,
-            profileID: motionComputePolicy.profileID, precision: "Mixed FP16/FP32; T5 Float32")
+            profileID: profileID, precision: "Mixed FP16/FP32; T5 Float32")
     }
 }

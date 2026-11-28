@@ -12,8 +12,18 @@ struct GenerationSettingsSheet: View {
                     LabeledContent("Engine", value: "Neodragon · Qualcomm AI Research")
                     LabeledContent("Output", value: "512 × 320 · 24 FPS")
                     LabeledContent("Framing", value: "Native landscape · 16:10")
-                    LabeledContent("Preset", value: "Working baseline")
+                    LabeledContent("Preset", value: model.inferenceProfileName)
                     Text("Fast, Balanced and Cinema configurations are awaiting matched device measurements. This build preserves the working sampling schedule.").font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Detail conditioning · comparison") {
+                    Toggle("Use upstream detail prompt", isOn: $model.useUpstreamDetailPrompt).accessibilityIdentifier("upstreamDetailToggle")
+                    Text("Adds Neodragon’s reference instructions for cinematic detail, textures and natural colors to both image and motion generation. This is prompt conditioning, with quality still to be compared on your device. It may influence your selected style.").font(.caption).foregroundStyle(.secondary)
+                }
+                if model.attentionTrialInstalled {
+                    Section("Memory comparison") {
+                        Toggle("Use lower-memory attention trial", isOn: $model.useAttentionTrial).accessibilityIdentifier("attentionTrialToggle")
+                        Text("Uses an optional conversion of the same weights for up to five seconds. Turn off to return to the original model. Device validation is pending.").font(.caption).foregroundStyle(.secondary)
+                    }
                 }
                 Section("Reproducibility") {
                     Toggle("Use a fixed seed", isOn: $model.useFixedSeed).accessibilityIdentifier("fixedSeedToggle")

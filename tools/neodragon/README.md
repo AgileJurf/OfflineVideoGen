@@ -86,3 +86,43 @@ HF_HOME=.model-cache/huggingface HF_HUB_OFFLINE=1 build/Neodragon/convert-env/bi
 ```
 
 Compare every block against its original output, including the final block that returns only image features, then execute the complete chain and genuine generation. Memory comparisons must use identical input shapes, declared shape ranges, compute units and instrumentation in separate processes. A passing single-block Mac test does not validate iPhone memory use, video quality or five-second completion. The app manifest and runtime are unchanged until a separately retained candidate passes device acceptance.
+
+
+## Optional attention memory trial
+
+The `neodragon-attention-head8-v1` candidate groups the 24 independent attention
+heads into three groups of eight. It retains all tokens, causal masks, temporal
+positions, pretrained projections and the original hybrid sampling schedule.
+The original 168-partition installation remains intact; only an explicitly
+selected set of 18 motion partitions comes from the optional directory.
+Generation performs no networking. Downloading this component is a separate,
+user-confirmed operation with size/hash verification and sequential compilation.
+
+Reproduce conversion for each block from 0 through 17 (replace BLOCK and NN):
+
+```sh
+build/Neodragon/convert-env/bin/python tools/neodragon/convert_transformer_block.py --block BLOCK --precision mixed --attention-head-group-size 8 --maximum-seconds 9 --boundary-only --output build/NeodragonMemoryQuality/head8-v1/block-NN
+```
+
+Run `check_transformer_chain.py --blocks build/NeodragonMemoryQuality/head8-v1`
+with `--seconds 2`, `5`, and `9`, each with a new `--output` directory. Then use
+`assemble_attention_variant.py --blocks ... --chain-reports ... ... ... --output ...`
+and `package_release.py` with tag `neodragon-attention-head8-v1`. The assembler
+checks all component identities, precision, shape ranges and chain fingerprints.
+The nine-second shape check is a conversion boundary test; the app trial remains
+limited to at most five seconds until actual device validation.
+
+`measure_attention.swift` evaluates one real Core ML block with a fixed
+five-second maximum input shape (1960 image tokens / 2088 total tokens), three
+load/predict/release cycles and 10 ms process-memory sampling. Compare original
+and candidate packages in separate processes on the same otherwise idle host.
+Its synthetic-input memory results are not iPhone generation benchmarks.
+
+The native full-generation harness accepts `--attention-runtime PATH` for the
+assembled overlay and preserves the baseline fixture. It also accepts
+`--upstream-detail` to compare the exact pinned upstream default prompt modifier.
+That modifier is text conditioning, not fine-tuning, sharpening or a demonstrated
+blur correction. Keep it off when comparing attention implementations. Preserve
+original/effective prompts and use the same seed and duration for quality tests.
+Do not publish a candidate download before a complete native generation passes;
+do not make it the app default before the physical iPhone checks pass.

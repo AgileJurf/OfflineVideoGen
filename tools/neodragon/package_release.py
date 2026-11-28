@@ -34,12 +34,15 @@ def main():
     if not args.tag.startswith("neodragon-") or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-." for c in args.tag):
         parser.error("Use a lowercase neodragon- release tag")
     index = json.loads((args.runtime / "package-index.json").read_text())
-    metadata = json.loads((args.runtime / "support/neodragon-runtime.json").read_text())
+    variant = index.get("attentionVariant")
+    metadata = variant or json.loads((args.runtime / "support/neodragon-runtime.json").read_text())
     chain = json.loads(args.chain_report.read_text())
     if chain["status"] != "passed-chained-parity" or chain["seconds"] != index["maximumSeconds"]:
         raise ValueError("The complete motion prediction has not passed at the requested maximum duration")
     if metadata["maximumSeconds"] != index["maximumSeconds"] or set(metadata["modelNames"]) != {m["name"] for m in index["models"]}:
         raise ValueError("Runtime model index differs")
+    if variant and (args.tag != variant["variantID"] or chain["componentFingerprints"] != {m["name"]: m["fingerprint"] for m in index["models"]}):
+        raise ValueError("Attention variant identity or validated components differ")
     groups = [{"models": [], "supportFiles": [], "files": [], "directories": [], "bytes": 0}]
     for source in sorted((args.runtime / "support").rglob("*")):
         if source.is_symlink():
@@ -122,11 +125,13 @@ def main():
                          "models": group["models"], "supportFiles": group["supportFiles"]})
         print("Verified", name, size, "download bytes", flush=True)
     reserve = sum(a["bytes"] for a in archives) + index["packageBytes"] * 2 + max(g["bytes"] for g in groups) + 2 * 1024**3
-    manifest = {"schemaVersion": 1, "modelID": metadata["modelID"], "modelVersion": args.tag,
+    manifest = {"schemaVersion": 1, "modelID": metadata.get("modelID", metadata.get("baseModelID")), "modelVersion": args.tag,
                 "weightsRevision": metadata["weightsRevision"], "sourceRevision": metadata["sourceRevision"],
                 "maximumSeconds": metadata["maximumSeconds"], "minimumAppVersion": args.minimum_app_version,
                 "minimumFreeBytes": math.ceil(reserve / 1024**3) * 1024**3, "archives": archives}
-    (args.output / "neodragon-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    if variant:
+        manifest["attentionVariant"] = variant
+    (args.output / ("neodragon-attention-manifest.json" if variant else "neodragon-manifest.json")).write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({"archives": len(archives), "downloadBytes": sum(a["bytes"] for a in archives),
                       "minimumFreeBytes": manifest["minimumFreeBytes"], "status": "prepared-locally-not-published"}), flush=True)
 

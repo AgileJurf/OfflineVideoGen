@@ -14,13 +14,16 @@ final class ModelRunner {
     var modelPredictionSeconds = 0.0
     private let retainedModelNames: Set<String>
     private let forceCPUOnly: Bool
+    private let modelOverrides: [String: URL]
     private var retainedModels: [String: MLModel] = [:]
 
     init(directory: URL, benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl(),
-         retainingSmallModels names: Set<String> = [], forceCPUOnly: Bool = false) {
+         retainingSmallModels names: Set<String> = [], forceCPUOnly: Bool = false,
+         modelOverrides: [String: URL] = [:]) {
         self.directory = directory; self.benchmark = benchmark; self.control = control
         retainedModelNames = names
         self.forceCPUOnly = forceCPUOnly
+        self.modelOverrides = modelOverrides
     }
 
     func checkpoint() async throws {
@@ -60,7 +63,7 @@ final class ModelRunner {
             #else
             config.computeUnits = (cpuOnly || forceCPUOnly) ? .cpuOnly : .cpuAndGPU
             #endif
-            let modelURL = directory.appendingPathComponent(name + ".mlmodelc")
+            let modelURL = modelOverrides[name] ?? directory.appendingPathComponent(name + ".mlmodelc")
             let unitLabel = config.computeUnits == .cpuOnly ? "cpuOnly" : "cpuAndGPU"
             let cacheKey = "\(name):\(config.computeUnits.rawValue)"
             // Shapes must be present before load as well as prediction: a native
