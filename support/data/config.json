@@ -1,32 +1,14 @@
 {
-  "schemaVersion": 1,
-  "configurationVersion": 1,
+  "schemaVersion": 2,
+  "configurationVersion": 2,
   "minimumAppVersion": "0.1.0",
   "supportedModelVersions": [
-    "movd-v1"
+    "neodragon-coreml-9s-v1"
   ],
-  "modelManifestPath": "/api/v1/models/movd-v1.json",
-  "inferenceProfiles": [
-    {
-      "id": "movd-fp32-rflow21-spatial-cpu-v2",
-      "modelVersion": "movd-v1",
-      "diffusionEvaluations": 21,
-      "guidance": 7,
-      "width": 256,
-      "height": 256,
-      "framesPerSecond": 12,
-      "validatedDurations": [
-        2
-      ],
-      "sampler": "rectified-flow",
-      "decoderPolicy": "spatial-cpu-v2"
-    }
-  ],
+  "modelManifestPath": "/api/v1/models/neodragon-coreml-9s-v1.json",
   "diagnostics": {
-    "enabled": true,
-    "path": "/api/v1/diagnostics",
-    "maximumBytes": 32768,
-    "retentionDays": 30,
-    "globalSlotHours": 2
-  }
+    "enabled": false
+  },
+  "remoteInference": false,
+  "settingsDelivery": "App releases pin validated inference settings; this catalog cannot alter generation."
 }

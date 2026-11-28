@@ -63,7 +63,7 @@ struct BenchmarkSummary: Identifiable, Sendable {
         defer { try? handle.close() }
         var result = Self(id: url.lastPathComponent)
         var timings: [String: PartitionTiming] = [:]
-        var partitionNames = Set(MOVDModel.requiredNames)
+        var partitionNames = Set<String>()
         let decoder = JSONDecoder()
         var sequence = 0, totalBytes = 0
         func consume(_ line: Data) {
@@ -111,7 +111,7 @@ struct BenchmarkSummary: Identifiable, Sendable {
                 }
             }
             if e.event == "finished" { result.status = e.fields["status"] ?? "unknown"; result.failure = e.fields["error"] }
-            if let name = e.partition, partitionNames.contains(name), let phase = e.phase {
+            if let name = e.partition, (partitionNames.isEmpty || partitionNames.contains(name)), let phase = e.phase, ["load", "predict"].contains(phase) {
                 if e.event == "begin" { result.lastOperation = name + " / " + phase }
                 if e.event == "end" || e.event == "failure" {
                     result.lastOperation = nil

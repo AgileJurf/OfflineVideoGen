@@ -1,233 +1,217 @@
 import SwiftUI
 import VideoEngine
 
-struct GenerationOptionsView: View {
+struct GenerationSettingsSheet: View {
     @EnvironmentObject private var model: AppModel
-    @Binding var tokenCount: Int?
-    var focusedField: FocusState<CreationField?>.Binding
-    @State private var tokenError: String?
-    private var promptKey: String { model.generationModel.rawValue + "\n" + String(model.neodragonInstalled) + "\n" + model.visualStyle.rawValue + "\n" + model.prompt }
-    private var tokenLimit: Int { model.generationModel == .movd ? 63 : 128 }
-
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var seedFocused: Bool
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            CreationSection("Visual style", icon: "paintpalette", detail: "Prompt styling for your scene") {
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: 10) {
-                        ForEach(VisualStyle.allCases) { style in
-                            StyleSelectionCard(style: style, selected: model.visualStyle == style) {
-                                model.visualStyle = style
-                            }
-                        }
+        NavigationStack {
+            Form {
+                Section("Generation") {
+                    LabeledContent("Engine", value: "Neodragon · Qualcomm AI Research")
+                    LabeledContent("Output", value: "512 × 320 · 24 FPS")
+                    LabeledContent("Framing", value: "Native landscape · 16:10")
+                    LabeledContent("Preset", value: "Working baseline")
+                    Text("Fast, Balanced and Cinema configurations are awaiting matched device measurements. This build preserves the working sampling schedule.").font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Reproducibility") {
+                    Toggle("Use a fixed seed", isOn: $model.useFixedSeed).accessibilityIdentifier("fixedSeedToggle")
+                    if model.useFixedSeed {
+                        TextField("Seed", text: $model.generationSeed).keyboardType(.numberPad).focused($seedFocused).accessibilityIdentifier("generationSeed")
                     }
-                }.scrollIndicators(.hidden)
-                Text(model.visualStyle.detail).font(.subheadline)
-                HStack {
-                    Text(tokenCount.map { "\($0)/\(tokenLimit) model tokens · scene + style" } ?? "Checking prompt tokens…")
-                        .foregroundStyle((tokenCount ?? 0) > tokenLimit ? .orange : .secondary)
-                        .accessibilityIdentifier("promptTokenBudget")
-                }.font(.caption)
-                if (tokenCount ?? 0) > tokenLimit {
-                    Text("Shorten your scene or choose Default. Your prompt will not be truncated.").font(.caption).foregroundStyle(.orange)
+                    Text("Use the same scene, style, duration and seed to compare outputs. Seeds are repeatable within this engine, not equivalent across different models.").font(.caption).foregroundStyle(.secondary)
                 }
-                if let tokenError { Text(tokenError).font(.caption).foregroundStyle(.orange) }
-                if model.generationModel == .neodragon {
-                    Text("The CLIP encoders must also fit 77 tokens, including special tokens. Every encoder is checked without truncation.").font(.caption).foregroundStyle(.secondary)
+                Section("Effective model input") {
+                    Text(model.effectivePrompt.isEmpty ? "Enter a scene in Create." : model.effectivePrompt).font(.callout).textSelection(.enabled)
+                    Text("Styles add local prompt instructions. No style adapter, remote assistant or postprocessing filter is used.").font(.caption).foregroundStyle(.secondary)
                 }
-                DisclosureGroup("Text sent to the model") {
-                    Text(model.visualStyle.applying(to: model.prompt)).font(.caption).textSelection(.enabled).padding(.top, 4)
-                    Text("Illustrated swatches, not example results. These styles use prompt instructions, not trained adapters.").font(.caption).foregroundStyle(.secondary)
-                }.font(.caption)
-            }
-            CreationSection("Video settings", icon: "film", detail: "Length and framing of your saved video") {
-                Picker("Duration", selection: $model.duration) {
-                    ForEach(model.supportedDurations, id: \.self) { Text("\($0) seconds").tag($0) }
-                }.pickerStyle(.menu).accessibilityIdentifier("durationPicker")
-                if model.generationModel == .neodragon {
-                    LabeledContent("Native output", value: "512 × 320 · 24 FPS").font(.subheadline)
-                    Text("Landscape 16:10. Each extra second generates more motion frames. Start with 2 seconds while validating this model on your phone; longer jobs can take substantially longer.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text("Time estimates use this job’s measurements and can rise as motion context grows.").font(.caption).foregroundStyle(.secondary)
-                } else {
-                Text("Output framing").font(.subheadline.weight(.medium))
-                Picker("Output framing", selection: $model.outputFraming) {
-                    Text("Square").tag(OutputFraming.square)
-                    Text("Portrait crop").tag(OutputFraming.portrait)
-                    Text("Landscape crop").tag(OutputFraming.landscape)
-                }.pickerStyle(.segmented).accessibilityIdentifier("outputFramingPicker")
-                HStack(spacing: 14) {
-                    FramingDiagram(framing: model.outputFraming).frame(width: 66, height: 66)
-                    Text(model.outputFraming.detail).font(.caption).foregroundStyle(.secondary)
+            }.disabled(model.working).studioBackground().navigationTitle("Generation settings").navigationBarTitleDisplayMode(.inline)
+                .scrollDismissesKeyboard(.immediately)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismissNativeKeyboard(); dismiss() } }
+                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { seedFocused = false; dismissNativeKeyboard() }.accessibilityIdentifier("dismissKeyboard") }
                 }
-                }
-            }
-            CreationSection("Repeatable settings", icon: "slider.horizontal.3", detail: "Use the same seed to compare results") {
-                LabeledContent("Generation preset", value: model.generationModel == .movd ? "Baseline · 21 evaluations" : "Neodragon hybrid · experimental").font(.subheadline)
-                Toggle(isOn: $model.useFixedSeed) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Use a fixed seed")
-                        Text("Off chooses a new seed for each video.").font(.caption).foregroundStyle(.secondary)
-                    }
-                }.accessibilityIdentifier("fixedSeedToggle")
-                if model.useFixedSeed {
-                    TextField("Seed", text: $model.generationSeed).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                        .focused(focusedField, equals: .seed)
-                        .accessibilityIdentifier("generationSeed")
-                    Text("Repeat the same prompt, style and seed to compare settings.").font(.caption).foregroundStyle(.secondary)
-                }
-                Text("Faster presets are awaiting device measurements.").font(.caption).foregroundStyle(.secondary)
-            }
-        }
-        .disabled(model.working)
-        .task(id: promptKey) {
-            tokenCount = nil; tokenError = nil
-            guard model.prompt.count <= 500 else {
-                tokenError = "Use a scene of up to 500 characters. Your text has not been shortened."
-                return
-            }
-            guard model.generationModel != .neodragon || model.neodragonInstalled else {
-                tokenError = "Install the optional Neodragon model in Setup to check this prompt."
-                return
-            }
-            let text = model.visualStyle.applying(to: model.prompt)
-            let choice = model.generationModel
-            let directory = model.neodragonDirectory
-            do {
-                try await Task.sleep(for: .milliseconds(250))
-                let count = try await Task.detached(priority: .userInitiated) {
-                    try choice == .movd ? MOVDEngine.promptTokenCount(text) : NeodragonEngine.promptTokenCount(text, modelsAt: directory)
-                }.value
-                try Task.checkCancellation()
-                tokenCount = count
-            } catch is CancellationError { }
-            catch { tokenError = "Prompt tokens could not be checked: " + error.localizedDescription }
-        }
+        }.presentationDetents([.large]).presentationDragIndicator(.visible)
     }
 }
 
-private struct StyleSelectionCard: View {
-    let style: VisualStyle
+struct PromptEditor: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focused: Bool
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Describe your scene").font(.title2.bold())
+                TextEditor(text: $model.prompt).focused($focused).scrollContentBackground(.hidden)
+                    .padding(12).studioGlass().accessibilityIdentifier("expandedPromptInput").disabled(model.working)
+                Text("\(model.prompt.count)/500 characters · Your full scene and style must fit the model’s encoders.")
+                    .font(.caption).foregroundStyle(model.prompt.count > 500 ? .orange : .secondary)
+            }.padding(20).background(StudioTheme.background)
+                .navigationTitle("Prompt").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { focused = false; dismiss() } }
+                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Hide keyboard") { focused = false } }
+                }
+        }.presentationDetents([.large]).presentationDragIndicator(.visible)
+    }
+}
+
+struct StyleCard: View {
+    let style: StyleConditioning
     let selected: Bool
     let action: () -> Void
-    private var backgroundColor: Color { selected ? Color.mint.opacity(0.14) : Color.white.opacity(0.04) }
-    private var borderColor: Color { selected ? Color.mint : Color.clear }
-    private var traits: AccessibilityTraits { selected ? .isSelected : [] }
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                StyleSwatch(style: style).frame(width: 126, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
-                HStack {
-                    Text(style.name).font(.caption.weight(.semibold))
-                    Spacer(minLength: 2)
-                    if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.mint) }
-                }
-            }.padding(9).frame(width: 144)
-                .background(backgroundColor, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderColor, lineWidth: 1))
-        }.buttonStyle(.plain)
-            .accessibilityLabel(style.name + ". " + style.detail)
-            .accessibilityAddTraits(traits)
-            .accessibilityIdentifier("style-" + style.rawValue)
+            VStack(alignment: .leading, spacing: 9) {
+                StyleThumbnail(style: style).frame(height: 78).clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(alignment: .topTrailing) {
+                        if selected { Image(systemName: "checkmark").font(.caption.bold()).padding(8).studioGlass(radius: 20).padding(6) }
+                    }
+                Text(style.name).font(.caption.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
+            }.frame(width: 142, alignment: .leading).padding(8)
+                .background(selected ? StudioTheme.accent.opacity(0.12) : StudioTheme.surface, in: RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(selected ? StudioTheme.accent : .clear, lineWidth: 1))
+        }.buttonStyle(.plain).accessibilityLabel(style.name + ", prompt-based style")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityIdentifier("style-" + style.id)
     }
 }
 
-private struct FramingDiagram: View {
-    let framing: OutputFraming
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8).fill(.white.opacity(0.07))
-            Rectangle().fill(.mint.opacity(0.2)).overlay(Rectangle().stroke(.mint, lineWidth: 2))
-                .frame(width: 62 * CGFloat(framing.width) / 256, height: 62 * CGFloat(framing.height) / 256)
-        }.accessibilityLabel(framing.name + (framing.isCrop ? ", center crop of square" : ", native"))
-    }
-}
-
-/// Hand-drawn interface illustrations, not generated-model examples or quality claims.
-private struct StyleSwatch: View {
-    let style: VisualStyle
-    private var colors: [Color] {
-        switch style {
-        case .default: return [.init(red: 0.10, green: 0.24, blue: 0.28), .mint, .teal]
-        case .photorealistic: return [.init(red: 0.52, green: 0.75, blue: 0.89), .init(red: 0.27, green: 0.46, blue: 0.36), .init(red: 0.12, green: 0.3, blue: 0.24)]
-        case .cinematic: return [.init(red: 0.07, green: 0.16, blue: 0.22), .orange, .init(red: 0.1, green: 0.32, blue: 0.36)]
-        case .anime: return [.cyan, .pink, .indigo]
-        case .cartoon: return [.blue, .yellow, .green]
-        case .animation3D: return [.indigo, .purple, .cyan]
-        case .pixelArt: return [.init(red: 0.12, green: 0.1, blue: 0.28), .pink, .purple]
-        case .watercolor: return [.init(red: 0.9, green: 0.87, blue: 0.76), .init(red: 0.6, green: 0.76, blue: 0.76), .init(red: 0.4, green: 0.6, blue: 0.5)]
-        case .claymation: return [.init(red: 0.68, green: 0.45, blue: 0.31), .orange, .init(red: 0.4, green: 0.5, blue: 0.32)]
-        case .blackAndWhite: return [.gray, .white, .black]
-        case .vintageFilm: return [.init(red: 0.66, green: 0.55, blue: 0.39), .init(red: 0.9, green: 0.74, blue: 0.49), .init(red: 0.35, green: 0.4, blue: 0.3)]
-        case .fantasy: return [.init(red: 0.12, green: 0.06, blue: 0.29), .purple, .mint]
+/// Bundled vector illustrations; explicitly identified as illustrations, not model samples.
+struct StyleThumbnail: View {
+    let style: StyleConditioning
+    private var palette: [Color] {
+        if ["blackAndWhite", "filmNoir", "manga", "pencilSketch", "inkIllustration"].contains(style.id) { return [.init(white: 0.2), .init(white: 0.55), .init(white: 0.9)] }
+        switch style.category {
+        case .realistic: return [.init(red: 0.29, green: 0.40, blue: 0.43), .init(red: 0.55, green: 0.63, blue: 0.57), .init(red: 0.91, green: 0.81, blue: 0.62)]
+        case .animation: return [.init(red: 0.35, green: 0.38, blue: 0.61), .init(red: 0.77, green: 0.62, blue: 0.71), .init(red: 0.91, green: 0.84, blue: 0.65)]
+        case .artistic: return [.init(red: 0.73, green: 0.72, blue: 0.65), .init(red: 0.46, green: 0.58, blue: 0.58), .init(red: 0.9, green: 0.85, blue: 0.74)]
+        case .genre: return [.init(red: 0.12, green: 0.22, blue: 0.31), .init(red: 0.34, green: 0.46, blue: 0.5), .init(red: 0.72, green: 0.62, blue: 0.48)]
+        case .environment: return [.init(red: 0.2, green: 0.36, blue: 0.4), .init(red: 0.48, green: 0.61, blue: 0.49), .init(red: 0.82, green: 0.86, blue: 0.68)]
         }
     }
     var body: some View {
         Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(colors[0]))
-            let sun = CGRect(x: size.width * 0.7, y: size.height * 0.15, width: 15, height: 15)
-            context.fill(style == .pixelArt ? Path(sun) : Path(ellipseIn: sun), with: .color(colors[1]))
-            for (index, peak) in [0.32, 0.65].enumerated() {
-                var path = Path()
-                path.move(to: CGPoint(x: -10 + index * 35, y: Int(size.height)))
-                path.addLine(to: CGPoint(x: size.width * peak, y: size.height * (index == 0 ? 0.3 : 0.48)))
-                path.addLine(to: CGPoint(x: size.width + 10, y: size.height))
-                path.closeSubpath()
-                context.fill(path, with: .color(colors[index + 1].opacity(style == .watercolor ? 0.65 : 1)))
-                if style == .anime || style == .cartoon { context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 2) }
-            }
-            if style == .pixelArt || style == .vintageFilm || style == .claymation {
-                for i in 0..<42 {
-                    let x = CGFloat((i * 37) % 126), y = CGFloat((i * 17) % 72)
-                    context.fill(Path(CGRect(x: x, y: y, width: style == .pixelArt ? 4 : 1, height: 2)), with: .color(.white.opacity(0.22)))
-                }
-            }
-            if style == .cinematic {
-                context.fill(Path(CGRect(x: 0, y: 0, width: size.width, height: 7)), with: .color(.black))
-                context.fill(Path(CGRect(x: 0, y: size.height - 7, width: size.width, height: 7)), with: .color(.black))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(palette[0]))
+            context.fill(Path(ellipseIn: CGRect(x: size.width * 0.72, y: 12, width: 20, height: 20)), with: .color(palette[2]))
+            var mountain = Path(); mountain.move(to: CGPoint(x: 0, y: size.height))
+            mountain.addLine(to: CGPoint(x: size.width * 0.38, y: 24)); mountain.addLine(to: CGPoint(x: size.width, y: size.height)); mountain.closeSubpath()
+            context.fill(mountain, with: .color(palette[1]))
+            if style.category == .animation || style.id == "inkIllustration" { context.stroke(mountain, with: .color(palette[2]), lineWidth: 2) }
+            if style.id == "pixelArt" {
+                for n in 0..<12 { context.fill(Path(CGRect(x: n * 14, y: 60 - (n % 3) * 6, width: 12, height: 12)), with: .color(palette[2])) }
             }
         }.accessibilityHidden(true)
     }
 }
 
-struct ModelCapabilitiesView: View {
-    @EnvironmentObject private var model: AppModel
+struct StyleBrowser: View {
+    @ObservedObject var store: StyleStore
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var search = ""
+    @State private var scope = "All"
+    @State private var category: StyleCategory?
+    @State private var editing: StyleConditioning?
+    @State private var deleting: StyleConditioning?
+    private var filtered: [StyleConditioning] {
+        let source = scope == "Recent" ? store.recent : (scope == "Custom" ? store.custom : store.all)
+        return source.filter { item in
+            (scope != "Favorites" || store.isFavorite(item)) && (category == nil || category == item.category)
+                && (search.isEmpty || (item.name + " " + item.instructions).localizedCaseInsensitiveContains(search))
+        }
+    }
     var body: some View {
-        List {
-            Section("MOVD") {
-                LabeledContent("MOVD text to video", value: model.installed ? "Installed" : "Not installed")
-                LabeledContent("Revision", value: String(MOVDModel.revision.prefix(8)))
-                LabeledContent("Download", value: "14.1 GB · SHA-256 verified")
-                Text("T5, STDiT-v3 and the video decoder are shared by all prompt styles. Selecting a style does not download another model.").font(.caption)
-                Text("Native output: square, 256 × 256, 12 FPS, 2–5 seconds. Longer durations still require separate device validation.").font(.caption)
-            }
-            Section("Additional generation modes") {
-                ForEach([GenerationMode.imageToVideo, .extendVideo]) { mode in
-                    VStack(alignment: .leading, spacing: 7) {
-                        Label(mode.name + " · unavailable", systemImage: "lock")
-                        Text(mode.unavailableReason ?? "").font(.caption).foregroundStyle(.secondary)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Picker("Style collection", selection: $scope) { ForEach(["All", "Favorites", "Recent", "Custom"], id: \.self) { Text($0) } }
+                        .pickerStyle(.segmented).accessibilityIdentifier("styleCollection")
+                    HStack {
+                        Picker("Category", selection: $category) {
+                            Text("All categories").tag(nil as StyleCategory?)
+                            ForEach(StyleCategory.allCases) { Text($0.title).tag(Optional($0)) }
+                        }.pickerStyle(.menu).accessibilityIdentifier("styleCategory")
+                        Spacer()
+                        Button("Reset") { store.select(StyleCatalog.definition(.default)); StudioTheme.feedback() }.frame(minHeight: 44)
                     }
+                    Text("Illustrative thumbnails · prompt-based styles. These are not generated previews or trained adapters. Style consistency requires device comparisons.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if filtered.isEmpty { ContentUnavailableView("No matching styles", systemImage: "paintpalette", description: Text("Try another category or create a custom style.")) }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 280 : 150), spacing: 14)], spacing: 16) {
+                        ForEach(filtered) { style in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Button { store.select(style); StudioTheme.feedback(); dismiss() } label: {
+                                    VStack(alignment: .leading, spacing: 9) {
+                                        StyleThumbnail(style: style).frame(height: 90).clipShape(RoundedRectangle(cornerRadius: 16))
+                                            .overlay(alignment: .topTrailing) {
+                                                if store.selected.id == style.id { Image(systemName: "checkmark").padding(8).studioGlass(radius: 18).padding(6) }
+                                            }
+                                        Text(style.name).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                                        Text(style.aesthetic.isEmpty ? "Your original scene." : style.aesthetic).font(.caption).foregroundStyle(.secondary).lineLimit(3)
+                                    }.frame(maxWidth: .infinity, alignment: .leading)
+                                }.buttonStyle(.plain).accessibilityIdentifier("browse-style-" + style.id)
+                                HStack {
+                                    Button { store.toggleFavorite(style) } label: { Image(systemName: store.isFavorite(style) ? "star.fill" : "star").frame(minWidth: 44, minHeight: 44) }
+                                        .accessibilityLabel((store.isFavorite(style) ? "Unfavorite " : "Favorite ") + style.name)
+                                    Spacer()
+                                    Menu {
+                                        Button("Duplicate", systemImage: "plus.square.on.square") { var copy = style; copy.id = "custom-" + UUID().uuidString; copy.isCustom = true; copy.name = String(style.name.prefix(50)) + " copy"; editing = copy }
+                                        if style.isCustom {
+                                            Button("Edit or rename", systemImage: "pencil") { editing = style }
+                                            Button("Delete custom style", systemImage: "trash", role: .destructive) { deleting = style }
+                                        }
+                                    } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }.accessibilityLabel("Actions for " + style.name)
+                                }
+                            }.padding(12).background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 22))
+                        }
+                    }
+                }.padding(20)
+            }.studioBackground().navigationTitle("Visual styles").searchable(text: $search, prompt: "Search aesthetics, light, color…")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) { Button("New style", systemImage: "plus") { editing = .init(id: "custom-" + UUID().uuidString, name: "", isCustom: true) }.accessibilityIdentifier("newCustomStyle") }
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 }
-                Text("Image import and video continuation need their own validated conditioning workflow. These modes are not enabled in this build.").font(.caption)
-            }
-            Section("Optional Neodragon") {
-                LabeledContent("Installation", value: model.neodragonInstalled ? "Installed" : "Not installed")
-                Text("Separate hybrid text-to-video model: SSD-1B first-image diffusion, Pyramid MMDiT motion generation and a causal video decoder. Native output is 512 × 320, 24 FPS, landscape 16:10.")
-                if let manifest = model.neodragonManifest {
-                    Text("Supports selecting 2–\(manifest.maximumSeconds) seconds with this package. This port is experimental; confirm complete generation and quality on your iPhone before relying on longer jobs.")
-                } else {
-                    Text("Download is not yet enabled while the converted package is validated.")
+                .sheet(item: $editing) { CustomStyleEditor(store: store, draft: $0) }
+                .confirmationDialog("Delete this custom style? Saved videos retain their style metadata.", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
+                    Button("Delete style", role: .destructive) { if let deleting { store.remove(deleting) }; deleting = nil }
                 }
-                Text("Neodragon does not use the online smoothing helper. The original MOVD model, baseline recovery, and generated videos remain separate.")
-                Text("Thermal pauses retain the running Neodragon job in memory. Saved-job recovery after force-quitting is not yet supported for this experimental model.")
-            }
-            Section("Framing and style") {
-                Text("MOVD portrait and landscape exports are explicitly labeled center crops of square output. Neodragon uses its own native landscape dimensions; portrait and square crops are not offered for it.")
-                Text("All 12 visual styles use text conditioning. Style quality is awaiting on-device comparison; no LoRA or trained style adapter is installed.")
-            }
-            Section("Offline and rollback") {
-                Text("Generation, styles, exports, comparison and the local library use local files after the selected model is installed. Online support is optional.")
-                Text("Original weights, the baseline sampler, thermal pauses and saved-baseline recovery are preserved. Cropping always creates a separate library item.")
-            }
-        }.navigationTitle("Model capabilities")
+                .alert("Style storage", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
+        }.presentationDragIndicator(.visible)
+    }
+}
+
+struct CustomStyleEditor: View {
+    @ObservedObject var store: StyleStore
+    @State var draft: StyleConditioning
+    @State private var failure: String?
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Your style") {
+                    TextField("Style name", text: $draft.name).accessibilityIdentifier("customStyleName")
+                    TextField("Aesthetic, texture and artistic medium", text: $draft.aesthetic, axis: .vertical).lineLimit(3...6).accessibilityIdentifier("customStyleDescription")
+                    Picker("Category", selection: $draft.category) { ForEach(StyleCategory.allCases) { Text($0.title).tag($0) } }
+                }
+                Section("Optional direction") {
+                    TextField("Color palette", text: $draft.palette, axis: .vertical)
+                    TextField("Lighting", text: $draft.lighting, axis: .vertical)
+                    TextField("Camera and composition", text: $draft.camera, axis: .vertical)
+                    TextField("Motion", text: $draft.motion, axis: .vertical)
+                }
+                Section {
+                    Text("Stored only on your device. Keep instructions concise: they share the model’s token budget with your scene. Reference images and independent style strength are not supported by this model path.").font(.caption).foregroundStyle(.secondary)
+                    if let failure { Text(failure).foregroundStyle(.orange) }
+                }
+            }.studioBackground().navigationTitle("Custom style").scrollDismissesKeyboard(.immediately)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) { Button("Save") { do { try store.upsert(draft); store.select(draft); dismiss() } catch { failure = error.localizedDescription } }.accessibilityIdentifier("saveCustomStyle") }
+                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Hide keyboard", action: dismissNativeKeyboard) }
+                }
+        }
     }
 }

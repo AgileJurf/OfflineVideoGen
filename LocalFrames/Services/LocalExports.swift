@@ -20,6 +20,9 @@ actor LocalExports {
     func publish(_ sources: [Source], explicit: Bool = false) throws -> [URL] {
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        guard try root.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
         for folder in Folder.allCases {
             let url = root.appendingPathComponent(folder.rawValue, isDirectory: true)
             try fm.createDirectory(at: url, withIntermediateDirectories: true)
@@ -44,11 +47,11 @@ actor LocalExports {
                 outcome = Result {
                     var destination = coordinated.appendingPathComponent(preferred.lastPathComponent)
                     var suffix = 2
-                    let digest = try ModelInstaller.sha256(source.url)
+                    let digest = try FileIntegrity.sha256(source.url)
                     while fm.fileExists(atPath: destination.path) {
                         let values = try destination.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                         if values.isRegularFile == true, values.isSymbolicLink != true,
-                           (try? ModelInstaller.sha256(destination)) == digest { return destination }
+                           (try? FileIntegrity.sha256(destination)) == digest { return destination }
                         let base = URL(fileURLWithPath: source.filename)
                         destination = coordinated.appendingPathComponent("\(base.deletingPathExtension().lastPathComponent) (\(suffix)).\(base.pathExtension)")
                         suffix += 1

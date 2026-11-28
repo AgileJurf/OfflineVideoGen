@@ -1,4 +1,5 @@
 import AVKit
+import Charts
 import SwiftUI
 import VideoEngine
 
@@ -6,57 +7,75 @@ struct BenchmarkView: View {
     @EnvironmentObject private var model: AppModel
     @State private var sessions: [BenchmarkSummary] = []
     @State private var failure: String?
+    private var generations: [BenchmarkSummary] { sessions.filter { $0.kind == "generation" } }
     var body: some View {
         List {
-            Section("Reference configuration") {
-                LabeledContent("Model", value: "MOVD · " + String(MOVDModel.revision.prefix(8)))
-                LabeledContent("Precision", value: GenerationProfile.precision)
-                LabeledContent("Preset", value: "Baseline")
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Preset: Baseline")
-                    .accessibilityIdentifier("benchmarkBaselinePreset")
-                LabeledContent("Sampler", value: "Rectified flow · 30-point schedule")
-                LabeledContent("Diffusion evaluations", value: "21 · final leap at index 20")
-                LabeledContent("Guidance", value: "7 · conditional/unconditional batch")
-                LabeledContent("Output", value: "256 × 256 · 12 FPS")
-                Text("The reference keeps the original weights and generation settings. Test one change at a time using the same prompt and seed.").font(.caption)
+            Section("Frame Lab") {
+                LabeledContent("Active model", value: "Neodragon")
+                LabeledContent("Backend", value: "Core ML · CPU motion compatibility")
+                LabeledContent("Precision", value: "Mixed FP16/FP32; T5 FP32")
+                LabeledContent("Preset", value: "Working baseline").accessibilityIdentifier("benchmarkBaselinePreset")
+                LabeledContent("Two-second schedule", value: "4 image + 18 motion evaluations")
+                LabeledContent("Native output", value: "512 × 320 · 24 FPS")
+                Text("Fast, Balanced and Cinema presets require matched on-device comparisons. GPU/Neural Engine utilization is unavailable without device profiling; requested compute units are not utilization measurements.").font(.caption).foregroundStyle(.secondary)
+                NavigationLink("Run a reproducible baseline") { DeviceBenchmarkToolsView() }.accessibilityIdentifier("openBenchmarkTools")
+                NavigationLink("Compare saved outputs") { VideoComparisonView() }.disabled(model.videos.count < 2)
             }
-            Section("Optimization presets") {
-                ForEach(GenerationProfile.pendingPresets, id: \.self) { name in
-                    LabeledContent(name, value: "Awaiting device comparisons").foregroundStyle(.secondary)
+            ExportFilesSection()
+            if !generations.isEmpty {
+                Section("Recorded generation sessions") {
+                    LabeledContent("Succeeded / recorded", value: "\(generations.filter { $0.status == "succeeded" }.count) / \(generations.count)")
+                    Chart(generations.prefix(10)) { session in
+                        BarMark(x: .value("Session", String(session.id.prefix(18))), y: .value("Seconds", session.elapsedSeconds))
+                            .foregroundStyle(session.status == "succeeded" ? StudioTheme.accent : Color.secondary)
+                    }.chartXAxis(.hidden).frame(height: 150).accessibilityLabel("Wall time for up to ten recorded sessions")
+                    Text("Wall time includes pauses. Interrupted and resumed sessions are shown separately and are not full-generation speed comparisons.").font(.caption).foregroundStyle(.secondary)
                 }
-                Text("Presets become selectable after matched on-device timing and quality tests. No experimental precision or sampler is selected automatically.").font(.caption)
-            }
-            Section("Reproducible runs") {
-                Text("Use Setup’s Sailboat, Flag, and Rolling ball prompts. Start with seed 42 and repeat each case three times; then test seeds 123 and 2026. Keep output duration at 2 seconds.")
-                Text("Record charging, Low Power Mode, starting thermal state, and whether this is the first run after launch. Cool the phone before each comparison. A resumed session measures only the remaining work.").font(.caption).foregroundStyle(.secondary)
-                NavigationLink("Compare saved outputs") { VideoComparisonView() }
-                    .disabled(model.videos.count < 2).accessibilityIdentifier("compareBenchmarkVideos")
             }
             Section("Local sessions · latest 50") {
                 if let failure { Text(failure).foregroundStyle(.orange) }
-                if sessions.isEmpty { Text("Run a baseline in Setup to record model timings and failures.").foregroundStyle(.secondary) }
+                if sessions.isEmpty { Text("No measurements yet. Run a generation or baseline on your device.").foregroundStyle(.secondary) }
                 ForEach(sessions) { session in
-                    NavigationLink {
-                        BenchmarkSessionView(session: session)
-                    } label: {
+                    NavigationLink { BenchmarkSessionView(session: session) } label: {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("\(session.kind.capitalized) · \(session.status)")
                             Text("Build \(session.appBuild) · \(session.sessionLabel) · \(session.elapsedSeconds, specifier: "%.1f") s").font(.caption)
-                            Text(session.id).font(.caption2).lineLimit(1).foregroundStyle(.secondary)
+                            Text(session.configuration).font(.caption2).lineLimit(2).foregroundStyle(.secondary)
                         }
                     }
                 }
             }
-        }.navigationTitle("Benchmarks")
-            .task { await reload() }
-            .refreshable { await reload() }
+        }.studioBackground().navigationTitle("Frame Lab").task { await reload() }.refreshable { await reload() }
     }
     @MainActor private func reload() async {
-        guard !model.working else { failure = "Measurements are being recorded. Refresh after the run finishes."; return }
+        guard !model.working else { failure = "Measurements are being recorded. Refresh when the run finishes."; return }
         let directory = model.benchmarkDirectory
-        do { sessions = try await Task.detached(priority: .utility) { try BenchmarkSummary.list(in: directory) }.value; failure = nil }
-        catch { failure = "A local journal could not be read: " + error.localizedDescription }
+        do {
+            if FileManager.default.fileExists(atPath: directory.path) { sessions = try await Task.detached(priority: .utility) { try BenchmarkSummary.list(in: directory) }.value }
+            failure = nil
+        } catch { failure = "A local journal could not be read: " + error.localizedDescription }
+    }
+}
+
+struct DeviceBenchmarkToolsView: View {
+    @EnvironmentObject private var model: AppModel
+    @FocusState private var focused: Bool
+    var body: some View {
+        Form {
+            Section("Reproducible baseline") {
+                Text("Uses the working Neodragon weights and schedule, Default style and a two-second output. Keep charging, Low Power Mode, cache condition and starting thermal state consistent between runs.").font(.subheadline)
+                Picker("Scene", selection: $model.benchmarkPromptIndex) {
+                    ForEach(AppModel.benchmarkPrompts.indices, id: \.self) { Text(AppModel.benchmarkPrompts[$0]).tag($0) }
+                }
+                TextField("Seed", text: $model.benchmarkSeed).keyboardType(.numberPad).focused($focused).accessibilityIdentifier("benchmarkSeed")
+                Button("Run 2-second baseline", systemImage: "play.circle") { focused = false; model.runBaselineBenchmark() }
+                    .disabled(!model.installed || model.working || model.exportingFiles || UInt64(model.benchmarkSeed) == nil).accessibilityIdentifier("runBaselineBenchmark")
+                Text("Prompt, seed, model load/prediction times, sampled process memory and thermal state are recorded locally. Export only when you choose.").font(.caption).foregroundStyle(.secondary)
+            }
+            if model.working { Section { GenerationJobCard(log: model.jobLog) } }
+            ExportFilesSection()
+        }.studioBackground().navigationTitle("Baseline test").scrollDismissesKeyboard(.immediately)
+            .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focused = false }.accessibilityIdentifier("dismissKeyboard") } }
     }
 }
 
@@ -99,7 +118,7 @@ private struct BenchmarkSessionView: View {
                     }
                 }
             }
-        }.navigationTitle("Session details")
+        }.studioBackground().navigationTitle("Session details")
     }
 }
 
@@ -117,14 +136,14 @@ struct VideoComparisonView: View {
                 selection("Reference", value: $leftID)
                 selection("Comparison", value: $rightID)
                 HStack(spacing: 8) {
-                    VideoPlayer(player: leftPlayer).aspectRatio(1, contentMode: .fit)
-                    VideoPlayer(player: rightPlayer).aspectRatio(1, contentMode: .fit)
+                    VideoPlayer(player: leftPlayer).aspectRatio(CGFloat(left?.width ?? 16) / CGFloat(max(1, left?.height ?? 10)), contentMode: .fit)
+                    VideoPlayer(player: rightPlayer).aspectRatio(CGFloat(right?.width ?? 16) / CGFloat(max(1, right?.height ?? 10)), contentMode: .fit)
                 }
                 HStack {
                     Button("Play together", systemImage: "play.fill") { Task { await replay() } }
                     Spacer()
                     Button("Pause", systemImage: "pause.fill") { leftPlayer?.pause(); rightPlayer?.pause() }
-                }.buttonStyle(.bordered)
+                }.buttonStyle(.bordered).disabled(model.working)
                 if let left, let right {
                     if left.effectivePrompt != right.effectivePrompt || left.seed != right.seed || left.duration != right.duration {
                         Text("Model prompts, styles, seeds, or duration differ. This can be a style comparison, but it is not a matched inference-performance comparison.").foregroundStyle(.orange)
@@ -143,10 +162,11 @@ struct VideoComparisonView: View {
                 Text("Inspect motion, subject identity, background stability, prompt adherence and flicker. Lower frame differences alone do not indicate better quality; a frozen video can score well on that measure.").font(.footnote).foregroundStyle(.secondary)
                 Text("Playback comparison leaves both original videos intact. Export each from its Library preview.").font(.caption).foregroundStyle(.secondary)
             }.padding()
-        }.navigationTitle("Compare outputs")
+        }.studioBackground().navigationTitle("Compare outputs")
             .task { leftID = model.videos.last?.id; rightID = model.videos.first?.id; loadPlayers() }
             .onChange(of: leftID) { loadPlayers() }
             .onChange(of: rightID) { loadPlayers() }
+            .onChange(of: model.working) { if model.working { leftPlayer?.pause(); rightPlayer?.pause() } }
             .onDisappear { leftPlayer?.pause(); rightPlayer?.pause() }
     }
     private func selection(_ title: String, value: Binding<UUID?>) -> some View {
@@ -161,7 +181,7 @@ struct VideoComparisonView: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(label).font(.headline)
             Text(video.prompt)
-            Text("Style: " + video.style.name)
+            Text("Style: " + video.styleName)
             Text(video.isCrop ? "Center-cropped copy" : (video.smoothing == nil ? video.framingName + " output" : "RIFE interpolated copy"))
             if let smoothing = video.smoothing { Text("Smoothing + transfer: \(smoothing.elapsedSeconds, specifier: "%.2f") s") }
             Text("Seed \(video.seed)")

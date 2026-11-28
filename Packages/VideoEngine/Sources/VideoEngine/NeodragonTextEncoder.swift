@@ -8,7 +8,7 @@ struct NeodragonTextEncoding {
 }
 
 /// Uses the optional package's own four CLIP encoders and distilled T5. Neither
-/// pretrained text weights nor tokenizers are substituted with MOVD components.
+/// pretrained text weights nor tokenizers are substituted with other model components.
 struct NeodragonTextEncoder {
     let runner: ModelRunner
 

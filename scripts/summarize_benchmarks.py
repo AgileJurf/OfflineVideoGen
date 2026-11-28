@@ -186,7 +186,7 @@ def render(runs):
         if failures:
             lines += ["Observed failures:", ""] + [f"- **{name}**: {escape(message)}" for name, message in failures] + [""]
     lines += ["## Optimization decision", "",
-              "No speedup or quality improvement is inferred from these logs alone. Before testing an optimization, require a completed physical iPhone baseline, all 102 successful partition predictions, a verified exported MP4, and visual review. Compare matched prompts/seeds, device/OS, model hashes, thermal/cache conditions, and instrumentation. Separate first-run and repeated-run results.", "",
+              "No speedup or quality improvement is inferred from these logs alone. Before testing an optimization, require a completed physical iPhone baseline, successful predictions from every partition required by that model, a verified exported MP4, and visual review. Compare matched prompts/seeds, device/OS, model hashes, thermal/cache conditions, and instrumentation. Separate first-run and repeated-run results.", "",
               "Float16 conversion, Neural Engine placement changes, and sampler/step reductions remain experimental until paired output and timing measurements pass. Preserve the baseline tag and model manifest. Choose the next experiment using the measured load/predict bottleneck table; missing measurements are not zero-cost operations.", ""]
     return "\n".join(lines)
 

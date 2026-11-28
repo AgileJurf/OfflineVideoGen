@@ -1,7 +1,7 @@
 import Foundation
 
 /// CLIP byte-level BPE for the pinned Neodragon assets. This mirrors the
-/// transformers 4.46 BasicTokenizer path (without optional ftfy). MOVD's T5
+/// transformers 4.46 BasicTokenizer path (without optional ftfy). Other T5
 /// tokenizer is separate. The caller must provide verified local model assets.
 final class NeodragonCLIPTokenizer {
     enum Failure: LocalizedError {

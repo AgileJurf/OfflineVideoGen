@@ -2,14 +2,41 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "functions": { "api/v1/diagnostics.js": { "maxDuration": 10, "memory": 1024, "includeFiles": "data/**" } },
   "headers": [
-    { "source": "/(.*)", "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Referrer-Policy", "value": "no-referrer" },
-      { "key": "Content-Security-Policy", "value": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }
-    ] },
-    { "source": "/api/v1/config.json", "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, s-maxage=3600" }] },
-    { "source": "/api/v1/models/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/api/v1/config.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=3600"
+        }
+      ]
+    },
+    {
+      "source": "/api/v1/models/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, immutable"
+        }
+      ]
+    }
   ]
 }

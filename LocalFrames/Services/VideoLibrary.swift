@@ -26,6 +26,7 @@ struct VideoRecord: Codable, Identifiable, Hashable {
     var postprocessingSeconds: Double? = nil
     var smoothing: SmoothingProvenance? = nil
     var modelID: String? = nil
+    var styleConditioning: StyleConditioning? = nil
 
     var style: VisualStyle { visualStyle ?? .default }
     var effectivePrompt: String { effectiveModelPrompt ?? prompt }
@@ -33,10 +34,9 @@ struct VideoRecord: Codable, Identifiable, Hashable {
     var framing: OutputFraming { outputFraming ?? .square }
     var isNeodragon: Bool { modelID == NeodragonModel.identifier || metrics.modelRevision == NeodragonModel.weightsRevision }
     var framingName: String { isNeodragon && !isCrop ? "Native 16:10" : framing.name }
+    var styleName: String { styleConditioning?.name ?? style.name }
     var canReuseSettings: Bool {
-        (generationMode ?? .textToVideo) == .textToVideo
-            && (metrics.modelRevision == MOVDModel.revision || metrics.modelRevision == NeodragonModel.weightsRevision)
-            && (styleConditioningVersion ?? 1) == 1 && effectivePrompt == style.applying(to: prompt)
+        (generationMode ?? .textToVideo) == .textToVideo && isNeodragon && smoothing == nil
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
@@ -60,56 +60,14 @@ actor VideoLibrary {
         }.sorted { $0.createdAt > $1.createdAt }
     }
 
-    func add(temporaryURL: URL, request: GenerationRequest, metrics: GenerationMetrics,
-             requestedFraming: OutputFraming = .square) async throws -> VideoRecord {
-        let item = VideoRecord(id: UUID(), prompt: request.prompt, duration: request.duration, width: request.width,
-                               height: request.height, framesPerSecond: request.framesPerSecond, seed: request.seed,
-                               createdAt: Date(), metrics: metrics, generationMode: .textToVideo,
-                               effectiveModelPrompt: request.effectivePrompt, visualStyle: request.style,
-                               styleConditioningVersion: 1, outputFraming: .square, requestedFraming: requestedFraming,
-                               mediaKind: "generated")
-        return try await persist(item, temporaryURL: temporaryURL)
-    }
-
-    func addCrop(temporaryURL: URL, original: VideoRecord, framing: OutputFraming,
-                 elapsedSeconds: Double) async throws -> VideoRecord {
-        guard framing.isCrop, !original.isCrop, original.width == 256, original.height == 256 else {
-            throw GenerationError.encodingFailed("Use the original square video to create a crop")
-        }
-        // Keep the original generation metrics, explicitly separate from export timing.
-        let item = VideoRecord(id: UUID(), prompt: original.prompt, duration: original.duration,
-            width: framing.width, height: framing.height, framesPerSecond: original.framesPerSecond,
-            seed: original.seed, createdAt: Date(), metrics: original.metrics,
-            generationMode: original.generationMode ?? .textToVideo, effectiveModelPrompt: original.effectivePrompt,
-            visualStyle: original.style, styleConditioningVersion: original.styleConditioningVersion ?? 1,
-            outputFraming: framing, requestedFraming: framing, sourceImageReference: original.sourceImageReference,
-            parentVideoID: original.id, extensionHistory: original.extensionHistory,
-            mediaKind: "center-crop-v1", postprocessingSeconds: elapsedSeconds, smoothing: original.smoothing)
-        return try await persist(item, temporaryURL: temporaryURL)
-    }
-
-    func addNeodragon(temporaryURL: URL, request: NeodragonGenerationRequest, metrics: GenerationMetrics) async throws -> VideoRecord {
+    func addNeodragon(temporaryURL: URL, request: NeodragonGenerationRequest, metrics: GenerationMetrics, conditioning: StyleConditioning? = nil) async throws -> VideoRecord {
         guard metrics.modelRevision == NeodragonModel.weightsRevision else { throw GenerationError.invalidTensor }
         let item = VideoRecord(id: UUID(), prompt: request.prompt, duration: request.duration,
             width: NeodragonModel.width, height: NeodragonModel.height, framesPerSecond: NeodragonModel.framesPerSecond,
             seed: request.seed, createdAt: Date(), metrics: metrics, generationMode: .textToVideo,
-            effectiveModelPrompt: request.effectivePrompt, visualStyle: request.style, styleConditioningVersion: 1,
-            mediaKind: "generated", modelID: NeodragonModel.identifier)
+            effectiveModelPrompt: request.effectivePrompt, visualStyle: request.style, styleConditioningVersion: conditioning?.version ?? 1,
+            mediaKind: "generated", modelID: NeodragonModel.identifier, styleConditioning: conditioning)
         return try await persist(item, temporaryURL: temporaryURL)
-    }
-
-    func addSmoothed(_ result: SmoothingResult, original: VideoRecord) async throws -> VideoRecord {
-        guard SmoothingMedia.supports(original) else { throw SmoothingError.unsupported }
-        _ = try await SmoothingMedia.inspect(result.url, fps: 24, acceptedCounts: [48])
-        try Task.checkCancellation()
-        let item = VideoRecord(id: UUID(), prompt: original.prompt, duration: 2, width: 256, height: 256,
-            framesPerSecond: 24, seed: original.seed, createdAt: Date(), metrics: original.metrics,
-            generationMode: original.generationMode ?? .textToVideo, effectiveModelPrompt: original.effectivePrompt,
-            visualStyle: original.style, styleConditioningVersion: original.styleConditioningVersion,
-            outputFraming: .square, requestedFraming: original.requestedFraming,
-            parentVideoID: original.id, mediaKind: "rife-24fps-v1",
-            postprocessingSeconds: result.provenance.elapsedSeconds, smoothing: result.provenance)
-        return try await persist(item, temporaryURL: result.url)
     }
 
     private func persist(_ item: VideoRecord, temporaryURL: URL) async throws -> VideoRecord {

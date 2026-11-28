@@ -2,7 +2,7 @@ import CoreML
 import Foundation
 
 /// Native port of the hybrid checkpoint's three-stage autoregressive flow.
-/// This is experimental and is not selected by the shipping MOVD generation UI.
+/// Used by the Neodragon pipeline with its validated CPU motion compatibility policy.
 struct NeodragonDenoiser {
     let runner: ModelRunner
     let maximumLatentFrames: Int

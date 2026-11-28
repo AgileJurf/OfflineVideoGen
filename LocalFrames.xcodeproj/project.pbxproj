@@ -9,17 +9,7 @@
 /* Begin PBXBuildFile section */
 		A19000000000000000000004 /* neodragon-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000003 /* neodragon-manifest.json */; };
 		A19000000000000000000002 /* NeodragonInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000001 /* NeodragonInstaller.swift */; };
-		A16000000000000000000002 /* GenerationWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A16000000000000000000001 /* GenerationWorkflowView.swift */; };
-		A15000000000000000000004 /* HuggingFaceAccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15000000000000000000003 /* HuggingFaceAccountTests.swift */; };
-		A15000000000000000000002 /* HuggingFaceAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15000000000000000000001 /* HuggingFaceAccount.swift */; };
-		A13000000000000000000021 /* SupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000020 /* SupportTests.swift */; };
-		A1300000000000000000000A /* support-config.json in Resources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000009 /* support-config.json */; };
-		A13000000000000000000008 /* OnlineSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000007 /* OnlineSupportView.swift */; };
-		A13000000000000000000006 /* DiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000005 /* DiagnosticReport.swift */; };
-		A13000000000000000000004 /* OnlineSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000003 /* OnlineSupport.swift */; };
-		A13000000000000000000002 /* SupportCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000001 /* SupportCatalog.swift */; };
 		A12000000000000000000003 /* GenerationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* GenerationOptionsView.swift */; };
-		A12000000000000000000001 /* VideoCropExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* VideoCropExporter.swift */; };
 		A11000000000000000000001 /* BenchmarkSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000003 /* BenchmarkSummary.swift */; };
 		A11000000000000000000002 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11000000000000000000004 /* BenchmarkView.swift */; };
 		70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */; };
@@ -35,17 +25,19 @@
 		6D959CB7EC6CE15802AA6849 /* LocalFrames/App/AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC275C2380C38304077287A /* LocalFrames/App/AppModel.swift */; };
 		7C79F71523ABF91162CFA123 /* VideoEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 13FED826EBF589E7F413451E /* VideoEngine */; };
 		8C73D23E356DAECD8A5CDEAA /* LocalFrames/Services/ModelInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B12CF3A348F16708961C4B /* LocalFrames/Services/ModelInstaller.swift */; };
-		9BAB60B45E80E8A7ADFBF6AA /* LocalFrames/Resources/model-manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 3EAE767F204296473D3FF2C3 /* LocalFrames/Resources/model-manifest.json */; };
 		AA5A4A7D5DDDB14FC18C6D09 /* LocalFrames/Views/PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */; };
 		C95C24E471C6B076333C2945 /* VideoEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 13FED826EBF589E7F413451E /* VideoEngine */; };
 		F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */; };
-		A14000000000000000000002 /* VideoSmoothing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000001 /* VideoSmoothing.swift */; };
-		A14000000000000000000004 /* RIFEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000003 /* RIFEClient.swift */; };
-		A14000000000000000000006 /* SmoothingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000005 /* SmoothingView.swift */; };
-		A14000000000000000000008 /* SmoothingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000007 /* SmoothingTests.swift */; };
-		A14000000000000000000011 /* source-12fps.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000010 /* source-12fps.mp4 */; };
-		A14000000000000000000013 /* rife-24fps-raw.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000012 /* rife-24fps-raw.mp4 */; };
-		A14000000000000000000015 /* rife-24fps-duration-corrected.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */; };
+		1570D98816720B6F2FFFBCCC /* StudioDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B8E88B7026A52E8134666D /* StudioDesign.swift */; };
+		8AFBD0E221BC882BEE59476D /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE904AEB8698442359C5E07A /* LibraryView.swift */; };
+		6613C4562F121D578074E59B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB2BD838004E7F01BEF2685 /* SettingsView.swift */; };
+		0FE573A219AD4890C914CC9A /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93857BE5854DD7ED807FCA74 /* ModelsView.swift */; };
+		100E29C9E2C68472D48B01F9 /* StyleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC79DD0E3606A4FF1A41EE82 /* StyleStore.swift */; };
+		37AEF87E61CB05A56A712EF1 /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E8B0BD2719D70FC6092BA3 /* LegacyMigration.swift */; };
+		15CB525D07F200C1297C3D6F /* LegacyVideoMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F3BE0A6E211797B0CAB715 /* LegacyVideoMetadata.swift */; };
+		8489F5A52F51979D238B0FFC /* LocalExports.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B8C487716057AFC4E2C7CF6 /* LocalExports.swift */; };
+		B71EBE87D4BD6BCE593E2821 /* JobActivityLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83175051EC8511C2B003C5CA /* JobActivityLog.swift */; };
+		FA5E62BA0F0D443743F5204B /* StudioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D59F38FEA8F37A39C2261B /* StudioTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,17 +60,7 @@
 /* Begin PBXFileReference section */
 		A19000000000000000000003 /* neodragon-manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/neodragon-manifest.json"; sourceTree = "<group>"; };
 		A19000000000000000000001 /* NeodragonInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/NeodragonInstaller.swift; sourceTree = "<group>"; };
-		A16000000000000000000001 /* GenerationWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationWorkflowView.swift; sourceTree = "<group>"; };
-		A15000000000000000000003 /* HuggingFaceAccountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesTests/HuggingFaceAccountTests.swift; sourceTree = "<group>"; };
-		A15000000000000000000001 /* HuggingFaceAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/HuggingFaceAccount.swift; sourceTree = "<group>"; };
-		A13000000000000000000020 /* SupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesTests/SupportTests.swift; sourceTree = "<group>"; };
-		A13000000000000000000009 /* support-config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/support-config.json"; sourceTree = "<group>"; };
-		A13000000000000000000007 /* OnlineSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Views/OnlineSupportView.swift"; sourceTree = "<group>"; };
-		A13000000000000000000005 /* DiagnosticReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/DiagnosticReport.swift"; sourceTree = "<group>"; };
-		A13000000000000000000003 /* OnlineSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/OnlineSupport.swift"; sourceTree = "<group>"; };
-		A13000000000000000000001 /* SupportCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/SupportCatalog.swift"; sourceTree = "<group>"; };
 		A12000000000000000000004 /* GenerationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/GenerationOptionsView.swift; sourceTree = "<group>"; };
-		A12000000000000000000002 /* VideoCropExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/VideoCropExporter.swift; sourceTree = "<group>"; };
 		A11000000000000000000003 /* BenchmarkSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BenchmarkSummary.swift; sourceTree = "<group>"; };
 		A11000000000000000000004 /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/BenchmarkView.swift; sourceTree = "<group>"; };
 		70DD95CE5C1A4A1EB33E1007 /* BackgroundGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/BackgroundGeneration.swift; sourceTree = "<group>"; };
@@ -91,7 +73,6 @@
 		2DB1C44E28A5D023461904E6 /* LocalFrames/Services/VideoLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/VideoLibrary.swift; sourceTree = "<group>"; };
 		3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LocalFrames/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		39B12CF3A348F16708961C4B /* LocalFrames/Services/ModelInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/ModelInstaller.swift; sourceTree = "<group>"; };
-		3EAE767F204296473D3FF2C3 /* LocalFrames/Resources/model-manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LocalFrames/Resources/model-manifest.json"; sourceTree = "<group>"; };
 		531742986503AE461A9D3287 /* LocalFramesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LocalFramesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		64955CBB9888BE58AD2B1590 /* LocalFrames/Views/RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/RootView.swift; sourceTree = "<group>"; };
 		736641190CE356BA8A3F766E /* LocalFrames.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalFrames.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -100,13 +81,16 @@
 		DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LocalFrames/Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/PreviewView.swift; sourceTree = "<group>"; };
 		EFC275C2380C38304077287A /* LocalFrames/App/AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/App/AppModel.swift; sourceTree = "<group>"; };
-		A14000000000000000000001 /* VideoSmoothing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/VideoSmoothing.swift"; sourceTree = "<group>"; };
-		A14000000000000000000003 /* RIFEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Services/RIFEClient.swift"; sourceTree = "<group>"; };
-		A14000000000000000000005 /* SmoothingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFrames/Views/SmoothingView.swift"; sourceTree = "<group>"; };
-		A14000000000000000000007 /* SmoothingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalFramesTests/SmoothingTests.swift"; sourceTree = "<group>"; };
-		A14000000000000000000010 /* source-12fps.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/source-12fps.mp4"; sourceTree = "<group>"; };
-		A14000000000000000000012 /* rife-24fps-raw.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/rife-24fps-raw.mp4"; sourceTree = "<group>"; };
-		A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = "docs/benchmarks/rife-synthetic-2026-11-21/rife-24fps-duration-corrected.mp4"; sourceTree = "<group>"; };
+		56B8E88B7026A52E8134666D /* StudioDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/StudioDesign.swift; sourceTree = "<group>"; };
+		FE904AEB8698442359C5E07A /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/LibraryView.swift; sourceTree = "<group>"; };
+		2EB2BD838004E7F01BEF2685 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/SettingsView.swift; sourceTree = "<group>"; };
+		93857BE5854DD7ED807FCA74 /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Views/ModelsView.swift; sourceTree = "<group>"; };
+		EC79DD0E3606A4FF1A41EE82 /* StyleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/StyleStore.swift; sourceTree = "<group>"; };
+		57E8B0BD2719D70FC6092BA3 /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/LegacyMigration.swift; sourceTree = "<group>"; };
+		23F3BE0A6E211797B0CAB715 /* LegacyVideoMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/LegacyVideoMetadata.swift; sourceTree = "<group>"; };
+		0B8C487716057AFC4E2C7CF6 /* LocalExports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/LocalExports.swift; sourceTree = "<group>"; };
+		83175051EC8511C2B003C5CA /* JobActivityLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFrames/Services/JobActivityLog.swift; sourceTree = "<group>"; };
+		B6D59F38FEA8F37A39C2261B /* StudioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFramesTests/StudioTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,23 +124,7 @@
 		B28B7AF69320201D1CF206EB = {
 			isa = PBXGroup;
 			children = (
-				A12000000000000000000002 /* VideoCropExporter.swift */,
 				A12000000000000000000004 /* GenerationOptionsView.swift */,
-				A16000000000000000000001 /* GenerationWorkflowView.swift */,
-				A13000000000000000000001 /* SupportCatalog.swift */,
-				A13000000000000000000003 /* OnlineSupport.swift */,
-				A14000000000000000000014 /* rife-24fps-duration-corrected.mp4 */,
-				A14000000000000000000012 /* rife-24fps-raw.mp4 */,
-				A14000000000000000000010 /* source-12fps.mp4 */,
-				A14000000000000000000007 /* SmoothingTests.swift */,
-				A15000000000000000000003 /* HuggingFaceAccountTests.swift */,
-				A14000000000000000000005 /* SmoothingView.swift */,
-				A14000000000000000000003 /* RIFEClient.swift */,
-				A15000000000000000000001 /* HuggingFaceAccount.swift */,
-				A14000000000000000000001 /* VideoSmoothing.swift */,
-				A13000000000000000000005 /* DiagnosticReport.swift */,
-				A13000000000000000000007 /* OnlineSupportView.swift */,
-				A13000000000000000000009 /* support-config.json */,
 				A11000000000000000000003 /* BenchmarkSummary.swift */,
 				A11000000000000000000004 /* BenchmarkView.swift */,
 				B1550ED80F46BEA14D5A9DBA /* LocalFrames/App/LocalFramesApp.swift */,
@@ -166,15 +134,23 @@
 				70DD95CE5C1A4A1EB33E1008 /* BackgroundTasks.plist */,
 				EA2C3119B803EE3F80AAC75E /* LocalFrames/Views/PreviewView.swift */,
 				64955CBB9888BE58AD2B1590 /* LocalFrames/Views/RootView.swift */,
+				B6D59F38FEA8F37A39C2261B /* StudioTests.swift */,
+				83175051EC8511C2B003C5CA /* JobActivityLog.swift */,
+				0B8C487716057AFC4E2C7CF6 /* LocalExports.swift */,
+				23F3BE0A6E211797B0CAB715 /* LegacyVideoMetadata.swift */,
+				57E8B0BD2719D70FC6092BA3 /* LegacyMigration.swift */,
+				EC79DD0E3606A4FF1A41EE82 /* StyleStore.swift */,
+				93857BE5854DD7ED807FCA74 /* ModelsView.swift */,
+				2EB2BD838004E7F01BEF2685 /* SettingsView.swift */,
+				FE904AEB8698442359C5E07A /* LibraryView.swift */,
+				56B8E88B7026A52E8134666D /* StudioDesign.swift */,
 				2DB1C44E28A5D023461904E6 /* LocalFrames/Services/VideoLibrary.swift */,
 				39B12CF3A348F16708961C4B /* LocalFrames/Services/ModelInstaller.swift */,
 				A19000000000000000000001 /* NeodragonInstaller.swift */,
 				A19000000000000000000003 /* neodragon-manifest.json */,
-				3EAE767F204296473D3FF2C3 /* LocalFrames/Resources/model-manifest.json */,
 				DA1E8070B6C657DF7198E1E6 /* LocalFrames/Resources/PrivacyInfo.xcprivacy */,
 				70DD95CE5C1A4A1EB33E1002 /* ThirdPartyNotices.txt */,
 				70DD95CE5C1A4A1EB33E1004 /* build-revision.txt */,
-				A13000000000000000000020 /* SupportTests.swift */,
 				7E66C14A7DCC17C6A58C6578 /* LocalFramesTests/LocalFramesTests.swift */,
 				241EB42AFE25A1EF142275AC /* LocalFramesUITests/LocalFramesUITests.swift */,
 				3685E330EC5277A9DD5661C6 /* LocalFrames/Resources/Assets.xcassets */,
@@ -314,9 +290,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1300000000000000000000A /* support-config.json in Resources */,
 				A19000000000000000000004 /* neodragon-manifest.json in Resources */,
-				9BAB60B45E80E8A7ADFBF6AA /* LocalFrames/Resources/model-manifest.json in Resources */,
 				2463BF9F68A03EAAA7001AC5 /* LocalFrames/Resources/PrivacyInfo.xcprivacy in Resources */,
 				F0C3048B9C4C204F3473B058 /* LocalFrames/Resources/Assets.xcassets in Resources */,
 				70DD95CE5C1A4A1EB33E1001 /* ThirdPartyNotices.txt in Resources */,
@@ -328,9 +302,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A14000000000000000000015 /* rife-24fps-duration-corrected.mp4 in Resources */,
-				A14000000000000000000013 /* rife-24fps-raw.mp4 in Resources */,
-				A14000000000000000000011 /* source-12fps.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,9 +312,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A14000000000000000000008 /* SmoothingTests.swift in Sources */,
-				A15000000000000000000004 /* HuggingFaceAccountTests.swift in Sources */,
-				A13000000000000000000021 /* SupportTests.swift in Sources */,
+				FA5E62BA0F0D443743F5204B /* StudioTests.swift in Sources */,
 				09DAF5CEF579DFFB8EE764A1 /* LocalFramesTests/LocalFramesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -352,17 +321,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A14000000000000000000006 /* SmoothingView.swift in Sources */,
-				A14000000000000000000004 /* RIFEClient.swift in Sources */,
-				A15000000000000000000002 /* HuggingFaceAccount.swift in Sources */,
-				A14000000000000000000002 /* VideoSmoothing.swift in Sources */,
-				A12000000000000000000001 /* VideoCropExporter.swift in Sources */,
+				1570D98816720B6F2FFFBCCC /* StudioDesign.swift in Sources */,
+				8AFBD0E221BC882BEE59476D /* LibraryView.swift in Sources */,
+				6613C4562F121D578074E59B /* SettingsView.swift in Sources */,
+				0FE573A219AD4890C914CC9A /* ModelsView.swift in Sources */,
+				100E29C9E2C68472D48B01F9 /* StyleStore.swift in Sources */,
+				37AEF87E61CB05A56A712EF1 /* LegacyMigration.swift in Sources */,
+				15CB525D07F200C1297C3D6F /* LegacyVideoMetadata.swift in Sources */,
+				8489F5A52F51979D238B0FFC /* LocalExports.swift in Sources */,
+				B71EBE87D4BD6BCE593E2821 /* JobActivityLog.swift in Sources */,
 				A12000000000000000000003 /* GenerationOptionsView.swift in Sources */,
-				A16000000000000000000002 /* GenerationWorkflowView.swift in Sources */,
-				A13000000000000000000002 /* SupportCatalog.swift in Sources */,
-				A13000000000000000000004 /* OnlineSupport.swift in Sources */,
-				A13000000000000000000006 /* DiagnosticReport.swift in Sources */,
-				A13000000000000000000008 /* OnlineSupportView.swift in Sources */,
 				A11000000000000000000001 /* BenchmarkSummary.swift in Sources */,
 				A11000000000000000000002 /* BenchmarkView.swift in Sources */,
 				70DD95CE5C1A4A1EB33E1006 /* BackgroundGeneration.swift in Sources */,

@@ -1,68 +1,35 @@
-# Local Frames
+# LOCAL FRAMES
 
-A standalone SwiftUI research application for offline text-to-video generation on iPhone, with MOVD / Open-Sora and a separately downloadable experimental Neodragon engine.
+A standalone native SwiftUI studio for genuine offline video diffusion on iPhone. The active engine is **Qualcomm AI Research Neodragon**, with Core ML conversion and runtime code in this repository. It has no dependency on JurfPod or remote AI inference.
 
-**Development status: experimental, with incremental device validation required.** See the [validation record](docs/VALIDATION.md) for software checks and [generation compatibility report](docs/GENERATION_EXPANSION.md) for enabled and blocked features. Build and simulator tests do not establish iPhone performance or video quality. New device journals and output evidence remain private.
+The development branch `feature/snapdragon-studio` combines the Liquid Glass redesign with legacy retirement. It is not merged into production. The working Build 44 checkpoint remains available as `baseline/testflight-build-44`.
 
-MOVD supports 256 × 256, 12 FPS, and 2–5 seconds. The optional Neodragon port offers native 512 × 320, 24 FPS, and a 2–9 second selector. Both use genuine local video diffusion. Model files download once and remain in the app sandbox; generation has no network service dependency. Neodragon's physical-device acceptance is still pending.
+## Current capabilities
 
-This repository is independent of other applications. The Git source tree contains no model weights, developer credentials, or device identifiers. Optional model weights are distributed separately as verified release assets.
+- Neodragon hybrid checkpoint: SSD-1B first image, Pyramid MMDiT motion diffusion, causal video decoding. Hybrid means local model stages, not cloud assistance.
+- Native 512 × 320 (16:10) output at 24 FPS. The package supports 2–9-second tensor shapes. Two-second physical-device completion is established; longer durations remain experimental, with a reported five-second memory-pressure cancellation under investigation.
+- Unchanged working weights, mixed FP16/FP32 precision, Float32 T5, four-step image LCM and three motion evaluations per subsequent latent unit. CPU motion compatibility preserves the Build 44 runtime fix.
+- 58 local **prompt-based** styles and editable custom conditioning. Original prompts and versioned style settings remain separate from effective model prompts. The complete prompt must fit every actual tokenizer; nothing is silently shortened. No trained style adapter or unvalidated style-strength control is advertised.
+- Four native tabs: Create, Library, Models and Settings. Native Liquid Glass on compatible SDKs/OS versions, accessible material/opaque fallbacks on iOS 18, system/light/dark appearance, keyboard dismissal, native AVKit playback and cached thumbnails.
+- Frame Lab, measured local journals, bounded running job log, elapsed time and measured motion-stage estimates. Estimates are not full-job guarantees.
+- Files app access under **On My iPhone → Local Frames → Videos / Benchmarks**. Export copies are separate from the private library. Settings and Frame Lab prominently expose **Export Benchmark Files**.
 
-## Build and test
+Image conditioning, AI continuation, alternative native aspect ratios, AI audio, trained style adapters and new Fast/Balanced/Cinema configurations are not exposed as working capabilities. See [studio migration and validation](docs/STUDIO_MIGRATION.md).
 
-Open `LocalFrames.xcodeproj` in Xcode 16.4 or newer and select the shared **LocalFrames** scheme. The app requires iOS 18 or newer. Swift package versions are locked in `Package.resolved`.
+## Install and run
 
-```sh
-xcodebuild -project LocalFrames.xcodeproj -scheme LocalFrames \
-  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build-for-testing
-```
+Open `LocalFrames.xcodeproj`, using the existing LocalFrames scheme and application identity. Minimum deployment remains iOS 18. The modern glass code uses compile-time SDK and runtime OS gates; Xcode Cloud is authoritative for those APIs.
 
-Use **Product → Test** with an available iPhone simulator to run the unit and UI suites. They check prompt validation, model gating, checksums, MP4 encoding, library persistence, and navigation. Synthetic pixels are used only as an encoder test fixture; those tests do not run diffusion or establish generation quality.
+In Models, explicitly confirm installation of Neodragon. Eight pinned SHA-256-verified archives total **7,881,071,452 bytes**. Installation requires **32,212,254,720 bytes** free for download, extraction and compilation. Existing installations are reused at the same sandbox path. Downloads resume when the server provides valid resume data. Generation and styles require no network after installation.
 
-For device builds, choose your Apple Developer team under Signing & Capabilities for all three targets. See [Xcode Cloud setup](docs/XCODE_CLOUD.md) for the cloud-first test workflow.
+This branch has no MOVD inference engine, model selector or download manifest, and no online assistant, Hugging Face sign-in or smoothing uploader. An audited, journaled one-time migration removes exact retired files while preserving the active Neodragon package, videos, metadata and settings. Storage reports actual deleted file bytes, not a promised amount.
 
-The [internal TestFlight guide](docs/TESTFLIGHT.md) covers installation, model setup, and the first offline test on an iPhone.
+## Validation and rollback
 
-## Model installation and generation
+Routine unit/UI tests use lightweight fixtures and never download model weights. Real-model tests are explicit opt-in tests and are skipped without their private local assets. Simulator success is not evidence of physical-device inference performance.
 
-In **Setup**, install the MOVD model over Wi-Fi. The three upstream archives total **14,133,836,614 bytes**. The app requires 50 GB free during extraction and compilation; that is a conservative setup allowance, not a measured installed size. SHA-256 checks occur before extraction. Downloads can resume when the server supplies valid resume data; interrupted model compilation starts again.
+The manual Xcode Cloud workflow **LOCAL FRAMES — Liquid Glass Development** uses the existing developer team, bundle identifier and App Store Connect record. It analyzes, tests one simulator destination, archives and distributes only to internal testers. No production merge or public distribution is authorized by this branch.
 
-After installation, enter a short prompt, select 2–5 seconds, and start generation. The engine performs T5 prompt encoding, STDiT temporal diffusion, temporal/spatial VAE decoding, and H.264 MP4 encoding locally. It loads one Core ML partition at a time. Serious/critical heat pauses work until nominal; cancellation and memory checks remain active. A running Core ML prediction cannot be interrupted immediately.
+[Neodragon conversion record](docs/NEODRAGON_IMPLEMENTATION.md) · [upstream source](https://github.com/qualcomm-ai-research/neodragon) · [upstream weights](https://huggingface.co/Qualcomm-AI-Research/Neodragon) · [model tooling and licenses](tools/neodragon/README.md)
 
-The 2-second benchmark saves completed motion steps and offers **Resume saved baseline** after relaunch. iOS 26+ builds request supported background GPU execution; if unavailable, work pauses while the app is backgrounded and continues on returning. Background time is controlled by iOS. See [continuation and recovery](docs/RESUMABLE_BASELINE.md) for measured versus unverified behavior.
-
-The library supports playback, replay, deletion, regeneration, Photos saving, and Files export. A completed generation stores its seed and sampled timing/memory/thermal metrics locally. No analytics or remote inference service is configured.
-
-Create offers twelve prompt-based visual styles with an explicit 63-token scene-plus-style budget, fixed seeds, and saved settings. Default preserves the unstyled prompt. Portrait and landscape options create clearly labeled 144 × 256 / 256 × 144 center-cropped copies; the native square original is retained. Image-to-video and AI continuation remain unavailable pending compatible encoder and conditioning exports. The capability screen explains these limits. No additional model is downloaded by these controls.
-
-Optional local diagnostics for Create jobs can be enabled in Setup. They include prompts and remain on the device unless manually exported. The benchmark screen supports side-by-side playback; precision and faster sampler presets require measured physical-device comparisons before activation.
-
-## Optional Neodragon
-
-The optional package has 168 Core ML partitions in eight SHA-256-verified archives: **7,881,071,452 bytes** to download, with **32,212,254,720 bytes** free required during installation. Setup requires a separate confirmation and stores the package independently from MOVD. Create selects the installed engine and its duration range. Removing Neodragon preserves MOVD and the local video library.
-
-Neodragon generates its first image with SSD-1B, then uses Pyramid MMDiT motion diffusion and a causal video decoder. Its native 24 FPS output requires no online smoothing or upload. Two seconds exports 48 actual frames; nine seconds requests 216. MOVD's fixed model retains its five-second limit. Nine-second attention and decoder checks do not establish full nine-second device reliability or video quality. See the [implementation and numerical evidence](docs/NEODRAGON_IMPLEMENTATION.md).
-
-All four Neodragon CLIP encoders and its distilled T5 tokenizer are checked without silent truncation. Styles remain prompt-based. Experimental Neodragon jobs always retain local diagnostics. Thermal pauses preserve an active job in memory, but saved recovery after force-quit is not yet supported for this model. Begin physical-device validation with two seconds in Airplane Mode after installation; keep the working MOVD model and earlier TestFlight rollback.
-
-## Optional online support
-
-Build 25 adds **Setup → Online support and model updates → Enable online support**. It defaults off. When enabled, users can manually check the live model catalog over Wi-Fi and cache the validated result for offline use. Enabling the switch alone makes no request; generation does not depend on the backend. Existing installations do not need to download the model again.
-
-A user can separately review and consent to one structured diagnostic report. Its allowlist excludes prompts, seeds, videos, personal files and raw journals. Reports use private storage with a 30-day expiration and limited free intake capacity. Turning support off cancels support requests; nothing is queued automatically. The [service](https://localframes-support.vercel.app) runs on Vercel Hobby, with [deployment and quota documentation](support/README.md) and a [test/release report](docs/SUPPORT_TEST_REPORT.md).
-
-Build 35 provides optional **24 FPS smoothing (beta)**, offering a separate interpolated copy of an original 2-second, 256 × 256, 12 FPS clip. Under Enable online support, choose a clip, preview the frozen local copy, and approve that specific upload to the community Hugging Face `1inkusFace/RIFE` Space. Each retry requires fresh consent. The connection update adds optional free-account OAuth, pre-upload eligibility/quota checks and the helper’s queue protocol. A live iOS Simulator app test saved and validated a 24 FPS copy; physical-iPhone acceptance remains pending. Anonymous access remains available, and neither path purchases credits or falls back to paid services. Free quota may be unavailable. The original, offline inference and local library remain independent of the helper. This does not accelerate diffusion. See the [integration and test report](docs/ONLINE_SMOOTHING.md) and [research evidence](docs/HYBRID_SUPPORT_RESEARCH.md).
-
-## Evidence and remaining work
-
-- [Feasibility and model choice](docs/FEASIBILITY.md)
-- [Validation record and acceptance gates](docs/VALIDATION.md)
-- [Device benchmark evidence and procedure](docs/BENCHMARK_REPORT.md)
-- [Optimization and reproducible comparison protocol](docs/OPTIMIZATION_PHASE2.md)
-- [Synthetic precision screening](docs/PRECISION_SCREENING.md)
-- [Generation expansion and exact model blockers](docs/GENERATION_EXPANSION.md)
-- [Expansion test report](docs/EXPANSION_TEST_REPORT.md)
-- [Third-party code and model provenance](docs/THIRD_PARTY_NOTICES.md)
-- [Optional Neodragon conversion, native tests and limitations](docs/NEODRAGON_IMPLEMENTATION.md)
-
-The released weights have been downloaded and hashed locally, and all 103 package specifications were inspected. Regression tests cover the tokenizer, saved-baseline compatibility, video writing, crop geometry, library metadata and UI persistence. Every new inference configuration still requires fresh physical-device completion, numerical and visual checks, offline testing and repeated measurements. The original model and build-18 rollback source are preserved.
+Historical documents under `docs/` describe earlier builds and experiments. Their old model/helper setup instructions do not apply to this branch. Private device journals, videos, native crash reports and current test artifacts stay in ignored `build/`; they are not uploaded by CI or the app.

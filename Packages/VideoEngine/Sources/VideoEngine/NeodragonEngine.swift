@@ -15,21 +15,22 @@ public struct NeodragonGenerationRequest: Codable, Sendable, Equatable {
     public let duration: Int
     public let seed: UInt64
     public let style: VisualStyle
-    public var effectivePrompt: String { style.applying(to: prompt) }
+    public let modelPrompt: String?
+    public var effectivePrompt: String { modelPrompt ?? style.applying(to: prompt) }
 
-    public init(prompt: String, duration: Int, seed: UInt64, style: VisualStyle = .default) throws {
+    public init(prompt: String, duration: Int, seed: UInt64, style: VisualStyle = .default, modelPrompt: String? = nil) throws {
         let clean = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { throw GenerationError.invalidPrompt }
         guard clean.count <= 500 else {
             throw GenerationError.incompatibleModel("Use a prompt up to 500 characters. The complete scene and style must also fit the installed model’s token limits.")
         }
         _ = try NeodragonModel.geometry(seconds: duration)
-        self.prompt = clean; self.duration = duration; self.seed = seed; self.style = style
+        guard (modelPrompt?.count ?? 0) <= 2500 else { throw GenerationError.promptTooLong }
+        self.prompt = clean; self.duration = duration; self.seed = seed; self.style = style; self.modelPrompt = modelPrompt
     }
 }
 
-/// Separate optional engine. Its existence does not promote a device-validated
-/// preset, replace MOVD, or permit a download before verified assets are ready.
+/// Genuine local video diffusion. New checkpoints and sampler changes require device validation.
 public actor NeodragonEngine {
     public init() {}
 

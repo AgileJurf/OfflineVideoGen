@@ -103,7 +103,7 @@ final class BackgroundGeneration {
             Task { @MainActor in
                 guard let self, self.identifier == id else { return }
                 self.log?.record("background_expired", fields: ["reason": "System expiration or cancellation in the system progress UI"])
-                self.statusChanged?("iOS ended this background task. Saved baseline progress can be resumed in Setup.")
+                self.statusChanged?("iOS ended this background task. The current job was interrupted; completed videos remain in Library.")
                 self.expired?()
                 self.finish(success: false)
             }

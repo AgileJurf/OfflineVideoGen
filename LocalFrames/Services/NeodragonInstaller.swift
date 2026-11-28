@@ -3,12 +3,6 @@ import Foundation
 import VideoEngine
 import ZIPFoundation
 
-enum VideoModelChoice: String, Codable, CaseIterable, Identifiable, Sendable {
-    case movd, neodragon
-    var id: String { rawValue }
-    var name: String { self == .movd ? "MOVD" : "Neodragon · experimental" }
-}
-
 struct NeodragonManifest: Codable, Sendable {
     struct Archive: Codable, Sendable {
         let name: String
@@ -43,7 +37,7 @@ struct NeodragonManifest: Codable, Sendable {
         guard schemaVersion == 1, modelID == NeodragonModel.identifier,
               weightsRevision == NeodragonModel.weightsRevision, sourceRevision == NeodragonModel.sourceRevision,
               (2...9).contains(maximumSeconds), (1...80).contains(archives.count), minimumFreeBytes > 0,
-              SupportCompatibility.appVersion.compare(minimumAppVersion, options: .numeric) != .orderedAscending,
+              (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0").compare(minimumAppVersion, options: .numeric) != .orderedAscending,
               Set(archives.map(\.name)).count == archives.count else { throw ModelInstallError.invalidArchive }
         var models = Set<String>(), files = Set<String>()
         for archive in archives {
@@ -71,8 +65,7 @@ struct NeodragonManifest: Codable, Sendable {
     }
 }
 
-/// Optional weights have a separate root from MOVD. Removing or updating one
-/// model cannot remove the other's weights, rollback copy, or saved videos.
+/// Preserves the established model root across the exclusive-engine migration.
 actor NeodragonInstaller {
     let root: URL
     var installed: URL { root.appendingPathComponent("Installed", isDirectory: true) }
@@ -125,7 +118,7 @@ actor NeodragonInstaller {
             stage(.verifying)
             progress(.init((Double(offset) + 0.6 * Double(archive.bytes)) / Double(manifest.downloadBytes), "Verifying Neodragon · \(archive.name)"))
             let size = try zip.resourceValues(forKeys: [.fileSizeKey]).fileSize
-            let hash = try ModelInstaller.sha256(zip)
+            let hash = try FileIntegrity.sha256(zip)
             guard size.map(Int64.init) == archive.bytes, hash == archive.sha256 else {
                 try? fm.removeItem(at: zip); try? fm.removeItem(at: resume)
                 throw ModelInstallError.checksum(archive.name)
@@ -184,6 +177,6 @@ actor NeodragonInstaller {
             for suffix in ["", ".resume", ".resume.source"] { try? fm.removeItem(at: root.appendingPathComponent(archive.name + suffix)) }
         }
         stage(.complete)
-        progress(.init(1, "Optional Neodragon model installed"))
+        progress(.init(1, "Neodragon installed for offline use"))
     }
 }

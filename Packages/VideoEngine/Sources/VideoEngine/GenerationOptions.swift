@@ -1,14 +1,13 @@
 import Foundation
 
-/// Prompt instructions only. These presets do not install or execute an adapter.
+/// Prompt-based presets; no trained adapter is implied.
 public enum VisualStyle: String, Codable, CaseIterable, Identifiable, Sendable {
-    case `default`, photorealistic, cinematic, anime, cartoon, animation3D, pixelArt
-    case watercolor, claymation, blackAndWhite, vintageFilm, fantasy
+    case `default`, photorealistic, hyperrealistic, cinematic, documentary, photography, naturalLighting, filmNoir, vintageFilm, blackAndWhite, film35mm, vhs, foundFootage, anime, retroAnime, manga, cartoon, westernAnimation, animation3D, claymation, stopMotion, handDrawn, celShaded, pixelArt, lowPoly, watercolor, oilPainting, pencilSketch, comicBook, graphicNovel, impressionism, surrealism, abstractArt, inkIllustration, paperCutout, scienceFiction, cyberpunk, steampunk, darkFantasy, highFantasy, fantasy, horror, gothic, western, historical, postApocalyptic, action, noirThriller, dreamlike, experimentalCinema, natureDocumentary, underwater, spaceExploration, atmospheric, neonCity, retroFuturism, miniature, macro
     public var id: String { rawValue }
 
     public var name: String {
         switch self {
-        case .default: return "Default"
+        case .default: return "Default / Original"
         case .photorealistic: return "Photorealistic"
         case .cinematic: return "Cinematic"
         case .anime: return "Anime"
@@ -20,6 +19,7 @@ public enum VisualStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .blackAndWhite: return "Black & White"
         case .vintageFilm: return "Vintage Film"
         case .fantasy: return "Fantasy"
+        default: return StyleCatalog.definition(self).name
         }
     }
 
@@ -37,6 +37,7 @@ public enum VisualStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .blackAndWhite: return "Monochrome tones and contrast."
         case .vintageFilm: return "Soft retro colors and film grain."
         case .fantasy: return "Dreamlike light and a magical atmosphere."
+        default: return StyleCatalog.definition(self).aesthetic
         }
     }
 
@@ -54,6 +55,7 @@ public enum VisualStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .blackAndWhite: return "Black and white, monochrome, rich tonal contrast."
         case .vintageFilm: return "Vintage film, subtle grain, faded retro colors."
         case .fantasy: return "Fantasy art, magical atmosphere, luminous cinematic light."
+        default: return StyleCatalog.definition(self).aesthetic
         }
     }
 

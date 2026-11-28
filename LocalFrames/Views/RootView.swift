@@ -1,362 +1,244 @@
+import AVKit
 import SwiftUI
 import VideoEngine
 
 struct RootView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var tab = 0
+    @SceneStorage("studio.selectedTab") private var tab = 0
     var body: some View {
         TabView(selection: $tab) {
-            NavigationStack { CreateView(support: model.support, openSetup: { tab = 2 }) }
+            NavigationStack { CreateView(styles: model.styles, openModels: { tab = 2 }) }
                 .tabItem { Label("Create", systemImage: "sparkles.tv") }.tag(0)
             NavigationStack { LibraryView() }
                 .tabItem { Label("Library", systemImage: "rectangle.stack") }.tag(1)
-            NavigationStack { SetupView() }
-                .tabItem { Label("Setup", systemImage: "square.and.arrow.down") }.tag(2)
+            NavigationStack { ModelsView() }
+                .tabItem { Label("Models", systemImage: "cpu") }.tag(2)
+            NavigationStack { SettingsView(openModels: { tab = 2 }) }
+                .tabItem { Label("Settings", systemImage: "gearshape") }.tag(3)
         }
         .onChange(of: model.creationRequestID) { tab = 0 }
-        .onChange(of: tab) { _, _ in dismissNativeKeyboard() }
-    }
-}
-
-enum CreationField: Hashable { case prompt, seed }
-
-func dismissNativeKeyboard() {
-    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-}
-
-struct CreationSection<Content: View>: View {
-    let title: String
-    let icon: String
-    let detail: String
-    @ViewBuilder let content: Content
-    init(_ title: String, icon: String, detail: String, @ViewBuilder content: () -> Content) {
-        self.title = title; self.icon = icon; self.detail = detail; self.content = content()
-    }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 5) {
-                Label(title, systemImage: icon).font(.headline).foregroundStyle(.mint)
-                Text(detail).font(.caption).foregroundStyle(.secondary)
-            }
-            Divider()
-            content
-        }.padding(18).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 20))
+        .onChange(of: tab) { dismissNativeKeyboard() }
     }
 }
 
 struct CreateView: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject var styles: StyleStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expandedPrompt = false
+    @State private var advanced = false
+    @State private var styleBrowser = false
+    @State private var logSheet = false
     @State private var tokenCount: Int?
-    @FocusState private var focusedField: CreationField?
-    @ObservedObject var support: OnlineSupport
-    let openSetup: () -> Void
-    private func hideKeyboard() { focusedField = nil; dismissNativeKeyboard() }
+    @State private var tokenError: String?
+    @FocusState private var promptFocused: Bool
+    let openModels: () -> Void
+    private var promptKey: String { model.effectivePrompt + "\n" + String(model.installed) }
+    private var canGenerate: Bool {
+        model.ready && model.installed && !model.working && !model.exportingFiles && tokenCount != nil && tokenError == nil
+            && !model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && model.prompt.count <= 500
+            && (!model.useFixedSeed || UInt64(model.generationSeed) != nil)
+    }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Create a video").font(.title.bold())
-                        Text("Generate on your iPhone. Choose an optional online finish.")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }
+            VStack(alignment: .leading, spacing: 22) {
+                HStack {
+                    StudioStatus(text: model.installed ? "On-device AI · ready" : "Install once. Create offline.", symbol: model.installed ? "checkmark.shield" : "iphone")
                     Spacer()
-                    Image(systemName: "film.stack.fill").font(.title).foregroundStyle(.mint)
+                    Button { advanced = true } label: { Image(systemName: "slider.horizontal.3").frame(minWidth: 44, minHeight: 44) }
+                        .studioButton().accessibilityLabel("Generation settings").accessibilityIdentifier("advancedGenerationSettings")
                 }
-                PendingSmoothingCard()
-                if model.working { GenerationJobCard() }
-                CreationSection("Video model", icon: "cpu", detail: "Choose the model used on this iPhone") {
-                    Picker("Video model", selection: $model.generationModel) {
-                        Text("MOVD").tag(VideoModelChoice.movd)
-                        Text("Neodragon · experimental").tag(VideoModelChoice.neodragon).disabled(!model.neodragonInstalled)
-                    }.pickerStyle(.menu).disabled(model.working).accessibilityIdentifier("generationModelPicker")
-                    Text(model.generationModel == .movd ? "256 × 256 · 12 FPS · 2–5 seconds" : "512 × 320 · 24 FPS · up to \(model.supportedDurations.upperBound) seconds")
-                        .font(.caption).foregroundStyle(.secondary)
-                    if !model.neodragonInstalled {
-                        Button("Optional Neodragon model in Setup") { hideKeyboard(); openSetup() }.font(.caption).disabled(model.working)
-                    }
+                CreationCanvas(video: model.videos.first)
+                if model.working { GenerationJobCard(log: model.jobLog) }
+                StudioGlassGroup {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            Label("Text to Video", systemImage: "text.bubble").font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Button { expandedPrompt = true; dismissNativeKeyboard() } label: {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right").frame(minWidth: 44, minHeight: 44)
+                            }.accessibilityLabel("Expand prompt editor").accessibilityIdentifier("expandPrompt")
+                        }
+                        TextField("Describe a subject, an action and a setting…", text: $model.prompt, axis: .vertical)
+                            .lineLimit(3...7).font(.body).focused($promptFocused).disabled(model.working)
+                            .accessibilityIdentifier("promptInput")
+                        HStack {
+                            Text("\(model.prompt.count)/500").monospacedDigit()
+                            Spacer()
+                            Button("Clear", systemImage: "xmark.circle") { model.prompt = ""; model.clearRestoredConditioning() }
+                                .disabled(model.prompt.isEmpty || model.working).frame(minHeight: 44).accessibilityIdentifier("clearPrompt")
+                        }.font(.caption).foregroundStyle(.secondary)
+                    }.padding(18).studioGlass()
                 }
-                CreationSection("Your scene", icon: "text.bubble", detail: "Describe a subject, an action and a setting") {
-                    TextField("A small sailboat glides across a calm lake at sunrise…", text: $model.prompt, axis: .vertical)
-                        .lineLimit(3...6).focused($focusedField, equals: .prompt)
-                        .disabled(model.working).accessibilityIdentifier("promptInput")
+                tokenStatus
+                HStack(alignment: .center, spacing: 12) {
+                    Picker("Duration", selection: $model.duration) {
+                        ForEach(model.supportedDurations, id: \.self) { Text("\($0) seconds").tag($0) }
+                    }.pickerStyle(.menu).frame(minHeight: 44).studioGlass(radius: 16).accessibilityIdentifier("durationPicker")
+                    Spacer(minLength: 0)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("512 × 320 · 24 FPS").font(.subheadline.weight(.medium))
+                        Text("Native landscape · 16:10").font(.caption).foregroundStyle(.secondary)
+                    }.accessibilityElement(children: .combine)
+                }.disabled(model.working)
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Text to Video")
+                        Text("Visual direction").font(.headline)
                         Spacer()
-                        Text("\(model.prompt.count)/500 characters")
-                    }.font(.caption).foregroundStyle(.secondary)
-                }
-                GenerationOptionsView(tokenCount: $tokenCount, focusedField: $focusedField)
-                if model.generationModel == .movd {
-                    GenerationFinishOptions(support: model.support, account: model.helperAccount)
-                } else {
-                    CreationSection("Frame rate", icon: "film", detail: "Native 24 FPS generation") {
-                        Label("Entire job stays on your iPhone", systemImage: "iphone")
-                        Text("No upload, frame-smoothing helper, or Hugging Face quota is needed.").font(.caption).foregroundStyle(.secondary)
+                        Button("Browse styles", systemImage: "square.grid.2x2") { styleBrowser = true }
+                            .font(.subheadline).frame(minHeight: 44).accessibilityIdentifier("browseStyles")
                     }
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 12) {
+                            ForEach(featuredStyles) { style in
+                                StyleCard(style: style, selected: styles.selected.id == style.id) {
+                                    styles.select(style); model.clearRestoredConditioning(); StudioTheme.feedback()
+                                }
+                            }
+                        }
+                    }.scrollIndicators(.hidden)
+                    Text("\(styles.selected.name) · prompt conditioning").font(.caption).foregroundStyle(.secondary)
+                }.disabled(model.working)
+                if !model.installed {
+                    Button(action: openModels) { Label("Install Neodragon to begin", systemImage: "arrow.down.circle").frame(maxWidth: .infinity, minHeight: 44) }
+                        .studioButton().accessibilityIdentifier("openModels")
                 }
-                if !model.selectedModelInstalled {
-                    Button { hideKeyboard(); openSetup() } label: {
-                        Label("Install the video model to begin", systemImage: "arrow.down.circle").frame(maxWidth: .infinity)
-                    }.buttonStyle(.bordered).accessibilityIdentifier("openSetup")
+                if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled) }
+                if !model.jobLog.entries.isEmpty && !model.working {
+                    Button("View last job log", systemImage: "list.bullet.rectangle") { logSheet = true }.frame(minHeight: 44)
                 }
-                if !model.working && model.pendingSmoothingVideo == nil {
-                    Button { hideKeyboard(); model.generate() } label: {
-                        Label(model.smoothAfterGeneration ? "Start 24 FPS video job" : "Generate Video", systemImage: "sparkles")
-                            .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
-                    }.buttonStyle(.borderedProminent)
-                        .disabled(!model.selectedModelInstalled || model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                  || model.prompt.count > 500 || tokenCount == nil || (tokenCount ?? 0) > (model.generationModel == .movd ? 63 : 128)
-                                  || (model.useFixedSeed && UInt64(model.generationSeed) == nil)
-                                  || (model.smoothAfterGeneration && model.smoothingSelectionIssue != nil))
-                        .accessibilityIdentifier("generateButton")
-                }
-                if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
-                NavigationLink("Model capabilities & experimental limits") { ModelCapabilitiesView() }.font(.caption)
-                Text("Your original is always saved locally. Online smoothing requires a separate approval for each clip.")
-                    .font(.caption).foregroundStyle(.secondary)
+                if model.duration > 2 { Text("Longer durations use the existing model path and need further device quality testing. Start with 2 seconds when comparing styles.").font(.caption).foregroundStyle(.secondary) }
             }.padding(20)
-        }.scrollDismissesKeyboard(.immediately)
-            .navigationTitle("Local Frames").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done", action: hideKeyboard).accessibilityIdentifier("dismissKeyboard")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if focusedField != nil {
-                        Button("Hide keyboard", systemImage: "keyboard.chevron.compact.down", action: hideKeyboard)
-                            .labelStyle(.iconOnly).accessibilityIdentifier("hideKeyboardNavigation")
-                    }
-                }
+        }
+        .studioBackground().scrollDismissesKeyboard(.immediately)
+        .navigationTitle("LOCAL FRAMES").navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            if !model.working {
+                Button { promptFocused = false; dismissNativeKeyboard(); StudioTheme.feedback(); model.generate() } label: {
+                    Label(model.exportingFiles ? "Saving export copies…" : "Generate Video", systemImage: "sparkles")
+                        .font(.headline).frame(maxWidth: .infinity, minHeight: 48)
+                }.studioButton(prominent: true).disabled(!canGenerate).accessibilityIdentifier("generateButton")
+                    .padding(.horizontal, 20).padding(.vertical, 8)
+                    .background(StudioTheme.background)
             }
-            .onChange(of: model.working) { _, working in if working { hideKeyboard() } }
-            .onDisappear { hideKeyboard() }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { promptFocused = false; dismissNativeKeyboard() }.accessibilityIdentifier("dismissKeyboard") }
+            ToolbarItem(placement: .topBarTrailing) {
+                if promptFocused { Button("Hide keyboard", systemImage: "keyboard.chevron.compact.down") { promptFocused = false; dismissNativeKeyboard() }.accessibilityIdentifier("hideKeyboardNavigation") }
+            }
+        }
+        .sheet(isPresented: $advanced) { GenerationSettingsSheet().environmentObject(model) }
+        .sheet(isPresented: $expandedPrompt) { PromptEditor().environmentObject(model) }
+        .sheet(isPresented: $styleBrowser) { StyleBrowser(store: styles) }
+        .onChange(of: styles.selected) { model.clearRestoredConditioning() }
+        .sheet(isPresented: $logSheet) { JobLogView(log: model.jobLog) }
+        .onChange(of: model.working) { if model.working { promptFocused = false; dismissNativeKeyboard() } }
+        .onDisappear { promptFocused = false; dismissNativeKeyboard() }
+        .task(id: promptKey) { await checkTokens() }
+    }
+    private var featuredStyles: [StyleConditioning] {
+        var list = [styles.selected]
+        for item in [VisualStyle.default, .anime, .photorealistic, .cinematic].map(StyleCatalog.definition) where !list.contains(where: { $0.id == item.id }) { list.append(item) }
+        return list
+    }
+    private var tokenStatus: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(tokenCount.map { "\($0)/128 motion tokens · all four CLIP inputs fit 77 tokens" } ?? (model.installed ? "Checking complete prompt…" : "Token validation becomes available after model installation"))
+                .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("promptTokenBudget")
+            if let tokenError { Text(tokenError).font(.caption).foregroundStyle(.orange).accessibilityIdentifier("promptError") }
+        }
+    }
+    private func checkTokens() async {
+        tokenCount = nil; tokenError = nil
+        guard model.prompt.count <= 500 else { tokenError = "Use up to 500 characters. Your prompt has not been shortened."; return }
+        guard model.installed else { return }
+        let text = model.effectivePrompt, directory = model.modelDirectory
+        do {
+            try await Task.sleep(for: .milliseconds(250))
+            let count = try await Task.detached(priority: .userInitiated) { try NeodragonEngine.promptTokenCount(text, modelsAt: directory) }.value
+            try Task.checkCancellation(); tokenCount = count
+        } catch is CancellationError { }
+        catch { tokenError = error.localizedDescription }
+    }
+}
+
+struct CreationCanvas: View {
+    @EnvironmentObject private var model: AppModel
+    let video: VideoRecord?
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 26).fill(StudioTheme.surface)
+            if let video {
+                VideoThumbnail(url: model.library.thumbnailURL(video.id)).scaledToFit()
+                VStack { Spacer(); HStack {
+                    Text(model.working ? "Previous output" : "Latest video").font(.caption.weight(.medium))
+                    Spacer()
+                    Button { model.selectedVideo = video } label: { Image(systemName: "play.fill").frame(minWidth: 44, minHeight: 44) }
+                        .studioButton().accessibilityLabel("Play latest video").disabled(model.isGenerating)
+                }.padding(12).studioGlass(radius: 18).padding(10) }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "viewfinder").font(.system(size: 32, weight: .ultraLight))
+                    Text("Your scene starts here").font(.headline)
+                    Text("Describe the motion. Keep it on your device.").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }.padding()
+            }
+        }.aspectRatio(1.6, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 26))
+            .accessibilityIdentifier("creationCanvas")
     }
 }
 
 struct GenerationJobCard: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject var log: JobActivityLog
+    @State private var showLog = false
     var body: some View {
-        CreationSection("Current job", icon: "waveform.path", detail: model.isGenerating ? "Generating locally on this iPhone" : "\(model.progress.message)") {
-            if model.generationWillSmooth && model.isGenerating {
-                Text("1 Generate → 2 Review upload → 3 Smooth → 4 Save").font(.caption).foregroundStyle(.mint)
-            }
-            ProgressView(value: model.progress.fraction)
-            Text(model.progressMessage).font(.subheadline)
+        StudioSection(title: model.installing ? "Installing model" : "Current generation", subtitle: model.progressMessage) {
+            if model.progress.fraction > 0 && model.progress.fraction < 1 { ProgressView(value: model.progress.fraction).accessibilityLabel("Reported engine progress") }
+            else { ProgressView().accessibilityLabel("Working") }
             if model.isGenerating {
-                Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("generationETA")
-                Label(model.backgroundStatus, systemImage: "iphone").font(.caption).foregroundStyle(.secondary)
-            }
-            Button(model.installing ? "Pause installation" : (model.smoothingActive ? "Cancel smoothing" : (model.exportingCrop ? "Cancel export" : "Cancel generation")), role: .cancel) { model.cancel() }
-        }
-    }
-}
-
-struct LibraryView: View {
-    @EnvironmentObject private var model: AppModel
-    var body: some View {
-        Group {
-            if model.videos.isEmpty {
-                ContentUnavailableView("Your first frame awaits", systemImage: "film.stack", description: Text("Generated videos will appear here, saved on your iPhone."))
-                    .accessibilityIdentifier("emptyLibrary")
-            } else {
-                List(model.videos) { video in
-                    Button { model.selectedVideo = video } label: {
-                        HStack(spacing: 14) {
-                            if let thumbnail = UIImage(contentsOfFile: model.library.thumbnailURL(video.id).path) {
-                                Image(uiImage: thumbnail).resizable().scaledToFill().frame(width: 78, height: 78).clipShape(RoundedRectangle(cornerRadius: 12))
-                            } else {
-                                Image(systemName: "film").frame(width: 78, height: 78).background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
-                            }
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(video.prompt).font(.subheadline.weight(.medium)).lineLimit(2)
-                                Text("\(video.duration)s · \(video.width) × \(video.height) · \(video.framesPerSecond) FPS").font(.caption).foregroundStyle(.secondary)
-                                Text(video.style.name + (video.smoothing != nil ? " · 24 FPS smoothed copy" : (video.isCrop ? " · cropped copy" : " · original"))).font(.caption2).foregroundStyle(.mint)
-                                Text(video.createdAt, style: .date).font(.caption2).foregroundStyle(.secondary)
-                            }
-                        }
-                    }.buttonStyle(.plain)
-                }.listStyle(.plain)
-            }
-        }.navigationTitle("Library")
-    }
-}
-
-struct SetupView: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var confirmDelete = false
-    var body: some View {
-        Form {
-            Section {
-                Label(model.installed ? "Model installed" : "Install MOVD", systemImage: model.installed ? "checkmark.seal.fill" : "cpu")
-                    .font(.headline).foregroundStyle(model.installed ? .mint : .primary)
-                Text("Creates videos on this iPhone, including in Airplane Mode after installation.").font(.subheadline)
-                Text("Download: approximately 14.1 GB. Allow 50 GB free during installation. Wi-Fi required.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if let notice = model.notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
-                if model.installing && !model.installingNeodragon {
-                    ProgressView(value: model.progress.fraction)
-                    Text(model.progressMessage).font(.caption)
-                    Button("Pause installation") { model.cancel() }
-                } else if model.installed {
-                    DisclosureGroup("Manage installed model") {
-                        Button("Delete model", role: .destructive) { confirmDelete = true }.disabled(model.working)
+                if let start = model.jobStartedAt {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text("Elapsed " + elapsed(max(0, context.date.timeIntervalSince(start)))).font(.caption.monospacedDigit())
                     }
-                } else {
-                    Button("Install model") { model.install() }.disabled(model.working).accessibilityIdentifier("installModelButton")
                 }
-            } header: { Text("Offline video model") }
-            NeodragonSetupSection()
-            Section("Online assistance") {
-                SetupOnlineSummary(support: model.support, account: model.helperAccount)
+                Text(model.estimatedTimeMessage).font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("generationETA")
+                LiveJobRows(log: log)
             }
-            Section("Developer tools") {
-                NavigationLink("Benchmark results and comparisons") { BenchmarkView() }.accessibilityIdentifier("openBenchmarks")
-                NavigationLink("Run a baseline & local diagnostics") { DeviceBenchmarkToolsView() }.accessibilityIdentifier("openBenchmarkTools")
-            }
-            Section("About this build") {
-                NavigationLink("Model capabilities and optional models") { ModelCapabilitiesView() }
-                LabeledContent("Selected engine", value: model.generationModel.name)
-                LabeledContent("Output", value: model.generationModel == .movd ? "256 × 256 · 12 FPS" : "512 × 320 · 24 FPS")
-                LabeledContent("Duration", value: "2–\(model.supportedDurations.upperBound) seconds")
-                Text("Xcode Cloud tests check the app and supporting code. Device benchmarks record generation time, sampled memory and thermal behavior. Model and sampler changes need on-device quality comparisons.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                Link("Source and model documentation", destination: URL(string: "https://github.com/AgileJurf/OfflineVideoGen")!)
-            }
-        }.navigationTitle("Setup")
-            .confirmationDialog("Delete the installed model? Your videos will remain in the library.", isPresented: $confirmDelete, titleVisibility: .visible) {
-                Button("Delete model", role: .destructive) { Task { await model.removeModel() } }
-            }
-
+            HStack {
+                if model.isGenerating { Button("Running log", systemImage: "list.bullet.rectangle") { showLog = true }.accessibilityIdentifier("runningJobLog") }
+                Spacer()
+                Button(model.installing ? "Pause download" : "Cancel job", role: .cancel, action: model.cancel).accessibilityIdentifier("cancelGeneration")
+            }.font(.subheadline).frame(minHeight: 44)
+        }.sheet(isPresented: $showLog) { JobLogView(log: log) }
     }
+    private func elapsed(_ seconds: Double) -> String { String(format: "%02d:%02d", Int(seconds) / 60, Int(seconds) % 60) }
 }
 
-struct NeodragonSetupSection: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var confirmInstall = false
-    @State private var confirmDelete = false
-    private func size(_ bytes: Int64) -> String { ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+struct LiveJobRows: View {
+    @ObservedObject var log: JobActivityLog
     var body: some View {
-        Section("Optional video model") {
-            Label("Neodragon · experimental", systemImage: model.neodragonInstalled ? "checkmark.seal.fill" : "cpu")
-                .font(.headline).foregroundStyle(model.neodragonInstalled ? .mint : .primary)
-            Text("Native 512 × 320 landscape video at 24 FPS. Generation stays on this iPhone after installation.").font(.subheadline)
-            NavigationLink("Model licenses and use terms") {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        Text("Neodragon uses Qualcomm’s published hybrid checkpoint. Its model card specifies BSD-3-Clause-Clear and the Qualcomm Responsible AI License.")
-                        Link("Qualcomm model use terms", destination: URL(string: "https://www.qualcomm.com/site/responsible-ai-license")!)
-                        Link("Original model and documentation", destination: URL(string: "https://huggingface.co/Qualcomm-AI-Research/Neodragon")!)
-                        Text(NeodragonModel.licenseNotices).font(.caption).textSelection(.enabled)
-                    }.padding()
-                }.navigationTitle("Neodragon licenses")
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(log.entries.suffix(4)) { entry in
+                HStack(alignment: .top, spacing: 8) { Text(entry.time).monospacedDigit(); Text(entry.message).lineLimit(2) }
+                    .font(.caption).foregroundStyle(.secondary).accessibilityElement(children: .combine)
             }
-            if let manifest = model.neodragonManifest {
-                Text("2–\(manifest.maximumSeconds) seconds · \(size(manifest.downloadBytes)) download · allow \(size(manifest.minimumFreeBytes)) free during installation. Wi-Fi required.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                Text("Start with a 2-second test. Speed, memory use and longer-video quality still require validation on your device. MOVD remains available separately.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if model.installingNeodragon {
-                    ProgressView(value: model.progress.fraction)
-                    Text(model.progressMessage).font(.caption)
-                    Button("Pause Neodragon installation", action: model.cancel)
-                } else if model.neodragonInstalled {
-                    Label("Installed for offline use", systemImage: "checkmark.circle").foregroundStyle(.mint)
-                    Button("Remove Neodragon", role: .destructive) { confirmDelete = true }.disabled(model.working)
-                } else {
-                    Button("Download optional Neodragon model") { confirmInstall = true }
-                        .disabled(model.working).accessibilityIdentifier("installNeodragonButton")
-                }
-            } else {
-                Text("The converted model package is still being validated. Download and generation are unavailable until those checks pass.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-        }
-        .confirmationDialog("Download the optional Neodragon model?", isPresented: $confirmInstall, titleVisibility: .visible) {
-            Button("Download over Wi-Fi", action: model.installNeodragon)
-        } message: {
-            if let manifest = model.neodragonManifest {
-                Text("Downloads \(size(manifest.downloadBytes)) and needs \(size(manifest.minimumFreeBytes)) free during installation. This experimental model is stored separately from MOVD. Your videos remain in Library.")
-            }
-        }
-        .confirmationDialog("Remove only the optional Neodragon model?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Remove Neodragon", role: .destructive) { Task { await model.removeNeodragon() } }
-        } message: { Text("MOVD and all saved videos will remain available.") }
+        }.accessibilityIdentifier("liveJobRows")
     }
 }
-
-struct DeviceBenchmarkToolsView: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var confirmDiscardBaseline = false
-    @FocusState private var seedFocused: Bool
-    private func hideKeyboard() { seedFocused = false; dismissNativeKeyboard() }
+struct JobLogView: View {
+    @ObservedObject var log: JobActivityLog
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
-        Form {
-            Section("Baseline test") {
-                Toggle(isOn: $model.recordCreationDiagnostics) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Record local diagnostics for MOVD Create jobs")
-                        Text("Includes prompts, seeds, timings, memory and temperature. Logs stay here unless you export them. Baseline tests and experimental Neodragon jobs always keep local logs.").font(.caption).foregroundStyle(.secondary)
-                    }
-                }.disabled(model.working)
-                NavigationLink("Benchmark results and comparisons") { BenchmarkView() }
-                    .accessibilityIdentifier("openBenchmarks")
-                Text("Run the unchanged MOVD 2-second baseline with a fixed prompt and seed. Records each model load and prediction, process memory/CPU samples, and thermal state locally. GPU utilization requires Instruments.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                Picker("Prompt", selection: $model.benchmarkPromptIndex) {
-                    Text("Sailboat").tag(0)
-                    Text("Flag").tag(1)
-                    Text("Rolling ball").tag(2)
-                }.disabled(model.working)
-                TextField("Seed", text: $model.benchmarkSeed).keyboardType(.numberPad).focused($seedFocused).disabled(model.working).accessibilityIdentifier("benchmarkSeed")
-                if let saved = model.savedBaselineDescription, !model.working {
-                    Text(saved).font(.footnote)
-                    Button("Resume saved baseline") { hideKeyboard(); model.resumeBaseline() }
-                        .disabled(!model.installed).accessibilityIdentifier("resumeBaseline")
-                    Button("Discard saved baseline", role: .destructive) { confirmDiscardBaseline = true }
+        NavigationStack {
+            List {
+                Text("Latest 200 events. The view refreshes at most twice per second. Full journals are available in Settings → Export Benchmark Files.").font(.caption).foregroundStyle(.secondary)
+                ForEach(log.entries.reversed()) { entry in
+                    VStack(alignment: .leading, spacing: 5) { Text(entry.time).font(.caption.monospacedDigit()).foregroundStyle(.secondary); Text(entry.message).font(.subheadline).textSelection(.enabled) }
                 }
-                Button("Run 2-second baseline") { hideKeyboard(); model.runBaselineBenchmark() }
-                    .disabled(!model.installed || model.working || model.savedBaselineDescription != nil).accessibilityIdentifier("runBaselineBenchmark")
-                Text("Pauses automatically for cooling and continues when the phone is cool. Completed motion steps are saved for recovery after relaunch.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Button("Inspect compute plans", action: model.inspectComputePlans)
-                    .disabled(!model.installed || model.working || model.videos.isEmpty)
-                Text("Compute-plan inspection becomes available after a video completes. It estimates compatible hardware; it does not measure GPU or Neural Engine utilization.")
-                    .font(.caption).foregroundStyle(.secondary)
-                if model.working && !model.installing {
-                    ProgressView(value: model.progress.fraction)
-                    Text(model.progressMessage).font(.caption)
-                    Text(model.backgroundStatus).font(.caption).foregroundStyle(.secondary)
-                    if model.isGenerating {
-                        Label(model.estimatedTimeMessage, systemImage: "clock").font(.caption).accessibilityIdentifier("benchmarkETA")
-                        Text("Estimates adapt as work completes. Saving, cooling, and background waits can add time.").font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Button("Pause benchmark") { model.cancel() }
-                }
-                if !model.benchmarkFiles.isEmpty {
-                    ShareLink(items: model.benchmarkFiles) { Label("Export benchmark files", systemImage: "square.and.arrow.up") }
-                        .disabled(model.working)
-                    Text("Includes prompts, seeds, measurements, errors, and completed benchmark videos. Export remains available after relaunch, including interrupted attempts.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
-        }.navigationTitle("Baseline & diagnostics").navigationBarTitleDisplayMode(.inline)
-            .scrollDismissesKeyboard(.immediately)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done", action: hideKeyboard).accessibilityIdentifier("dismissKeyboard")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if seedFocused { Button("Hide keyboard", systemImage: "keyboard.chevron.compact.down", action: hideKeyboard).labelStyle(.iconOnly) }
-                }
-            }
-            .onChange(of: model.working) { _, working in if working { hideKeyboard() } }
-            .onDisappear { hideKeyboard() }
-            .confirmationDialog("Discard the saved baseline progress? Exported logs and videos will remain.", isPresented: $confirmDiscardBaseline, titleVisibility: .visible) {
-                Button("Discard saved baseline", role: .destructive, action: model.discardSavedBaseline)
-            }
+            }.studioBackground().navigationTitle(log.recording ? "Running log" : "Job log")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }

@@ -1,187 +1,102 @@
 import XCTest
 
 final class LocalFramesUITests: XCTestCase {
-    @MainActor
-    func testKeyboardDismissesForPromptAndNumericSeedsWithoutLosingText() throws {
-        let app = XCUIApplication(); app.launch()
-        let prompt = app.textFields["promptInput"]
-        XCTAssertTrue(prompt.waitForExistence(timeout: 10)); prompt.tap()
-        prompt.typeText("A sailboat on a quiet lake.")
-        let done = app.buttons["dismissKeyboard"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
-                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
-        XCTAssertTrue((prompt.value as? String)?.contains("quiet lake") == true)
-        let fixed = app.switches["fixedSeedToggle"]
-        for _ in 0..<8 where !fixed.isHittable { app.swipeUp() }
-        XCTAssertTrue(fixed.isHittable)
-        if fixed.value as? String == "0" { fixed.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
-        let seed = app.textFields["generationSeed"]
-        for _ in 0..<4 where !seed.isHittable { app.swipeUp() }
-        seed.tap(); seed.typeText("7")
-        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
-                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
-        app.tabBars.buttons["Setup"].tap()
-        let tools = app.buttons["openBenchmarkTools"]
-        for _ in 0..<6 where !tools.isHittable { app.swipeUp() }
-        tools.tap()
-        let benchmarkSeed = app.textFields["benchmarkSeed"]
-        for _ in 0..<5 where !benchmarkSeed.isHittable { app.swipeUp() }
-        benchmarkSeed.tap(); benchmarkSeed.typeText("8")
-        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
-                                                                   object: app.keyboards.firstMatch)], timeout: 5), .completed)
-        app.tabBars.buttons["Library"].tap()
-        XCTAssertTrue(app.staticTexts["emptyLibrary"].waitForExistence(timeout: 5))
-        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Keyboard dismissed and tabs reachable"
-        screenshot.lifetime = .keepAlways; add(screenshot)
+    override func setUpWithError() throws { continueAfterFailure = false }
+    @MainActor private func launch() -> XCUIApplication {
+        let app = XCUIApplication()
+        // Separate sandbox fixtures: no production model, media or inference mock.
+        app.launchEnvironment["LOCALFRAMES_UI_TEST_ID"] = UUID().uuidString
+        app.launch(); return app
+    }
+    @MainActor private func reveal(_ item: XCUIElement, in app: XCUIApplication, upward: Bool = true) {
+        for _ in 0..<8 where !item.isHittable { if upward { app.swipeUp() } else { app.swipeDown() } }
+        XCTAssertTrue(item.waitForExistence(timeout: 5)); XCTAssertTrue(item.isHittable)
+    }
+    @MainActor private func capture(_ app: XCUIApplication, _ name: String) {
+        let image = XCTAttachment(screenshot: app.screenshot()); image.name = name; image.lifetime = .keepAlways; add(image)
     }
 
-    @MainActor
-    func test24FPSJobExplainsReviewAndRequiresSupportedSettings() throws {
-        let app = XCUIApplication(); app.launch()
-        let rate = app.segmentedControls["finalFrameRate"]
-        for _ in 0..<9 where !rate.isHittable { app.swipeUp() }
-        XCTAssertTrue(rate.isHittable); rate.buttons["24 FPS · online finish"].tap()
-        XCTAssertTrue(app.staticTexts["One job, four stages"].waitForExistence(timeout: 5))
-        let issue = app.descendants(matching: .any).matching(identifier: "smoothingSelectionIssue").firstMatch
-        for _ in 0..<4 where !issue.isHittable { app.swipeUp() }
-        XCTAssertTrue(issue.exists)
-        let generate = app.buttons["generateButton"]
-        for _ in 0..<5 where !generate.isHittable { app.swipeUp() }
-        XCTAssertFalse(generate.isEnabled)
-        XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists, "Choosing 24 FPS cannot approve a future upload")
-        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "One job with explicit upload review"
-        screenshot.lifetime = .keepAlways; add(screenshot)
-        for _ in 0..<5 where !rate.isHittable { app.swipeDown() }
-        rate.buttons["12 FPS · offline"].tap()
-    }
-
-    @MainActor
-    func testOnlineSupportDefaultsOffAndNeverDownloadsFromItsToggle() throws {
-        let app = XCUIApplication(); app.launch()
-        app.tabBars.buttons["Setup"].tap()
-        let link = app.buttons["openOnlineSupport"]
-        for _ in 0..<5 where !link.isHittable { app.swipeUp() }
-        XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
-        let toggle = app.switches["enableOnlineSupport"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        // Newer iOS Form snapshots omit off-screen rows. Reveal a control before querying it.
-        func reveal(_ element: XCUIElement) {
-            for _ in 0..<8 where !toggle.isHittable { app.swipeDown() }
-            for _ in 0..<8 where !element.isHittable { app.swipeUp() }
-            XCTAssertTrue(element.waitForExistence(timeout: 5))
-        }
-        let updates = app.buttons["checkSupportUpdates"]
-        let smoothing = app.buttons["chooseSmoothingClip"]
-        let account = app.buttons["helperAccountSettings"]
-        XCTAssertEqual(toggle.value as? String, "0")
-        reveal(account); XCTAssertFalse(account.isEnabled)
-        reveal(smoothing); XCTAssertFalse(smoothing.isEnabled)
-        reveal(updates); XCTAssertFalse(updates.isEnabled)
-        reveal(toggle)
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertEqual(toggle.value as? String, "1")
-        reveal(account); XCTAssertTrue(account.isEnabled); account.tap()
-        XCTAssertTrue(app.navigationBars["Helper account"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["finishHelperConnection"].exists, "Opening account settings must not start sign-in")
-        XCTAssertFalse(app.staticTexts["Checking helper connection"].exists)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        reveal(smoothing); XCTAssertTrue(smoothing.isEnabled)
-        reveal(updates); XCTAssertTrue(updates.isEnabled)
-        XCTAssertFalse(app.buttons["Cancel support request"].exists, "Enabling support must not initiate network work")
-        XCTAssertFalse(app.buttons["Send this report"].exists)
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Optional online support with manual checks"; screenshot.lifetime = .keepAlways; add(screenshot)
-        reveal(smoothing); smoothing.tap()
-        XCTAssertTrue(app.staticTexts["noSmoothingClips"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists, "An empty library must not offer an upload")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        reveal(toggle)
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        reveal(smoothing); XCTAssertFalse(smoothing.isEnabled)
-        reveal(updates); XCTAssertFalse(updates.isEnabled)
-    }
-    @MainActor
-    func testStylesFramingPersistAndUnsupportedModesStayUnavailable() throws {
-        let app = XCUIApplication()
-        app.launch()
-        let style = app.buttons["style-photorealistic"]
-        for _ in 0..<5 where !style.isHittable { app.swipeUp() }
-        XCTAssertTrue(style.waitForExistence(timeout: 5)); style.tap()
-        XCTAssertTrue(style.isSelected)
-        let framing = app.segmentedControls["outputFramingPicker"]
-        for _ in 0..<5 where !framing.isHittable { app.swipeUp() }
-        framing.buttons["Portrait crop"].tap()
-        XCTAssertTrue(framing.buttons["Portrait crop"].isSelected)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Center crop · 144 × 256")).firstMatch.exists)
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Explicit crop framing and prompt styles"
-        screenshot.lifetime = .keepAlways; add(screenshot)
-        app.terminate(); app.launch()
-        for _ in 0..<5 where !app.buttons["style-photorealistic"].isHittable { app.swipeUp() }
-        XCTAssertTrue(app.buttons["style-photorealistic"].isSelected)
-        for _ in 0..<5 where !app.segmentedControls["outputFramingPicker"].isHittable { app.swipeUp() }
-        XCTAssertTrue(app.segmentedControls["outputFramingPicker"].buttons["Portrait crop"].isSelected)
-        app.tabBars.buttons["Setup"].tap()
-        let capabilities = app.buttons["Model capabilities and optional models"]
-        for _ in 0..<7 where !capabilities.isHittable { app.swipeUp() }
-        capabilities.tap()
-        XCTAssertTrue(app.staticTexts["Image to Video · unavailable"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Generate Extension"].exists)
-    }
-    @MainActor
-    func testDeveloperBenchmarksAreLocalAndPresetsStayUnvalidated() throws {
-        let app = XCUIApplication()
-        app.launch()
-        app.tabBars.buttons["Setup"].tap()
-        let link = app.buttons["openBenchmarks"]
-        for _ in 0..<4 where !link.isHittable { app.swipeUp() }
-        XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
-        let preset = app.descendants(matching: .any).matching(identifier: "benchmarkBaselinePreset").firstMatch
-        XCTAssertTrue(preset.waitForExistence(timeout: 5))
-        XCTAssertTrue(preset.label.contains("Baseline"))
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Benchmark reference configuration"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
-        app.swipeUp()
-        XCTAssertTrue(app.staticTexts["Fast"].exists)
-        XCTAssertFalse(app.buttons["Fast"].exists, "Unvalidated preset must not become selectable")
-    }
-
-    @MainActor
-    func testLaunchPromptAndModelGate() throws {
-        let app = XCUIApplication()
-        app.launch()
-        XCTAssertTrue(app.textFields["promptInput"].waitForExistence(timeout: 10))
-        let input = app.textFields["promptInput"]
-        input.tap()
-        input.typeText("A small sailboat glides across a calm lake.")
-        app.buttons["dismissKeyboard"].tap()
-        for _ in 0..<6 where !app.buttons["generateButton"].isHittable { app.swipeUp() }
+    @MainActor func testFourTabsAndNoUnsupportedGeneration() throws {
+        let app = launch()
+        XCTAssertTrue(app.textFields["promptInput"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["generateButton"].isEnabled)
-        app.buttons["openSetup"].tap()
-        XCTAssertTrue(app.buttons["installModelButton"].waitForExistence(timeout: 5))
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Model setup"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(app, "Studio Create — no model installed")
+        for title in ["Library", "Models", "Settings", "Create"] {
+            let tab = app.tabBars.buttons[title]; XCTAssertTrue(tab.exists); tab.tap(); XCTAssertTrue(tab.isSelected)
+        }
+        XCTAssertFalse(app.buttons["Generate Extension"].exists)
+        XCTAssertFalse(app.buttons["uploadSmoothingClip"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Setup"].exists)
+        app.tabBars.buttons["Library"].tap(); capture(app, "Studio Library — empty state")
+        XCTAssertFalse(app.buttons["Play"].exists)
+        app.tabBars.buttons["Models"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Neodragon")).firstMatch.waitForExistence(timeout: 5))
+        capture(app, "Studio Models — pinned Neodragon")
+        XCTAssertFalse(app.buttons["Install MOVD"].exists)
     }
 
-    @MainActor
-    func testLibraryNavigation() throws {
-        let app = XCUIApplication()
-        app.launch()
-        app.tabBars.buttons["Library"].tap()
-        XCTAssertTrue(app.staticTexts["Your first frame awaits"].waitForExistence(timeout: 5))
-        app.tabBars.buttons["Create"].tap()
-        for _ in 0..<6 where !app.buttons["generateButton"].isHittable { app.swipeUp() }
-        XCTAssertTrue(app.buttons["generateButton"].exists)
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Create screen"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+    @MainActor func testKeyboardDismissalAndExpandedEditor() throws {
+        let app = launch(), input = app.textFields["promptInput"]
+        XCTAssertTrue(input.waitForExistence(timeout: 15)); reveal(input, in: app)
+        input.tap(); input.typeText("A small sailboat glides across a calm lake.")
+        let done = app.buttons["dismissKeyboard"]; XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
+        XCTAssertEqual(app.keyboards.count, 0)
+        let expand = app.buttons["expandPrompt"]; reveal(expand, in: app, upward: false); expand.tap()
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5))
+        capture(app, "Studio expanded prompt composer")
+        app.navigationBars.buttons["Done"].tap()
+        app.tabBars.buttons["Settings"].tap(); XCTAssertTrue(app.buttons["exportBenchmarkFiles"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testStyleSearchCustomStyleAndPersistence() throws {
+        let app = launch()
+        let browse = app.buttons["browseStyles"]; reveal(browse, in: app); browse.tap()
+        XCTAssertTrue(app.navigationBars["Visual styles"].waitForExistence(timeout: 5))
+        capture(app, "Studio style browser — illustrative prompt styles")
+        let search = app.searchFields.firstMatch
+        if !search.isHittable { app.swipeDown() }
+        search.tap(); search.typeText("Retro Anime")
+        let anime = app.buttons["browse-style-retroAnime"]; reveal(anime, in: app); anime.tap()
+        XCTAssertTrue(browse.waitForExistence(timeout: 5)); browse.tap()
+        app.buttons["newCustomStyle"].tap()
+        let name = app.textFields["customStyleName"]; XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Moonlit ink")
+        let description = app.textFields["customStyleDescription"]; description.tap(); description.typeText("Silver ink, charcoal shadows, gentle motion")
+        app.buttons["saveCustomStyle"].tap()
+        app.navigationBars.buttons["Done"].tap()
+        app.terminate(); app.launch()
+        reveal(app.buttons["browseStyles"], in: app); app.buttons["browseStyles"].tap()
+        app.segmentedControls["styleCollection"].buttons["Custom"].tap()
+        XCTAssertTrue(app.staticTexts["Moonlit ink"].waitForExistence(timeout: 5))
+        capture(app, "Studio saved custom style")
+    }
+
+    @MainActor func testExportsFrameLabAndCleanupStatusAreAccessible() throws {
+        let app = launch(); app.tabBars.buttons["Settings"].tap()
+        let export = app.buttons["exportBenchmarkFiles"]
+        XCTAssertTrue(export.waitForExistence(timeout: 10)); XCTAssertTrue(export.isHittable); XCTAssertFalse(export.isEnabled)
+        capture(app, "Studio Settings — prominent exports")
+        let lab = app.buttons["openFrameLab"]; reveal(lab, in: app); lab.tap()
+        XCTAssertTrue(app.navigationBars["Frame Lab"].waitForExistence(timeout: 5))
+        let baseline = app.buttons["openBenchmarkTools"]; reveal(baseline, in: app); baseline.tap()
+        XCTAssertFalse(app.buttons["runBaselineBenchmark"].isEnabled)
+        XCTAssertFalse(app.buttons["Fast"].exists)
+        app.tabBars.buttons["Models"].tap(); app.tabBars.buttons["Settings"].tap()
+        // Return through preserved navigation to the Settings root.
+        for _ in 0..<3 where !app.navigationBars["Settings"].exists { app.navigationBars.buttons.element(boundBy: 0).tap() }
+        let storage = app.buttons["openStorage"]; reveal(storage, in: app); storage.tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Completed · version 1")).firstMatch.waitForExistence(timeout: 5))
+        capture(app, "Studio measured storage cleanup")
+    }
+
+    @MainActor func testAppearanceAndReducedEffects() throws {
+        let app = launch(); app.tabBars.buttons["Settings"].tap()
+        let appearance = app.buttons["appearancePicker"]
+        reveal(appearance, in: app); appearance.tap(); app.buttons["Dark"].tap()
+        capture(app, "Studio dark appearance")
+        appearance.tap(); app.buttons["Light"].tap(); capture(app, "Studio light appearance")
+        let reduce = app.switches["reducedEffectsToggle"]; reveal(reduce, in: app)
+        reduce.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(reduce.value as? String, "1")
+        app.tabBars.buttons["Create"].tap(); capture(app, "Studio reduced effects Create")
     }
 }

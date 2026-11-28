@@ -30,7 +30,7 @@ public enum NeodragonModel {
 }
 
 /// Port of the upstream PyramidFlowMatchEulerDiscreteScheduler's three-stage,
-/// one-evaluation-per-stage configuration. MOVD's scheduler is unaffected.
+/// one-evaluation-per-stage configuration from the pinned distilled checkpoint.
 /// Qualcomm BSD-3-Clause-Clear notice is bundled in Neodragon-LICENSE.txt.
 struct NeodragonScheduler {
     struct Stage {
