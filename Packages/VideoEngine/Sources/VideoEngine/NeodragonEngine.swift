@@ -1,6 +1,15 @@
 import CoreML
 import Foundation
 
+public enum NeodragonMotionComputePolicy: String, Codable, Sendable {
+    case originalCPUAndGPU = "motion-cpu-gpu-v1"
+    case cpuCompatibility = "motion-cpu-compatibility-v1"
+
+    public var profileID: String {
+        self == .cpuCompatibility ? "neodragon-hybrid-motion-cpu-v2" : "neodragon-hybrid-experimental-v1"
+    }
+}
+
 public struct NeodragonGenerationRequest: Codable, Sendable, Equatable {
     public let prompt: String
     public let duration: Int
@@ -83,6 +92,7 @@ public actor NeodragonEngine {
     public func generate(_ request: NeodragonGenerationRequest, modelsAt directory: URL, output: URL,
                          benchmark: BenchmarkLog? = nil, control: GenerationControl = GenerationControl(),
                          computeOnCPUOnly: Bool = false,
+                         motionComputePolicy: NeodragonMotionComputePolicy = .originalCPUAndGPU,
                          progress: @escaping @Sendable (GenerationProgress) -> Void) async throws -> GenerationMetrics {
         let installed = try Self.validateInstallation(at: directory)
         guard request.duration <= installed.maximumSeconds else {
@@ -92,6 +102,8 @@ public actor NeodragonEngine {
         let started = ProcessInfo.processInfo.systemUptime
         let runner = ModelRunner(directory: directory, benchmark: benchmark, control: control,
                                  retainingSmallModels: Set(NeodragonModel.decoderNames), forceCPUOnly: computeOnCPUOnly)
+        benchmark?.record("neodragon_execution_policy", fields: ["motionComputePolicy": motionComputePolicy.rawValue,
+            "forceAllComponentsCPUOnly": String(computeOnCPUOnly), "profileID": motionComputePolicy.profileID])
         try await runner.checkpoint()
         // Validate every tokenizer before expensive work, with no truncation.
         _ = try Self.promptTokenCount(request.effectivePrompt, modelsAt: directory)
@@ -99,7 +111,8 @@ public actor NeodragonEngine {
         progress(.init(0.18, "Encoding the Neodragon motion prompt"))
         let encoding = try await NeodragonTextEncoder(runner: runner).video(request.effectivePrompt)
         let maximum = try NeodragonModel.geometry(seconds: installed.maximumSeconds).latentFrames
-        let latents = try await NeodragonDenoiser(runner: runner, maximumLatentFrames: maximum).generate(
+        let latents = try await NeodragonDenoiser(runner: runner, maximumLatentFrames: maximum,
+            motionComputePolicy: motionComputePolicy).generate(
             firstFrame: first, encoding: encoding, latentFrames: geometry.latentFrames,
             seed: request.seed &+ 0x4E454F445241474F, progress: progress)
         try await NeodragonDecoder(runner: runner).decode(latents, output: output, exportFrames: geometry.exportFrames, progress: progress)
@@ -123,6 +136,6 @@ public actor NeodragonEngine {
             decoderExecutionPolicy: "neodragon-streaming-causal-v1", modelLoadSeconds: runner.modelLoadSeconds,
             modelPredictionSeconds: runner.modelPredictionSeconds,
             diffusionEvaluations: 4 + (geometry.latentFrames - 1) * 3,
-            profileID: "neodragon-hybrid-experimental-v1", precision: "Mixed FP16/FP32; T5 Float32")
+            profileID: motionComputePolicy.profileID, precision: "Mixed FP16/FP32; T5 Float32")
     }
 }

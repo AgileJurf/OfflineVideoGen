@@ -6,6 +6,7 @@ import Foundation
 struct NeodragonDenoiser {
     let runner: ModelRunner
     let maximumLatentFrames: Int
+    var motionComputePolicy: NeodragonMotionComputePolicy = .originalCPUAndGPU
 
     func generate(firstFrame: MLShapedArray<Float32>, encoding: NeodragonTextEncoding,
                   latentFrames: Int, seed: UInt64,
@@ -63,10 +64,17 @@ struct NeodragonDenoiser {
                 let mask = feature(.init(scalars: layout.mask, shape: [1, 1, layout.totalTokens, layout.totalTokens]))
                 let cosine = feature(.init(scalars: layout.cosine, shape: [1, layout.totalTokens, 1, 32]))
                 let sine = feature(.init(scalars: layout.sine, shape: [1, layout.totalTokens, 1, 32]))
+                runner.benchmark?.record("neodragon_motion_stage_started", fields: [
+                    "latentUnit": String(unit), "pyramidStage": String(stage + 1),
+                    "imageTokens": String(layout.imageTokens), "totalTokens": String(layout.totalTokens),
+                    "motionComputePolicy": motionComputePolicy.rawValue])
                 for block in 0..<18 {
+                    // The compatibility policy selects CPU before model loading;
+                    // Swift catch cannot recover a process-aborting native assert.
                     let result = try await runner.predict(String(format: "transformer_block_%02d", block), [
                         "hidden": hidden, "context": context, "time_embedding": timeEmbeddings[stage],
-                        "attention_mask": mask, "rope_cos": cosine, "rope_sin": sine])
+                        "attention_mask": mask, "rope_cos": cosine, "rope_sin": sine],
+                        cpuOnly: motionComputePolicy == .cpuCompatibility)
                     let next = try tensor(result, "hidden_out")
                     guard next.shape == [1, layout.imageTokens, 1536], next.scalars.allSatisfy(\.isFinite) else { throw GenerationError.invalidTensor }
                     hidden = feature(next)
@@ -80,8 +88,9 @@ struct NeodragonDenoiser {
                     let estimate: GenerationEstimate? = recentUnitSeconds.isEmpty ? nil : .init(
                         seconds: max(0, recentUnitSeconds.reduce(0, +) / Double(recentUnitSeconds.count) * Double(latentFrames - unit) - elapsed),
                         scope: "Motion estimate", isFullJob: false)
+                    let execution = motionComputePolicy == .cpuCompatibility ? " · CPU compatibility" : ""
                     progress(.init(0.2 + 0.64 * completed / Double((latentFrames - 1) * 54),
-                                   "Generating Neodragon motion · unit \(unit) of \(latentFrames - 1) · stage \(stage + 1) · block \(block + 1) of 18", estimate: estimate))
+                                   "Generating Neodragon motion\(execution) · unit \(unit) of \(latentFrames - 1) · stage \(stage + 1) · block \(block + 1) of 18", estimate: estimate))
                 }
                 guard let array = hidden.multiArrayValue else { throw GenerationError.invalidTensor }
                 let currentTokens = latent.height * latent.width / 4

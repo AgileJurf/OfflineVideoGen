@@ -728,6 +728,7 @@ extension AppModel {
             let request = try NeodragonGenerationRequest(prompt: prompt, duration: duration, seed: seed, style: visualStyle)
             let installation = try NeodragonEngine.validateInstallation(at: neodragonDirectory)
             let geometry = try NeodragonModel.geometry(seconds: duration)
+            let motionComputePolicy = NeodragonMotionComputePolicy.cpuCompatibility
             // The optional port always keeps local evidence while device validation
             // is in progress. Diagnostics remain subject to separate upload consent.
             let log = try makeBenchmarkLog(kind: "generation", fields: ["modelID": NeodragonModel.identifier,
@@ -735,8 +736,9 @@ extension AppModel {
                 "prompt": request.prompt, "effectiveModelPrompt": request.effectivePrompt, "visualStyle": request.style.rawValue,
                 "seed": String(seed), "durationSeconds": String(request.duration), "width": "512", "height": "320", "fps": "24",
                 "generationMode": GenerationMode.textToVideo.rawValue, "requestedFraming": "native-16:10",
-                "profileID": "neodragon-hybrid-experimental-v1", "precision": "Mixed FP16/FP32; T5 Float32",
-                "configuration": "Neodragon hybrid mixed precision · native 24 FPS",
+                "profileID": motionComputePolicy.profileID, "precision": "Mixed FP16/FP32; T5 Float32",
+                "motionComputePolicy": motionComputePolicy.rawValue,
+                "configuration": "Neodragon CPU motion compatibility · mixed precision · native 24 FPS",
                 "expectedPartitions": installation.modelNames.joined(separator: ","),
                 "expectedEvaluations": String(4 + (geometry.latentFrames - 1) * 3),
                 "schedule": "SSD-1B LCM 4 steps, then 3 flow evaluations per subsequent latent unit",
@@ -764,7 +766,8 @@ extension AppModel {
                     defer { try? FileManager.default.removeItem(at: output); self.finish(success: succeeded) }
                     do {
                         let metrics = try await self.neodragonEngine.generate(request, modelsAt: self.neodragonDirectory, output: output,
-                                                                       benchmark: log, control: control) { progress in
+                                                                       benchmark: log, control: control,
+                                                                       motionComputePolicy: motionComputePolicy) { progress in
                             Task { @MainActor in
                                 self.progress = progress
                                 BackgroundGeneration.shared.report(progress, paused: self.pauseReason == nil ? nil : self.progressMessage)

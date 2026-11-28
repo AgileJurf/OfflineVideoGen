@@ -63,6 +63,11 @@ final class ModelRunner {
             let modelURL = directory.appendingPathComponent(name + ".mlmodelc")
             let unitLabel = config.computeUnits == .cpuOnly ? "cpuOnly" : "cpuAndGPU"
             let cacheKey = "\(name):\(config.computeUnits.rawValue)"
+            // Shapes must be present before load as well as prediction: a native
+            // compiler abort can terminate the process inside MLModel.init.
+            let shapes = benchmark == nil ? "" : inputs.keys.sorted().map { key in
+                "\(key):\(inputs[key]?.multiArrayValue?.shape.map(\.intValue) ?? [])"
+            }.joined(separator: ";")
             let cached = retainedModels[cacheKey]
             let model: MLModel
             let load = { () throws -> MLModel in
@@ -75,7 +80,7 @@ final class ModelRunner {
             }
             if let benchmark {
                 model = try benchmark.measure(name, phase: "load", fields: ["requestedComputeUnits": unitLabel,
-                    "retainedModelHit": String(cached != nil)], load)
+                    "retainedModelHit": String(cached != nil), "inputShapes": shapes], load)
             } else { model = try load() }
             let provider = try MLDictionaryFeatureProvider(dictionary: inputs)
             let result: MLFeatureProvider
@@ -85,9 +90,6 @@ final class ModelRunner {
                 return try model.prediction(from: provider)
             }
             if let benchmark {
-                let shapes = inputs.keys.sorted().map { key in
-                    "\(key):\(inputs[key]?.multiArrayValue?.shape.map(\.intValue) ?? [])"
-                }.joined(separator: ";")
                 let layouts = inputs.keys.sorted().compactMap { key -> String? in
                     guard let array = inputs[key]?.multiArrayValue else { return nil }
                     return "\(key):type=\(array.dataType.rawValue),strides=\(array.strides.map(\.intValue))"
